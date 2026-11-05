@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S00 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | Commit 0 (documentação e specs, feito pela pessoa) |
 | **Chamadas reais de API** | Não |
 
