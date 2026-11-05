@@ -1,0 +1,35 @@
+# Registros de decisão de arquitetura (ADRs)
+
+Cada arquivo registra uma decisão: contexto, decisão, alternativas e consequências. Um ADR aceito não é reescrito; um ADR novo o substitui.
+
+Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
+
+| ADR | Decisão | Status |
+|---|---|---|
+| [0001](0001-supabase-postgres-pgvector.md) | Usar Supabase Postgres com pgvector em vez de SQLite | Aceito |
+| [0002](0002-sem-framework-de-agente.md) | Construir RAG, memória e guardrails à mão, sem framework de agente | Aceito |
+| [0003](0003-github-actions-e-vercel-cron.md) | Automatizar com GitHub Actions e Vercel Cron, não com n8n nem pg_cron | Aceito |
+| [0004](0004-sem-streaming.md) | Devolver respostas completas em vez de streaming | Aceito |
+| [0005](0005-driver-postgres-rls-sem-policies.md) | Acessar o banco só pelo servidor, com o driver postgres | Aceito |
+| [0006](0006-bancos-dev-e-prod-separados.md) | Usar dois projetos Supabase, dev e prod | Aceito |
+| [0007](0007-pasta-knowledge-base.md) | Chamar a pasta de fontes do RAG de knowledge-base/ | Aceito |
+| [0008](0008-vitest-e-tsx.md) | Usar Vitest e tsx nos testes e nos scripts locais | Aceito |
+| [0009](0009-somente-gemini.md) | Usar o Gemini como único provedor de LLM, pelo @google/genai | Aceito |
+| [0010](0010-link-de-continuacao-em-vez-de-login.md) | Usar um link de continuação da sessão em vez de login | Aceito |
+| [0011](0011-somente-parceiros-atuais.md) | Restringir o assistente a restaurantes que já são parceiros | Aceito |
+| [0012](0012-rag-e-prompt-em-vez-de-fine-tuning.md) | Personalizar com RAG e engenharia de prompt, não com fine-tuning | Aceito |
+| [0013](0013-fluxo-de-branch-por-spec.md) | Uma branch, um worktree e um PR por spec | Aceito |
+
+## Modelo
+
+```markdown
+# NNNN. Título
+
+- **Status:** Proposto
+- **Data:** AAAA-MM-DD
+
+## Contexto
+## Decisão
+## Alternativas consideradas
+## Consequências
+```
