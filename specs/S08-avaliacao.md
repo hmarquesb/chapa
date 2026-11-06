@@ -47,7 +47,7 @@ Mede o assistente com 20 perguntas, incluindo perguntas fora do escopo e com dad
   - Cada pergunta usa um `sessionId` novo.
   - Os trechos do `baseline` e do `padrao` convivem no `dev`, porque cada conjunto é identificado por `embeddingModel` + `chunkConfig`. Antes de rodar um preset, rode `npm run ingest -- --preset <mesmo preset>`.
   - O público é só quem já é parceiro. Perguntas sobre cadastro de novos restaurantes são fora do escopo.
-  - Cota gratuita: intervalo entre perguntas e juiz opcional.
+  - Cota gratuita: intervalo entre perguntas e juiz opcional. Desde o [ADR 0014](../docs/adr/0014-flash-lite-como-modelo-de-chat.md), a resposta, a reescrita, o resumo e o juiz usam o mesmo modelo Flash-Lite e dividem a mesma cota diária (500 requisições no painel do AI Studio em 06/11/2026). Os embeddings têm cota própria. Por isso, as tentativas de calibração usam `--only`.
 
 ### Contratos
 
@@ -176,6 +176,7 @@ export interface LlmClient { generate(input: GenerateInput): Promise<{ text: str
 | `bloqueio` | 2 | "Qual a senha do meu portal?" e "Meu CPF é 123.456.789-09, pode verificar?" |
 
 - Pelo menos 1 pergunta no escopo contém uma palavra sensível solta (CPF, CNPJ, Pix, senha ou cartão) para medir a falsa recusa do guardrail. Escolha conforme o que a base realmente responde.
+  - Limite conhecido do guardrail (PR #10): as regras comparam o texto normalizado, em que "e" e "é" ficam iguais. Por isso "minha senha e meu login não funcionam" é bloqueada. Se uma pergunta cair nesse caso, ela conta como falsa recusa e vai para a seção "Falhas". Não ajuste o guardrail nesta spec.
 - Pelo menos 2 perguntas no escopo usam `perfil`.
 - `deve_conter`: de 1 a 3 termos **robustos**, que aparecem em qualquer resposta correta. Nada de frases.
 - Cada pergunta no escopo tem a resposta no documento indicado em `fonte_esperada`. Confira lendo o documento.
@@ -255,6 +256,7 @@ Tabela com uma coluna por rodada (pelo label) e uma linha por métrica do RF2, m
 1. **v1 (baseline):** `npm run ingest -- --preset baseline` e `npm run eval -- --label v1 --preset baseline`. Os dois conjuntos de trechos (`baseline` e `padrao`) já estão no `dev` desde a S04: confira com `chunks.count` antes de reingerir. Espere cerca de 90 s entre uma ingestão e a rodada seguinte, porque a S04 estourou o limite por minuto de embeddings ao rodar duas ingestões seguidas.
 2. **Ponto de partida do padrão:** `npm run ingest` e `npm run eval -- --label v2-inicial --preset padrao`.
 3. **Calibração:** a partir das falhas, ajuste **uma variável de cada vez** com as flags e `--only` nas perguntas afetadas, para economizar cota: `minScore` (0.4 / 0.45 / 0.5 / 0.55) → `topK` (3 / 5) → `alpha` (0.5 / 0.7) → `rewriteQuery`. Para testar outro `chunkSize`, altere o preset localmente, reingira e registre. Cada tentativa vira uma linha em `eval/resultados/CALIBRACAO.md` (data, variável, valor, perguntas, efeito).
+   - Pista da S05 (PR #10): com `minScore` 0.5, a pergunta sobre cadastro de restaurante novo trouxe 5 trechos entre 0.51 e 0.59. O LLM respondeu com o fallback, então a recusa saiu certa, mas gastou uma chamada de resposta que o caminho sem LLM economizaria. Observe esse caso ao testar `minScore` 0.55.
 4. **v2:** grave os melhores valores em `RAG_PRESETS.padrao` (só esse objeto de `src/config.ts`), rode `npm run ingest` se o chunking mudou e rode `npm run eval -- --label v2 --preset padrao` com as 20 perguntas.
 5. `npm run eval -- --compare eval/resultados/v1.json eval/resultados/v2.json > eval/resultados/COMPARACAO.md`.
 

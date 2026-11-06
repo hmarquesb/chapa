@@ -167,6 +167,9 @@ export interface ChunkRepository { count(key: ChunkSetKey): Promise<number>; ...
 // src/config.ts (S01): config, chunkConfigKey
 // src/infra/container.ts (S05): getContainer() → { config, llm, chunks, sessions, rateLimits, assistant }
 // src/infra/env.ts (S00): requireEnv(name)
+// src/lib/session-id.ts (S07): isUuid(value: string): boolean
+//   O isUuid de validate.ts reaproveita esta função (com a checagem de typeof antes),
+//   para a regex de UUID ficar num lugar só. A CLI da S05 já usa a mesma função.
 ```
 
 ## Requisitos funcionais
