@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S06 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S05 |
 | **Chamadas reais de API** | Só com autorização: teste manual local com `npm run dev` contra o `dev` (algumas chamadas) |
 

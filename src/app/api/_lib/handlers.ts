@@ -1,0 +1,293 @@
+import { timingSafeEqual } from "node:crypto"
+import { ERROR_MESSAGES } from "@/app/api/_lib/errors"
+import { HttpError, json, readJsonBody } from "@/app/api/_lib/http"
+import { type LogEntry, logRequest } from "@/app/api/_lib/log"
+import { checkRateLimit, getClientIp, hashIp } from "@/app/api/_lib/rate-limit"
+import { isUuid, parseChatRequest } from "@/app/api/_lib/validate"
+import { type AppConfig, chunkConfigKey } from "@/config"
+import { LlmQuotaError, LlmUnavailableError } from "@/core/errors"
+import type {
+  Assistant,
+  ChunkRepository,
+  RateLimitRepository,
+  SessionRepository,
+  StoredMessage,
+} from "@/core/types"
+import type {
+  ApiErrorResponse,
+  ChatResponse,
+  HealthResponse,
+  HistoryMessage,
+  SessionHistoryResponse,
+} from "@/lib/types"
+
+type Log = (entry: LogEntry) => void
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const RATE_LIMIT_RETENTION_DAYS = 2
+
+const ROUTES = {
+  chat: "/api/chat",
+  history: "/api/sessions/[id]/messages", // the template, never the real path with the id
+  health: "/api/health",
+  cleanup: "/api/cron/cleanup",
+} as const
+
+// ---------- error mapping ----------
+
+// Network failures (Node and postgres.js codes) and the SQLSTATEs Postgres or the Supabase
+// pooler send when the database can't take the connection.
+const DB_UNAVAILABLE_CODES = new Set([
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+  "EPIPE",
+  "CONNECT_TIMEOUT",
+  "CONNECTION_CLOSED",
+  "CONNECTION_ENDED",
+  "CONNECTION_DESTROYED",
+  "53300", // too_many_connections
+  "57P01", // admin_shutdown
+  "57P02", // crash_shutdown
+  "57P03", // cannot_connect_now
+])
+
+function isDbUnavailable(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) return false
+  const { code } = error
+  return typeof code === "string" && (DB_UNAVAILABLE_CODES.has(code) || code.startsWith("08"))
+}
+
+function errorName(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error
+}
+
+// Only fixed PT-BR texts leave the server: never the provider's message nor a stack trace.
+function toPublicError(error: unknown): { status: number; message: string } {
+  if (error instanceof HttpError) return { status: error.status, message: error.publicMessage }
+  if (error instanceof LlmQuotaError) return { status: 429, message: ERROR_MESSAGES.llmQuota }
+  if (error instanceof LlmUnavailableError || isDbUnavailable(error)) {
+    return { status: 503, message: ERROR_MESSAGES.unavailable }
+  }
+  return { status: 500, message: ERROR_MESSAGES.internal }
+}
+
+function errorResponse(status: number, message: string, headers?: HeadersInit): Response {
+  const body: ApiErrorResponse = { error: message }
+  return json(body, { status, headers })
+}
+
+// Measures latency and writes exactly one log line per request.
+function startRequest(route: string, method: string, log: Log) {
+  const started = performance.now()
+  return (entry: Omit<LogEntry, "route" | "method" | "latencyMs">) =>
+    log({ route, method, ...entry, latencyMs: Math.round(performance.now() - started) })
+}
+
+function failed(error: unknown, finish: ReturnType<typeof startRequest>): Response {
+  const { status, message } = toPublicError(error)
+  finish({ status, error: errorName(error) })
+  return errorResponse(status, message)
+}
+
+// ---------- POST /api/chat ----------
+
+export function createChatHandler(deps: {
+  assistant: Assistant
+  rateLimits: RateLimitRepository
+  config: AppConfig
+  ipHashSecret: () => string
+  now?: () => Date
+  log?: Log
+}): (req: Request) => Promise<Response> {
+  const now = deps.now ?? (() => new Date())
+  const log = deps.log ?? logRequest
+  const { limits } = deps.config
+  let secret: string | undefined // read on the first request, not at import or build time
+
+  return async (req) => {
+    const finish = startRequest(ROUTES.chat, "POST", log)
+    try {
+      const contentType = req.headers.get("content-type") ?? ""
+      if (!contentType.toLowerCase().startsWith("application/json")) {
+        throw new HttpError(415, ERROR_MESSAGES.unsupportedMediaType)
+      }
+      const parsed = parseChatRequest(await readJsonBody(req, limits.maxBodyBytes))
+      if (!parsed.ok) throw new HttpError(400, parsed.error)
+
+      secret ??= deps.ipHashSecret()
+      const limit = await checkRateLimit({
+        ipHash: hashIp(getClientIp(req.headers), secret),
+        now: now(),
+        repo: deps.rateLimits,
+        perMinute: limits.rateLimitPerMinute,
+        perDay: limits.rateLimitPerDay,
+      })
+      if (!limit.allowed) {
+        finish({ status: 429 })
+        return errorResponse(429, ERROR_MESSAGES.rateLimited, {
+          "Retry-After": String(limit.retryAfterSeconds),
+        })
+      }
+
+      const reply = await deps.assistant.handleMessage({ ...parsed.value, channel: "web" })
+      finish({
+        status: 200,
+        replyStatus: reply.status,
+        llmCalls: reply.usage.calls,
+        inputTokens: reply.usage.inputTokens,
+        outputTokens: reply.usage.outputTokens,
+      })
+      // Picked one by one: retrieved, searchQuery and usage never leave the server.
+      const body: ChatResponse = {
+        status: reply.status,
+        answer: reply.answer,
+        sources: reply.sources,
+      }
+      return json(body)
+    } catch (error) {
+      return failed(error, finish)
+    }
+  }
+}
+
+// ---------- GET /api/sessions/[id]/messages ----------
+
+function toHistoryMessage(message: StoredMessage): HistoryMessage {
+  return {
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    status: message.status,
+    sources: message.sources,
+    createdAt: message.createdAt.toISOString(),
+  }
+}
+
+export function createHistoryHandler(deps: {
+  sessions: SessionRepository
+  log?: Log
+}): (req: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response> {
+  const log = deps.log ?? logRequest
+
+  return async (_req, ctx) => {
+    const finish = startRequest(ROUTES.history, "GET", log)
+    try {
+      const { id } = await ctx.params
+      if (!isUuid(id)) throw new HttpError(400, ERROR_MESSAGES.invalidSessionId)
+      // Read-only: get and listMessages never update last_activity_at.
+      const session = await deps.sessions.get(id)
+      if (session === null) throw new HttpError(404, ERROR_MESSAGES.sessionNotFound)
+      const messages = await deps.sessions.listMessages(session.id)
+
+      finish({ status: 200 })
+      const body: SessionHistoryResponse = {
+        sessionId: session.id,
+        profile: session.profile,
+        messages: messages.map(toHistoryMessage),
+      }
+      return json(body)
+    } catch (error) {
+      return failed(error, finish)
+    }
+  }
+}
+
+// ---------- GET /api/health ----------
+
+export function createHealthHandler(deps: {
+  chunks: ChunkRepository
+  config: AppConfig
+  log?: Log
+}): (req: Request) => Promise<Response> {
+  const log = deps.log ?? logRequest
+  const embeddingModel = deps.config.models.embedding
+  const key = { embeddingModel, chunkConfig: chunkConfigKey(deps.config.rag) }
+
+  return async () => {
+    const finish = startRequest(ROUTES.health, "GET", log)
+    try {
+      const chunks = await deps.chunks.count(key)
+      finish({ status: 200 })
+      const body: HealthResponse = { ok: true, chunks, embeddingModel }
+      return json(body)
+    } catch (error) {
+      finish({ status: 503, error: errorName(error) })
+      const body: HealthResponse = { ok: false, chunks: 0, embeddingModel }
+      return json(body, { status: 503 })
+    }
+  }
+}
+
+// ---------- GET /api/cron/cleanup ----------
+
+// Constant-time comparison; different lengths are a plain failure.
+function sameSecret(given: string, expected: string): boolean {
+  const a = Buffer.from(given, "utf8")
+  const b = Buffer.from(expected, "utf8")
+  return a.length === b.length && timingSafeEqual(a, b)
+}
+
+const BEARER_PREFIX = "Bearer "
+
+export function createCleanupHandler(deps: {
+  sessions: SessionRepository
+  rateLimits: RateLimitRepository
+  config: AppConfig
+  cronSecret: () => string
+  now?: () => Date
+  log?: Log
+}): (req: Request) => Promise<Response> {
+  const now = deps.now ?? (() => new Date())
+  const log = deps.log ?? logRequest
+
+  return async (req) => {
+    const finish = startRequest(ROUTES.cleanup, "GET", log)
+    try {
+      const authorization = req.headers.get("authorization") ?? ""
+      const authorized =
+        authorization.startsWith(BEARER_PREFIX) &&
+        sameSecret(authorization.slice(BEARER_PREFIX.length), deps.cronSecret())
+      if (!authorized) throw new HttpError(401, ERROR_MESSAGES.unauthorized)
+
+      const current = now().getTime()
+      const deletedSessions = await deps.sessions.deleteInactive(
+        new Date(current - deps.config.sessionTtlDays * DAY_MS),
+      )
+      const deletedRateLimits = await deps.rateLimits.deleteBefore(
+        new Date(current - RATE_LIMIT_RETENTION_DAYS * DAY_MS),
+      )
+      finish({ status: 200 })
+      return json({ deletedSessions, deletedRateLimits })
+    } catch (error) {
+      return failed(error, finish)
+    }
+  }
+}
+
+// ---------- lazy creation for the route files ----------
+
+// Builds the real handler on the first request, so `next build` never reads env vars nor
+// opens connections. If building fails (e.g. MissingEnvError), answers 500 and retries on the
+// next request.
+export function createLazyHandler<Ctx extends unknown[]>(
+  meta: { route: string; method: string; log?: Log },
+  create: () => (req: Request, ...ctx: Ctx) => Promise<Response>,
+): (req: Request, ...ctx: Ctx) => Promise<Response> {
+  let handler: ((req: Request, ...ctx: Ctx) => Promise<Response>) | undefined
+  return async (req, ...ctx) => {
+    if (handler === undefined) {
+      const finish = startRequest(meta.route, meta.method, meta.log ?? logRequest)
+      try {
+        handler = create()
+      } catch (error) {
+        return failed(error, finish)
+      }
+    }
+    return handler(req, ...ctx)
+  }
+}

@@ -6,6 +6,21 @@ import type { NextConfig } from "next"
 const nextConfig: NextConfig = {
   // `next dev` would otherwise inject a managed block into our hand-written AGENTS.md.
   agentRules: false,
+  poweredByHeader: false,
+  // The continue link (/?sessao=<id>) works as a credential, so no page leaks it as a referrer.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ]
+  },
   turbopack: {
     rules: {
       "*.css": {
