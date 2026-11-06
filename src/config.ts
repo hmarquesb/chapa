@@ -70,10 +70,10 @@ export const MODEL_THINKING_LEVEL: Readonly<Record<string, ThinkingLevel>> = Obj
 })
 
 export const RAG_PRESETS: { padrao: RagConfig; baseline: RagConfig } = Object.freeze({
-  // Candidato inicial. A S08 atualiza estes valores com o resultado da calibração.
+  // Calibrado na S08: minScore 0.5 → 0.55 (ver eval/resultados/CALIBRACAO.md).
   padrao: Object.freeze({
     topK: 5,
-    minScore: 0.5,
+    minScore: 0.55,
     alpha: 0.7,
     candidateLimit: 30,
     chunkStrategy: "markdown",
