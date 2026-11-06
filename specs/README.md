@@ -12,7 +12,7 @@ Legenda: 🟡 Aguardando aprovação · ✅ Aprovada · 🔵 Em andamento · �
 
 | ID | Spec | Onda | Depende de | Esforço | Usa API | Status |
 |---|---|---|---|---|---|---|
-| S00 | [Bootstrap do projeto Next.js](S00-bootstrap.md) | 0 | commit 0 | 45 min | não | ✅ |
+| S00 | [Bootstrap do projeto Next.js](S00-bootstrap.md) | 0 | commit 0 | 45 min | não | 🟢 |
 | S01 | [Configuração e cliente do Gemini](S01-config-e-cliente-llm.md) | 1 | S00 | 1h | fumaça (H1) | ✅ |
 | S02 | [Base de conhecimento](S02-base-de-conhecimento.md) | 1 | S00 | 1h30 | não (web) | ✅ |
 | S03 | [Banco de dados e repositórios](S03-banco-de-dados.md) | 1 | S00 | 1h15 | não (banco no H2) | ✅ |
