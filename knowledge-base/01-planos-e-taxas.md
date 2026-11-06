@@ -1,12 +1,24 @@
 # Planos e taxas
 
-> Fonte: https://blog-parceiros.ifood.com.br/planos-ifood/; https://blog-parceiros.ifood.com.br/taxas-ifood/. Consultadas em 05/11/2026. Texto reescrito para fins de estudo, sem afiliação com a empresa.
+> Fonte: https://blog-parceiros.ifood.com.br/planos-ifood/; https://blog-parceiros.ifood.com.br/taxas-ifood/ (consultadas em 05/11/2026 e 06/11/2026); https://blog-parceiros.ifood.com.br/area-de-entrega/; https://blog-parceiros.ifood.com.br/taxa-de-entrega-flexivel/ (consultadas em 06/11/2026). Texto reescrito para fins de estudo, sem afiliação com a empresa.
 
 ## O que diferencia os planos (restaurante entrega × app entrega)
 
 A grande diferença entre os planos da plataforma está em quem leva o pedido até o cliente. No Plano Básico, o próprio restaurante faz a entrega: a loja cuida da equipe de entregadores, da rota e do raio de atendimento, e o app cuida da vitrine, do pedido e do pagamento. No Plano Entrega, o app assume o transporte com a sua rede de entregadores parceiros, e o restaurante só prepara e despacha o pedido. Existe ainda o Plano Entrega Flex, que mistura os dois modelos: a loja entrega numa área próxima definida por ela, e a rede parceira atende o resto do mapa.
 
 Na prática, o custo da entrega no Plano Básico é fixo, porque depende da equipe própria, mesmo nas horas de pouco movimento. No Plano Entrega, esse custo acompanha o volume de pedidos. O Plano Entrega também inclui rastreio do pedido em tempo real, gestão do tempo de preparo, atendimento ao cliente até a entrega e seguro contra fraudes na entrega.
+
+## Taxa de entrega: quem paga e quem define
+
+A taxa de entrega é paga pelo cliente. Ela é calculada pela distância entre a loja e o endereço do cliente e entra no valor total que o cliente vê ao finalizar o pedido, conforme a página de planos do blog para parceiros, consultada em 06/11/2026. No Plano Entrega, o custo da entrega feita pela rede parceira faz parte do que o cliente paga à plataforma, conforme a página de taxas do blog para parceiros, consultada em 06/11/2026.
+
+Quem define o valor da taxa depende do plano. No Plano Básico, a loja faz a própria entrega e define a área, a taxa e o tempo de entrega no Portal do Parceiro, nas configurações de entrega, preenchendo a taxa e o tempo de cada área. A mesma tela de áreas, taxas e tempos atende o Plano Entrega Flex. A loja pode salvar até 5 combinações de taxa e tempo, e a taxa não pode passar de R$ 50,00, conforme a página de área de entrega do blog para parceiros, consultada em 06/11/2026. No Plano Entrega, a área de entrega é definida automaticamente pela plataforma.
+
+## Entrega grátis
+
+A loja pode oferecer entrega grátis com campanhas próprias. No Portal do Parceiro, em "Promoções" e depois "Taxa de entrega Flexível", a loja cria a campanha, escolhe o público (clientes novos, clientes que não pedem há mais de 30 dias ou todos os clientes) e define o valor máximo que a promoção cobre, conforme a página de taxa de entrega flexível do blog para parceiros, consultada em 06/11/2026. A campanha pode ser ativada e desativada a qualquer momento.
+
+Um raio maior com entrega grátis dá mais visibilidade à loja no app. A plataforma não detalha quem arca com o custo da entrega grátis, então confirme as condições da campanha no Portal do Parceiro antes de ativá-la.
 
 ## Comissão
 
