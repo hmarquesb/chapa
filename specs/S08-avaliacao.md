@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S08 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S05 (as perguntas dependem da S02 aprovada no H3) |
 | **Chamadas reais de API** | Só com autorização (H4): cada rodada completa faz de 60 a 90 chamadas ao Gemini contra o `dev` |
 
