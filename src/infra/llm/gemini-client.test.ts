@@ -119,8 +119,8 @@ describe("generate (RF7)", () => {
     const thinking = generateContent.mock.calls.map(
       (call) => (call[0] as { config: { thinkingConfig?: { thinkingLevel?: string } } }).config,
     )
-    expect(MODEL_THINKING_LEVEL[config.models.chat]).toBe("low")
-    expect(thinking[0]?.thinkingConfig).toEqual({ thinkingLevel: "LOW" })
+    expect(MODEL_THINKING_LEVEL[config.models.chat]).toBe("minimal")
+    expect(thinking[0]?.thinkingConfig).toEqual({ thinkingLevel: "MINIMAL" })
     expect(thinking[1]?.thinkingConfig).toEqual({ thinkingLevel: "MINIMAL" })
   })
 
