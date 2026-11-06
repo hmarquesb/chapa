@@ -104,7 +104,7 @@ Também traz uma seção "Como desfazer": voltar a um deploy anterior na Vercel 
 
 ### RF3. Segredos
 
-- **Critério de aceite:** Dado o repositório, quando o revisor roda `git grep -nE "AIza[0-9A-Za-z_-]{20,}|postgres(ql)?://[^ ]*:[^ @]+@|CRON_SECRET=.+|IP_HASH_SECRET=.+"`, então não há resultado. O `git log` não tem nenhum arquivo `.env*` além do `.env.example`.
+- **Critério de aceite:** Dado o repositório, quando o revisor roda `git grep -nE "AIza[0-9A-Za-z_-]{20,}|postgres(ql)?://[^ ]*:[^ @]+@|CRON_SECRET[=].+|IP_HASH_SECRET[=].+"` (o `[=]` evita que o padrão case com o próprio texto), então não há resultado. O `git log` não tem nenhum arquivo `.env*` além do `.env.example`.
 
 ## Requisitos não funcionais
 
