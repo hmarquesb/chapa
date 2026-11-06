@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S05 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🔵 Em andamento |
 | **Depende de** | S01, S03, S04 |
 | **Chamadas reais de API** | Só com autorização: sessão manual na CLI contra o `dev` (cerca de 10 a 20 chamadas) |
 
