@@ -261,6 +261,7 @@ Cada `route.ts` só exporta `runtime`, `dynamic` (e `maxDuration` no chat) e rep
 - Escrever o teste antes da implementação em `validate`, `rate-limit`, `http` e `handlers`, usando `new Request(...)` e fakes.
 - Usar `node:crypto` para HMAC e comparação em tempo constante.
 - Rodar `npm test`, `npm run typecheck`, `npm run lint` e `npm run build` antes de entregar.
+- *(Com autorização, no teste manual local)* Refazer contra a API real, com `npm run dev` e o `dev`, as verificações RF4 (diálogo de continuação), RF6 (exemplo fora da base → fallback sem fontes) e RF8 (teclado e modo escuro) da S07, que ficaram pendentes no PR #8. A interface só grava um `sessionId` novo depois que o servidor confirma a sessão (desvio 1 da S07), então o `GET /api/sessions/[id]/messages` devolve 404 para uma sessão que ainda não recebeu mensagem.
 - Entregar um relatório com: arquivos alterados, cada critério de aceite com a evidência (comando + saída resumida), desvios da spec e pendências humanas.
 
 ## Você não deve
