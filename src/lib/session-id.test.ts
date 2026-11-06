@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
   buildContinueLink,
+  INVALID_LINK_NOTICE_NEW,
+  INVALID_LINK_NOTICE_STORAGE,
+  invalidLinkNotice,
   isUuid,
   randomSessionId,
   resolveInitialSession,
@@ -78,6 +81,24 @@ describe("resolveInitialSession", () => {
     resolveInitialSession({ queryValue: A, storedValue: null, newId: counting })
     resolveInitialSession({ queryValue: null, storedValue: B, newId: counting })
     expect(calls).toBe(0)
+  })
+})
+
+describe("invalidLinkNotice", () => {
+  it("says nothing when there is no link or the link was used", () => {
+    expect(invalidLinkNotice(null, "storage")).toBeNull()
+    expect(invalidLinkNotice(null, "new")).toBeNull()
+    expect(invalidLinkNotice(A, "link")).toBeNull()
+  })
+
+  it("warns that a malformed link fell back to the conversation saved in this browser", () => {
+    // A truncated UUID used to look like it "worked" because the stored session loaded silently.
+    expect(invalidLinkNotice(A.slice(0, -3), "storage")).toBe(INVALID_LINK_NOTICE_STORAGE)
+  })
+
+  it("warns that a malformed link started a new conversation", () => {
+    expect(invalidLinkNotice("abc", "new")).toBe(INVALID_LINK_NOTICE_NEW)
+    expect(invalidLinkNotice("", "new")).toBe(INVALID_LINK_NOTICE_NEW)
   })
 })
 

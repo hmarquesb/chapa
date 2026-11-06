@@ -17,6 +17,7 @@ import {
   sanitizeProfile,
 } from "@/lib/profile-storage"
 import {
+  invalidLinkNotice,
   randomSessionId,
   resolveInitialSession,
   SESSION_QUERY_PARAM,
@@ -93,6 +94,8 @@ export function ChatApp() {
     // A link or stored id is kept until the server says otherwise; a new one waits (see adoptSession).
     adoptSession(initialId, source !== "new")
     removeSessionParam()
+    const linkNotice = invalidLinkNotice(queryValue, source)
+    if (linkNotice !== null) dispatch({ type: "reset", notice: linkNotice })
     if (source === "new") return
 
     setLoadingHistory(true)
