@@ -76,7 +76,7 @@ Cotas por modelo no painel de cotas do AI Studio, informadas pela pessoa em 06/1
 |---|---|---|---|
 | `gemini-3.5-flash-lite` | 15 | 500 | Painel de cotas do AI Studio da conta, consultado em 06/11/2026 ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)) |
 | `gemini-embedding-001` | 100 | 1.000 | Painel de cotas do AI Studio da conta, consultado em 06/11/2026 |
-| `gemini-3.8-flash` (só se usado via `CHAT_MODEL`) | _a conferir no painel_ | 20 | Painel de cotas, 06/11/2026 (ADR 0014) |
+| `gemini-3.8-flash` (só se usado via `CHAT_MODEL`) | 5 | 20 | Painel de cotas do AI Studio da conta, consultado em 06/11/2026 (ADR 0014) |
 
 **Capacidade estimada da demo:** uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding. Com 500 gerações por dia, a demo aguenta perto de **160 mensagens por dia**, menos o que o eval e a CLI gastarem no mesmo projeto do Google. Por minuto, as 15 gerações dão cerca de **5 mensagens por minuto** somando todos os usuários. Os embeddings (100 por minuto e 1.000 por dia) não são o gargalo. Além disso, a API limita cada IP a 10 mensagens por minuto e 100 por dia (`src/config.ts`).
 
