@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S02 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S00 |
 | **Chamadas reais de API** | Não usa LLM. Usa busca e leitura de páginas públicas na web (WebSearch/WebFetch) |
 
