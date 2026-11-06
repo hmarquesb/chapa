@@ -131,6 +131,7 @@ async function main(): Promise<void> {
 
   console.log(`Fumaça em ${base.url}`)
   if (bypassSecret) console.log(`(usando ${BYPASS_ENV} para a Deployment Protection)`)
+  else console.log(`(sem ${BYPASS_ENV}: um preview protegido vai responder 302 ou 401)`)
 
   let failures = 0
   for (const [index, step] of steps.entries()) {

@@ -299,6 +299,12 @@ describe("hintForStatus", () => {
     expect(hintForStatus(404)).toContain("URL")
   })
 
+  it("explains redirects as the Vercel login page of a protected deploy", () => {
+    for (const status of [302, 303, 307, 308]) {
+      expect(hintForStatus(status)).toContain("VERCEL_AUTOMATION_BYPASS_SECRET")
+    }
+  })
+
   it("has no hint for other statuses", () => {
     expect(hintForStatus(200)).toBeUndefined()
     expect(hintForStatus(418)).toBeUndefined()

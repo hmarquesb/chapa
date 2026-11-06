@@ -56,6 +56,14 @@ export function buildRequestHeaders(bypassSecret: string | undefined): Record<st
 
 export function hintForStatus(status: number): string | undefined {
   switch (status) {
+    case 302:
+    case 303:
+    case 307:
+    case 308:
+      return (
+        `redirecionado, provavelmente para o login da Vercel (deploy protegido); ` +
+        `exporte ${BYPASS_ENV} no mesmo terminal antes de rodar o smoke`
+      )
     case 401:
       return (
         `o deploy pode estar protegido pela Vercel Authentication (comum em preview); ` +
