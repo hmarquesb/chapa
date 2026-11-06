@@ -22,7 +22,7 @@ Legenda: 🟡 Aguardando aprovação · ✅ Aprovada · 🔵 Em andamento · �
 | S06 | [API: rotas, rate limit, logs e cron](S06-api.md) | 4 | S05 | 1h30 | manual | 🟢 |
 | S08 | [Avaliação](S08-avaliacao.md) | 4 | S05 (perguntas: S02 + H3) | 1h30 + rodadas | **sim** (H4) | 🟢 |
 | S09 | [Deploy na Vercel e banco de produção](S09-deploy.md) | 5 | S06, S07, S08 | 45 min + humano | sim (H5) | 🟢 |
-| S10 | [Documentação final](S10-documentacao.md) | 6 | S08, S09 | 1h30 | não | ✅ |
+| S10 | [Documentação final](S10-documentacao.md) | 6 | S08, S09 | 1h30 | não | 🟢 |
 
 ## Ondas de execução com subagentes
 
