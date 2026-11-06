@@ -18,7 +18,7 @@ Legenda: 🟡 Aguardando aprovação · ✅ Aprovada · 🔵 Em andamento · �
 | S03 | [Banco de dados e repositórios](S03-banco-de-dados.md) | 1 | S00 | 1h15 | não (banco no H2) | 🟢 |
 | S04 | [Ingestão e busca híbrida](S04-ingestao-e-busca.md) | 2 | S01, S03 | 1h15 | ingest | 🟢 |
 | S07 | [Interface de chat](S07-interface-de-chat.md) | 2 | S00 | 2h | manual | 🟢 |
-| S05 | [Assistente: guardrails, memória, prompts e CLI](S05-assistente.md) | 3 | S01, S03, S04 | 2h | manual | ✅ |
+| S05 | [Assistente: guardrails, memória, prompts e CLI](S05-assistente.md) | 3 | S01, S03, S04 | 2h | manual | 🟢 |
 | S06 | [API: rotas, rate limit, logs e cron](S06-api.md) | 4 | S05 | 1h30 | manual | ✅ |
 | S08 | [Avaliação](S08-avaliacao.md) | 4 | S05 (perguntas: S02 + H3) | 1h30 + rodadas | **sim** (H4) | ✅ |
 | S09 | [Deploy na Vercel e banco de produção](S09-deploy.md) | 5 | S06, S07, S08 | 45 min + humano | sim (H5) | ✅ |
