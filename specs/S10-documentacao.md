@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S10 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S08 (resultados das rodadas) e S09 (link da demo) |
 | **Chamadas reais de API** | Não |
 
