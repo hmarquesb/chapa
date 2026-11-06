@@ -1,0 +1,193 @@
+{
+  "label": "cal-norewrite-ms055",
+  "preset": "padrao",
+  "date": "2026-11-06T14:13:41.195Z",
+  "commit": "8a91048",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.55,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": false
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 11,
+        "tipo": "multi_turno",
+        "turnos": [
+          "Meu restaurante faz a própria entrega.",
+          "Como funciona a comissão nesse caso?"
+        ],
+        "fonte_esperada": ["01-planos-e-taxas.md"],
+        "deve_conter": ["12%"],
+        "esperado": "resposta",
+        "nota": "O segundo turno depende do primeiro: entrega própria é o Plano Básico, com comissão de 12%."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.6023058212309944,
+            "semantic": 0.753294030329992,
+            "keyword": 0.25,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos no repasse",
+            "score": 0.582663181625908,
+            "semantic": 0.72523311660844,
+            "keyword": 0.25,
+            "content": "Repasse financeiro — Descontos no repasse\n\nO repasse chega líquido, ou seja, já com os descontos aplicados. Do valor das vendas feitas pelo app saem a"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.5793507127241493,
+            "semantic": 0.720501018177356,
+            "keyword": 0.25,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Abrir e fechar a loja",
+            "score": 0.5725532755422699,
+            "semantic": 0.603647536488957,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Abrir e fechar a loja\n\nO horário de funcionamento da loja no app é configurado no Portal do Parceiro, dia por dia"
+          }
+        ],
+        "searchQuery": "Como funciona a comissão nesse caso?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1743,
+          "outputTokens": 22
+        },
+        "latencyMs": 5087
+      },
+      "latencyMs": 11546,
+      "usage": {
+        "calls": 4,
+        "inputTokens": 3652,
+        "outputTokens": 44
+      }
+    },
+    {
+      "question": {
+        "id": 12,
+        "tipo": "multi_turno",
+        "turnos": [
+          "Tive um pedido cancelado ontem que eu acho injusto.",
+          "Até quando eu posso contestar?"
+        ],
+        "perfil": {
+          "name": "Sushi Kenzo",
+          "plan": "Plano Entrega",
+          "cuisine": "Japonesa"
+        },
+        "fonte_esperada": ["03-cancelamentos-e-contestacoes.md"],
+        "deve_conter": ["7 dias"],
+        "esperado": "resposta",
+        "nota": "Pergunta elíptica no segundo turno (contestar o quê), com perfil em todos os turnos."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Você pode abrir a contestação de cancelamento em até 7 dias após a data do cancelamento. Passado esse prazo, o botão some do Portal do Parceiro.",
+        "sources": ["03-cancelamentos-e-contestacoes.md"],
+        "retrieved": [
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Prazos para contestar",
+            "score": 0.7115256377753536,
+            "semantic": 0.730750911107648,
+            "keyword": 0.666666666666667,
+            "content": "Cancelamentos e contestações — Prazos para contestar\n\nA contestação de cancelamento pode ser aberta em até 7 dias depois da data do cancelamento, conf"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como contestar",
+            "score": 0.6031949692417233,
+            "semantic": 0.718849956059605,
+            "keyword": 0.333333333333333,
+            "content": "Cancelamentos e contestações — Como contestar\n\nA contestação de cancelamento é feita na área \"Pedidos\" do Portal do Parceiro. O passo a passo é este:\n"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quando dá para contestar",
+            "score": 0.5961277063825605,
+            "semantic": 0.708753866260801,
+            "keyword": 0.333333333333333,
+            "content": "Cancelamentos e contestações — Quando dá para contestar\n\nA contestação de cancelamento é o pedido de revisão de um cancelamento que não gerou crédito "
+          }
+        ],
+        "searchQuery": "Até quando eu posso contestar?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1526,
+          "outputTokens": 35
+        },
+        "latencyMs": 4549
+      },
+      "latencyMs": 10318,
+      "usage": {
+        "calls": 4,
+        "inputTokens": 3312,
+        "outputTokens": 215
+      }
+    }
+  ],
+  "scores": [
+    {
+      "id": 11,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": false,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": true
+    },
+    {
+      "id": 12,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    }
+  ],
+  "metrics": {
+    "total": 2,
+    "inScope": 2,
+    "hitAtK": 1,
+    "accuracy": 0.5,
+    "correctRefusal": 0,
+    "falseRefusal": 0.5,
+    "latencyP50Ms": 10318,
+    "latencyP95Ms": 11546,
+    "errors": 0,
+    "usage": {
+      "calls": 8,
+      "inputTokens": 6964,
+      "outputTokens": 259
+    }
+  }
+}

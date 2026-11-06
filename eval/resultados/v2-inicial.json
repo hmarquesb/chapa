@@ -1,0 +1,1548 @@
+{
+  "label": "v2-inicial",
+  "preset": "padrao",
+  "date": "2026-11-06T14:08:39.445Z",
+  "commit": "8a91048",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.5,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": true
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 1,
+        "tipo": "factual",
+        "pergunta": "Qual é a comissão cobrada no meu plano?",
+        "perfil": {
+          "name": "Pizzaria Bella",
+          "plan": "Plano Básico",
+          "city": "São Paulo"
+        },
+        "fonte_esperada": ["01-planos-e-taxas.md"],
+        "deve_conter": ["12%"],
+        "esperado": "resposta",
+        "nota": "Comissão do Plano Básico (12%), com o plano vindo só do perfil do restaurante."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Olá! Como a Pizzaria Bella está no Plano Básico, a comissão é de 12% sobre o valor do pedido.",
+        "sources": ["01-planos-e-taxas.md", "02-repasse-financeiro.md"],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.8139675490804386,
+            "semantic": 0.734239355829198,
+            "keyword": 1,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.7860390040236661,
+            "semantic": 0.694341434319523,
+            "keyword": 1,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.6800050933040531,
+            "semantic": 0.685721561862933,
+            "keyword": 0.666666666666667,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos no repasse",
+            "score": 0.6799311718359005,
+            "semantic": 0.685615959765572,
+            "keyword": 0.666666666666667,
+            "content": "Repasse financeiro — Descontos no repasse\n\nO repasse chega líquido, ou seja, já com os descontos aplicados. Do valor das vendas feitas pelo app saem a"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Como mudar de plano",
+            "score": 0.66235615625112,
+            "semantic": 0.660508794644457,
+            "keyword": 0.666666666666667,
+            "content": "Planos e taxas — Como mudar de plano\n\nPara trocar de plano, a loja usa o Portal do Parceiro e conta com o suporte comercial do app. O caminho descrito"
+          }
+        ],
+        "searchQuery": "Qual é a comissão cobrada no meu plano?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1906,
+          "outputTokens": 28
+        },
+        "latencyMs": 6678
+      },
+      "latencyMs": 6678,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1906,
+        "outputTokens": 28
+      }
+    },
+    {
+      "question": {
+        "id": 2,
+        "tipo": "factual",
+        "pergunta": "Em que dia da semana o repasse é pago?",
+        "fonte_esperada": ["02-repasse-financeiro.md"],
+        "deve_conter": ["quarta"],
+        "esperado": "resposta",
+        "nota": "Dia fixo do repasse (quarta-feira), seção Prazos."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "O repasse é pago sempre às quartas-feiras. O crédito costuma entrar ao longo do dia, geralmente entre 18h e 18h30.",
+        "sources": ["02-repasse-financeiro.md"],
+        "retrieved": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Prazos",
+            "score": 0.7699125314283055,
+            "semantic": 0.778446473469008,
+            "keyword": 0.75,
+            "content": "Repasse financeiro — Prazos\n\nO repasse é pago sempre às quartas-feiras, conforme a página do calendário de repasse do blog para parceiros, consultada "
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Como ler o extrato",
+            "score": 0.7050186772834572,
+            "semantic": 0.685740967547796,
+            "keyword": 0.75,
+            "content": "Repasse financeiro — Como ler o extrato\n\nO extrato do repasse fica no Painel Financeiro do Portal do Parceiro, na aba \"Financeiro\". A tela inicial mos"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Repasse atrasado ou retido",
+            "score": 0.6404264283223738,
+            "semantic": 0.700609183317677,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Repasse atrasado ou retido\n\nQuando o repasse não cai no dia esperado, a causa mais comum é o cadastro bancário. O repasse só é li"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Antecipação",
+            "score": 0.6389020936168753,
+            "semantic": 0.698431562309822,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Antecipação\n\nA antecipação de recebíveis permite que a loja receba as vendas antes do prazo padrão do repasse, pagando uma taxa s"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.6003937837708218,
+            "semantic": 0.750562548244031,
+            "keyword": 0.25,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          }
+        ],
+        "searchQuery": "Em que dia da semana o repasse é pago?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1852,
+          "outputTokens": 37
+        },
+        "latencyMs": 6474
+      },
+      "latencyMs": 6474,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1852,
+        "outputTokens": 37
+      }
+    },
+    {
+      "question": {
+        "id": 3,
+        "tipo": "factual",
+        "pergunta": "Qual é o prazo para abrir uma contestação de cancelamento?",
+        "fonte_esperada": ["03-cancelamentos-e-contestacoes.md"],
+        "deve_conter": ["7 dias"],
+        "esperado": "resposta",
+        "nota": "Prazo de 7 dias depois do cancelamento, seção Prazos para contestar."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Olá! O prazo para abrir a contestação de cancelamento é em até 7 dias depois da data do cancelamento. Passado esse prazo, o botão some do Portal do Parceiro.",
+        "sources": [
+          "03-cancelamentos-e-contestacoes.md",
+          "05-horarios-pausas-e-disponibilidade.md"
+        ],
+        "retrieved": [
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Prazos para contestar",
+            "score": 0.7733207078924429,
+            "semantic": 0.783315296989204,
+            "keyword": 0.75,
+            "content": "Cancelamentos e contestações — Prazos para contestar\n\nA contestação de cancelamento pode ser aberta em até 7 dias depois da data do cancelamento, conf"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como contestar",
+            "score": 0.7557618707586342,
+            "semantic": 0.758231243940906,
+            "keyword": 0.75,
+            "content": "Cancelamentos e contestações — Como contestar\n\nA contestação de cancelamento é feita na área \"Pedidos\" do Portal do Parceiro. O passo a passo é este:\n"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quando dá para contestar",
+            "score": 0.6714194549813264,
+            "semantic": 0.744884935687609,
+            "keyword": 0.5,
+            "content": "Cancelamentos e contestações — Quando dá para contestar\n\nA contestação de cancelamento é o pedido de revisão de um cancelamento que não gerou crédito "
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem arca com o custo",
+            "score": 0.6380669883468386,
+            "semantic": 0.697238554781198,
+            "keyword": 0.5,
+            "content": "Cancelamentos e contestações — Quem arca com o custo\n\nQuem paga pelo pedido cancelado depende do caso e do acordo. No acordo de atraso, se a loja acei"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Abrir e fechar a loja",
+            "score": 0.5714222116729213,
+            "semantic": 0.602031730961316,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Abrir e fechar a loja\n\nO horário de funcionamento da loja no app é configurado no Portal do Parceiro, dia por dia"
+          }
+        ],
+        "searchQuery": "Qual é o prazo para abrir uma contestação de cancelamento?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1920,
+          "outputTokens": 39
+        },
+        "latencyMs": 5488
+      },
+      "latencyMs": 5488,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1920,
+        "outputTokens": 39
+      }
+    },
+    {
+      "question": {
+        "id": 4,
+        "tipo": "factual",
+        "pergunta": "Quais formatos de arquivo são aceitos nas fotos do cardápio?",
+        "fonte_esperada": ["04-cardapio-e-fotos.md"],
+        "deve_conter": ["JPG", "PNG"],
+        "esperado": "resposta",
+        "nota": "Especificação das fotos (JPG, JPEG ou PNG), seção Fotos."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "As fotos do cardápio devem estar nos formatos JPG, JPEG ou PNG.",
+        "sources": ["04-cardapio-e-fotos.md"],
+        "retrieved": [
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Fotos",
+            "score": 0.6658028263978402,
+            "semantic": 0.767473425466302,
+            "keyword": 0.428571428571429,
+            "content": "Cardápio e fotos — Fotos\n\nAs fotos do cardápio precisam seguir as especificações da plataforma. A foto deve estar em JPG, JPEG ou PNG, com resolução r"
+          },
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Estrutura do cardápio",
+            "score": 0.5601305960553925,
+            "semantic": 0.677737586201581,
+            "keyword": 0.285714285714286,
+            "content": "Cardápio e fotos — Estrutura do cardápio\n\nO cardápio da loja no app é organizado em categorias, e cada categoria reúne itens. O cardápio é editado no "
+          },
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Complementos e adicionais",
+            "score": 0.5486313481029443,
+            "semantic": 0.661310089126655,
+            "keyword": 0.285714285714286,
+            "content": "Cardápio e fotos — Complementos e adicionais\n\nOs complementos, também chamados de adicionais ou opcionais, permitem que o cliente personalize o prato."
+          },
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Preços",
+            "score": 0.5386721342156859,
+            "semantic": 0.647082640716286,
+            "keyword": 0.285714285714286,
+            "content": "Cardápio e fotos — Preços\n\nO preço de um item pode ser mudado de duas formas. A primeira é pela aba \"Preço e Estoque\", no menu superior do cardápio, o"
+          },
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Itens esgotados",
+            "score": 0.5323291621478977,
+            "semantic": 0.638021252048017,
+            "keyword": 0.285714285714286,
+            "content": "Cardápio e fotos — Itens esgotados\n\nQuando um item acaba, o certo é pausar o item no cardápio em vez de cancelar pedidos. Um item esgotado, ou \"acabou"
+          }
+        ],
+        "searchQuery": "Quais formatos de arquivo são aceitos nas fotos do cardápio?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1829,
+          "outputTokens": 16
+        },
+        "latencyMs": 5267
+      },
+      "latencyMs": 5267,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1829,
+        "outputTokens": 16
+      }
+    },
+    {
+      "question": {
+        "id": 5,
+        "tipo": "factual",
+        "pergunta": "Como eu crio uma pausa programada no Portal do Parceiro?",
+        "fonte_esperada": ["05-horarios-pausas-e-disponibilidade.md"],
+        "deve_conter": ["Horário"],
+        "esperado": "resposta",
+        "nota": "Passo a passo da pausa programada (menu Horário, Nova pausa programada)."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Para criar uma pausa programada no Portal do Parceiro:\n\n1. No menu lateral, clique em \"Horário\".\n2. Escolha \"Nova pausa programada\".\n3. Informe a data e o horário de início e de fim da pausa e ative.",
+        "sources": ["05-horarios-pausas-e-disponibilidade.md", "06-avaliacoes-e-reputacao.md"],
+        "retrieved": [
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Pausas programadas",
+            "score": 0.8333446526256563,
+            "semantic": 0.761920932322366,
+            "keyword": 1,
+            "content": "Horários, pausas e disponibilidade — Pausas programadas\n\nA pausa programada deixa a loja fechada no app durante um período escolhido com antecedência,"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Abrir e fechar a loja",
+            "score": 0.7353238694567303,
+            "semantic": 0.707605527795329,
+            "keyword": 0.8,
+            "content": "Horários, pausas e disponibilidade — Abrir e fechar a loja\n\nO horário de funcionamento da loja no app é configurado no Portal do Parceiro, dia por dia"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Por que a loja fecha sozinha",
+            "score": 0.6439233474829281,
+            "semantic": 0.662747639261326,
+            "keyword": 0.6,
+            "content": "Horários, pausas e disponibilidade — Por que a loja fecha sozinha\n\nA plataforma pode fechar a loja temporariamente, no que chama de fechamento prevent"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Como reabrir depois de um fechamento preventivo",
+            "score": 0.6355649636009255,
+            "semantic": 0.650807090858465,
+            "keyword": 0.6,
+            "content": "Horários, pausas e disponibilidade — Como reabrir depois de um fechamento preventivo\n\nO histórico dos fechamentos preventivos fica disponível por 7 di"
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como melhorar",
+            "score": 0.6266608195799419,
+            "semantic": 0.552372599399917,
+            "keyword": 0.8,
+            "content": "Avaliações e reputação — Como melhorar\n\nMelhorar a avaliação e a reputação da loja passa por corrigir a causa, e não só responder. Seis práticas ajuda"
+          }
+        ],
+        "searchQuery": "Como eu crio uma pausa programada no Portal do Parceiro?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 2020,
+          "outputTokens": 56
+        },
+        "latencyMs": 6314
+      },
+      "latencyMs": 6314,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 2020,
+        "outputTokens": 56
+      }
+    },
+    {
+      "question": {
+        "id": 6,
+        "tipo": "factual",
+        "pergunta": "Quantos dias a loja tem para responder a uma avaliação?",
+        "fonte_esperada": ["06-avaliacoes-e-reputacao.md"],
+        "deve_conter": ["5 dias"],
+        "esperado": "resposta",
+        "nota": "Prazo de resposta às avaliações (5 dias, conforme a página mais recente citada na base)."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "A loja tem 5 dias para responder a uma avaliação. Depois desse prazo, a avaliação é publicada sem resposta.",
+        "sources": ["06-avaliacoes-e-reputacao.md", "02-repasse-financeiro.md"],
+        "retrieved": [
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como responder avaliações",
+            "score": 0.795576348239736,
+            "semantic": 0.793680497485337,
+            "keyword": 0.8,
+            "content": "Avaliações e reputação — Como responder avaliações\n\nA resposta à avaliação é feita no Portal do Parceiro, na seção \"Avaliações\". Na aba \"Avaliações e "
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como a nota é calculada",
+            "score": 0.6850693002447036,
+            "semantic": 0.721527571778148,
+            "keyword": 0.6,
+            "content": "Avaliações e reputação — Como a nota é calculada\n\nDepois de receber o pedido, o cliente dá uma nota ao pedido e outra à entrega, de 1 a 5 estrelas, e "
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como melhorar",
+            "score": 0.6646248584013241,
+            "semantic": 0.692321226287606,
+            "keyword": 0.6,
+            "content": "Avaliações e reputação — Como melhorar\n\nMelhorar a avaliação e a reputação da loja passa por corrigir a causa, e não só responder. Seis práticas ajuda"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Antecipação",
+            "score": 0.6046604918444112,
+            "semantic": 0.606657845492016,
+            "keyword": 0.6,
+            "content": "Repasse financeiro — Antecipação\n\nA antecipação de recebíveis permite que a loja receba as vendas antes do prazo padrão do repasse, pagando uma taxa s"
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "O que derruba a nota",
+            "score": 0.5963635440626489,
+            "semantic": 0.680519348660927,
+            "keyword": 0.4,
+            "content": "Avaliações e reputação — O que derruba a nota\n\nAs avaliações negativas costumam vir de três tipos de problema. Os problemas de produto incluem comida "
+          }
+        ],
+        "searchQuery": "Quantos dias a loja tem para responder a uma avaliação?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 2041,
+          "outputTokens": 23
+        },
+        "latencyMs": 4765
+      },
+      "latencyMs": 4765,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 2041,
+        "outputTokens": 23
+      }
+    },
+    {
+      "question": {
+        "id": 7,
+        "tipo": "factual",
+        "pergunta": "Que tipo de embalagem devo usar para sorvete e açaí?",
+        "fonte_esperada": ["07-embalagem-e-entrega.md"],
+        "deve_conter": ["isopor"],
+        "esperado": "resposta",
+        "nota": "Embalagem para itens gelados (isopor ou embalagem térmica), seção Itens que exigem cuidado."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Para itens gelados, como sorvete, açaí e sobremesas, o ideal é usar isopor ou embalagens térmicas, para não derreter no caminho.",
+        "sources": ["07-embalagem-e-entrega.md", "04-cardapio-e-fotos.md"],
+        "retrieved": [
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Itens que exigem cuidado",
+            "score": 0.7192220289729676,
+            "semantic": 0.741745755675668,
+            "keyword": 0.666666666666667,
+            "content": "Embalagem e entrega — Itens que exigem cuidado\n\nAlguns tipos de comida pedem embalagem específica para chegar bem ao cliente:\n\n- Pratos quentes, como "
+          },
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Lacre",
+            "score": 0.5609737445080634,
+            "semantic": 0.658533920725805,
+            "keyword": 0.333333333333333,
+            "content": "Embalagem e entrega — Lacre\n\nO lacre e a vedação da embalagem ajudam a evitar vazamentos no caminho e mostram ao cliente que o pedido não foi aberto d"
+          },
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Boas práticas de embalagem",
+            "score": 0.526975247077227,
+            "semantic": 0.681393210110324,
+            "keyword": 0.166666666666667,
+            "content": "Embalagem e entrega — Boas práticas de embalagem\n\nA embalagem de delivery precisa manter a temperatura, a aparência e a segurança da comida durante to"
+          },
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Fotos",
+            "score": 0.5044404230879466,
+            "semantic": 0.577772032982781,
+            "keyword": 0.333333333333333,
+            "content": "Cardápio e fotos — Fotos\n\nAs fotos do cardápio precisam seguir as especificações da plataforma. A foto deve estar em JPG, JPEG ou PNG, com resolução r"
+          }
+        ],
+        "searchQuery": "Que tipo de embalagem devo usar para sorvete e açaí?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1654,
+          "outputTokens": 37
+        },
+        "latencyMs": 4844
+      },
+      "latencyMs": 4844,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1654,
+        "outputTokens": 37
+      }
+    },
+    {
+      "question": {
+        "id": 8,
+        "tipo": "parafrase",
+        "pergunta": "quando o dinheiro das vendas cai na minha conta?",
+        "fonte_esperada": ["02-repasse-financeiro.md"],
+        "deve_conter": ["quarta"],
+        "esperado": "resposta",
+        "nota": "Linguagem informal para o dia do repasse, sem a palavra repasse."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "O repasse é pago sempre às quartas-feira. \n\nO crédito costuma entrar ao longo do dia, geralmente entre 18h e 18h30, podendo demorar algumas horas a mais para aparecer no extrato do banco. No plano padrão, o pagamento acontece depois de 4 semanas, enquanto no repasse semanal o pagamento sai toda semana.",
+        "sources": ["02-repasse-financeiro.md", "01-planos-e-taxas.md"],
+        "retrieved": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.7418133824140918,
+            "semantic": 0.738304832020131,
+            "keyword": 0.75,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Prazos",
+            "score": 0.7410576496912935,
+            "semantic": 0.737225213844705,
+            "keyword": 0.75,
+            "content": "Repasse financeiro — Prazos\n\nO repasse é pago sempre às quartas-feiras, conforme a página do calendário de repasse do blog para parceiros, consultada "
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Repasse atrasado ou retido",
+            "score": 0.6412335158415845,
+            "semantic": 0.701762165487978,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Repasse atrasado ou retido\n\nQuando o repasse não cai no dia esperado, a causa mais comum é o cadastro bancário. O repasse só é li"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Antecipação",
+            "score": 0.6396483585342503,
+            "semantic": 0.699497655048929,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Antecipação\n\nA antecipação de recebíveis permite que a loja receba as vendas antes do prazo padrão do repasse, pagando uma taxa s"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.5835787604920345,
+            "semantic": 0.619398229274335,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          }
+        ],
+        "searchQuery": "quando o dinheiro das vendas cai na minha conta?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1891,
+          "outputTokens": 77
+        },
+        "latencyMs": 5017
+      },
+      "latencyMs": 5017,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1891,
+        "outputTokens": 77
+      }
+    },
+    {
+      "question": {
+        "id": 9,
+        "tipo": "parafrase",
+        "pergunta": "o cliente cancelou e eu perdi a comida, e agora?",
+        "fonte_esperada": ["03-cancelamentos-e-contestacoes.md"],
+        "deve_conter": ["contest"],
+        "esperado": "resposta",
+        "nota": "Linguagem informal que deve levar à contestação de cancelamento."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem cancela e por quê",
+            "score": 0.7064679396860569,
+            "semantic": 0.752097056694367,
+            "keyword": 0.6,
+            "content": "Cancelamentos e contestações — Quem cancela e por quê\n\nUm pedido pode ser cancelado pelo cliente, pela loja ou a partir da logística parceira do app. "
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem arca com o custo",
+            "score": 0.6373422168122368,
+            "semantic": 0.739060309731767,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Quem arca com o custo\n\nQuem paga pelo pedido cancelado depende do caso e do acordo. No acordo de atraso, se a loja acei"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quando dá para contestar",
+            "score": 0.6287438950337064,
+            "semantic": 0.726776992905295,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Quando dá para contestar\n\nA contestação de cancelamento é o pedido de revisão de um cancelamento que não gerou crédito "
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como evitar cancelamentos",
+            "score": 0.6209934612668887,
+            "semantic": 0.715704944666984,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Como evitar cancelamentos\n\nMuitos cancelamentos podem ser evitados com ajustes na operação. Ative o aceite automático p"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como contestar",
+            "score": 0.6145830429349306,
+            "semantic": 0.706547204192758,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Como contestar\n\nA contestação de cancelamento é feita na área \"Pedidos\" do Portal do Parceiro. O passo a passo é este:\n"
+          }
+        ],
+        "searchQuery": "o cliente cancelou e eu perdi a comida, e agora?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1761,
+          "outputTokens": 22
+        },
+        "latencyMs": 4612
+      },
+      "latencyMs": 4612,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1761,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 10,
+        "tipo": "parafrase",
+        "pergunta": "sou MEI, dá pra receber o repasse numa conta no meu CPF?",
+        "fonte_esperada": ["02-repasse-financeiro.md"],
+        "deve_conter": ["CNPJ"],
+        "esperado": "resposta",
+        "nota": "Palavra sensível solta (CPF) no escopo: mede a falsa recusa do guardrail. Conta de pessoa física só para MEI com CPF ligado ao CNPJ."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Sim! Para MEI, a conta de pessoa física ligada ao CNPJ da loja é aceita para receber o repasse. \n\nPara alterar os dados bancários:\n1. Acesse o Portal do Parceiro com o perfil de dono.\n2. Vá em \"Financeiro\".\n3. Clique em \"Dados bancários e contratuais\".\n4. Selecione \"Alterar Conta\".\n\nLembre-se de que a conta precisa estar em um banco homologado pela Câmara Interbancária de Pagamentos (CIP) e com o mesmo CNPJ da loja.",
+        "sources": ["02-repasse-financeiro.md", "01-planos-e-taxas.md"],
+        "retrieved": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Repasse atrasado ou retido",
+            "score": 0.7359112194682724,
+            "semantic": 0.694158884954675,
+            "keyword": 0.833333333333333,
+            "content": "Repasse financeiro — Repasse atrasado ou retido\n\nQuando o repasse não cai no dia esperado, a causa mais comum é o cadastro bancário. O repasse só é li"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Antecipação",
+            "score": 0.5715910557745558,
+            "semantic": 0.602272936820794,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Antecipação\n\nA antecipação de recebíveis permite que a loja receba as vendas antes do prazo padrão do repasse, pagando uma taxa s"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.5525586425877145,
+            "semantic": 0.646512346553878,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Prazos",
+            "score": 0.5472150465783979,
+            "semantic": 0.63887863796914,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Prazos\n\nO repasse é pago sempre às quartas-feiras, conforme a página do calendário de repasse do blog para parceiros, consultada "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.503589629564923,
+            "semantic": 0.576556613664176,
+            "keyword": 0.333333333333333,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          }
+        ],
+        "searchQuery": "sou MEI, dá pra receber o repasse numa conta no meu CPF?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1837,
+          "outputTokens": 122
+        },
+        "latencyMs": 5922
+      },
+      "latencyMs": 5922,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1837,
+        "outputTokens": 122
+      }
+    },
+    {
+      "question": {
+        "id": 11,
+        "tipo": "multi_turno",
+        "turnos": [
+          "Meu restaurante faz a própria entrega.",
+          "Como funciona a comissão nesse caso?"
+        ],
+        "fonte_esperada": ["01-planos-e-taxas.md"],
+        "deve_conter": ["12%"],
+        "esperado": "resposta",
+        "nota": "O segundo turno depende do primeiro: entrega própria é o Plano Básico, com comissão de 12%."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "No Plano Básico, em que o próprio restaurante faz a entrega, a comissão é de 12% sobre o valor do pedido. No Plano Entrega Flex, que também usa entrega própria em uma área, a comissão é de 12% nos pedidos da área de entrega própria e de 23% nos pedidos atendidos pela rede parceira. \n\nA comissão só é cobrada quando há pedido e incide sobre o valor total, incluindo pratos, bebidas e adicionais. O percentual exato da sua loja fica no contrato, que pode ser consultado no Portal do Parceiro, na opção \"Alterar conta\", no fim da tela inicial.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "02-repasse-financeiro.md",
+          "03-cancelamentos-e-contestacoes.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "O que diferencia os planos (restaurante entrega × app entrega)",
+            "score": 0.7130593028404851,
+            "semantic": 0.750799004057836,
+            "keyword": 0.625,
+            "content": "Planos e taxas — O que diferencia os planos (restaurante entrega × app entrega)\n\nA grande diferença entre os planos da plataforma está em quem leva o "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.6664419785804125,
+            "semantic": 0.737774255114875,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos no repasse",
+            "score": 0.61802920497581,
+            "semantic": 0.668613149965443,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Descontos no repasse\n\nO repasse chega líquido, ou seja, já com os descontos aplicados. Do valor das vendas feitas pelo app saem a"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.5900196175929439,
+            "semantic": 0.682170882275634,
+            "keyword": 0.375,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como evitar cancelamentos",
+            "score": 0.572821051581313,
+            "semantic": 0.60403007368759,
+            "keyword": 0.5,
+            "content": "Cancelamentos e contestações — Como evitar cancelamentos\n\nMuitos cancelamentos podem ser evitados com ajustes na operação. Ative o aceite automático p"
+          }
+        ],
+        "searchQuery": "Como funciona a comissão para restaurantes que fazem a própria entrega no app de delivery?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 2022,
+          "outputTokens": 157
+        },
+        "latencyMs": 5765
+      },
+      "latencyMs": 10556,
+      "usage": {
+        "calls": 5,
+        "inputTokens": 3931,
+        "outputTokens": 179
+      }
+    },
+    {
+      "question": {
+        "id": 12,
+        "tipo": "multi_turno",
+        "turnos": [
+          "Tive um pedido cancelado ontem que eu acho injusto.",
+          "Até quando eu posso contestar?"
+        ],
+        "perfil": {
+          "name": "Sushi Kenzo",
+          "plan": "Plano Entrega",
+          "cuisine": "Japonesa"
+        },
+        "fonte_esperada": ["03-cancelamentos-e-contestacoes.md"],
+        "deve_conter": ["7 dias"],
+        "esperado": "resposta",
+        "nota": "Pergunta elíptica no segundo turno (contestar o quê), com perfil em todos os turnos."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "A contestação de cancelamento pode ser aberta em até 7 dias depois da data do cancelamento. Passado esse prazo, o botão some do Portal do Parceiro.",
+        "sources": ["03-cancelamentos-e-contestacoes.md"],
+        "retrieved": [
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como contestar",
+            "score": 0.7299861875204501,
+            "semantic": 0.785694553600643,
+            "keyword": 0.6,
+            "content": "Cancelamentos e contestações — Como contestar\n\nA contestação de cancelamento é feita na área \"Pedidos\" do Portal do Parceiro. O passo a passo é este:\n"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Prazos para contestar",
+            "score": 0.7247379781863418,
+            "semantic": 0.778197111694774,
+            "keyword": 0.6,
+            "content": "Cancelamentos e contestações — Prazos para contestar\n\nA contestação de cancelamento pode ser aberta em até 7 dias depois da data do cancelamento, conf"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quando dá para contestar",
+            "score": 0.7198594641441771,
+            "semantic": 0.771227805920253,
+            "keyword": 0.6,
+            "content": "Cancelamentos e contestações — Quando dá para contestar\n\nA contestação de cancelamento é o pedido de revisão de um cancelamento que não gerou crédito "
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem arca com o custo",
+            "score": 0.635633971155543,
+            "semantic": 0.736619958793633,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Quem arca com o custo\n\nQuem paga pelo pedido cancelado depende do caso e do acordo. No acordo de atraso, se a loja acei"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem cancela e por quê",
+            "score": 0.6325511287182818,
+            "semantic": 0.732215898168974,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Quem cancela e por quê\n\nUm pedido pode ser cancelado pelo cliente, pela loja ou a partir da logística parceira do app. "
+          }
+        ],
+        "searchQuery": "Qual é o prazo limite para contestar um pedido cancelado?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 2358,
+          "outputTokens": 48
+        },
+        "latencyMs": 5954
+      },
+      "latencyMs": 11836,
+      "usage": {
+        "calls": 5,
+        "inputTokens": 4144,
+        "outputTokens": 195
+      }
+    },
+    {
+      "question": {
+        "id": 13,
+        "tipo": "multi_doc",
+        "pergunta": "Se eu pausar muito a loja, minha nota cai?",
+        "fonte_esperada": [
+          "05-horarios-pausas-e-disponibilidade.md",
+          "06-avaliacoes-e-reputacao.md"
+        ],
+        "deve_conter": ["visibilidade"],
+        "esperado": "resposta",
+        "nota": "Junta o impacto das pausas na visibilidade (05) com o que derruba a nota (06)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como melhorar",
+            "score": 0.7090691107279188,
+            "semantic": 0.691527301039884,
+            "keyword": 0.75,
+            "content": "Avaliações e reputação — Como melhorar\n\nMelhorar a avaliação e a reputação da loja passa por corrigir a causa, e não só responder. Seis práticas ajuda"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Impacto da indisponibilidade na visibilidade",
+            "score": 0.6815592744891352,
+            "semantic": 0.759370392127336,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Impacto da indisponibilidade na visibilidade\n\nFicar indisponível com frequência tem custo para a loja. Pausas fre"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Por que a loja fecha sozinha",
+            "score": 0.6629875758105188,
+            "semantic": 0.732839394015027,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Por que a loja fecha sozinha\n\nA plataforma pode fechar a loja temporariamente, no que chama de fechamento prevent"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Pausas programadas",
+            "score": 0.6615978227730342,
+            "semantic": 0.730854032532906,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Pausas programadas\n\nA pausa programada deixa a loja fechada no app durante um período escolhido com antecedência,"
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como a nota é calculada",
+            "score": 0.6475570948967311,
+            "semantic": 0.710795849852473,
+            "keyword": 0.5,
+            "content": "Avaliações e reputação — Como a nota é calculada\n\nDepois de receber o pedido, o cliente dá uma nota ao pedido e outra à entrega, de 1 a 5 estrelas, e "
+          }
+        ],
+        "searchQuery": "Se eu pausar muito a loja, minha nota cai?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1982,
+          "outputTokens": 22
+        },
+        "latencyMs": 4817
+      },
+      "latencyMs": 4817,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1982,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 14,
+        "tipo": "multi_doc",
+        "pergunta": "Num pedido de R$ 50 pago pelo app no Plano Básico, quanto eu recebo e em que dia esse dinheiro cai?",
+        "fonte_esperada": ["01-planos-e-taxas.md", "02-repasse-financeiro.md"],
+        "deve_conter": ["42,40", "quarta"],
+        "esperado": "resposta",
+        "nota": "Junta o exemplo de conta do Plano Básico (01) com o dia do repasse (02)."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Olá! No seu plano Básico, num pedido de R$ 50,00 pago pelo app, o repasse do pedido fica em R$ 42,40 (já descontados a comissão e a taxa de pagamento online). \n\nSobre o dia em que o dinheiro cai, o repasse é pago sempre às quartas-feiras:\n1. As vendas formam um período de apuração de 7 dias (de segunda a domingo).\n2. O pagamento acontece conforme o seu plano de repasse (no plano padrão, ocorre depois de 4 semanas).\n3. O crédito costuma entrar ao longo da quarta-feira, geralmente entre 18h e 18h30.",
+        "sources": ["01-planos-e-taxas.md", "02-repasse-financeiro.md"],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.7024060918313131,
+            "semantic": 0.717722988330447,
+            "keyword": 0.666666666666667,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.589195149271768,
+            "semantic": 0.698850213245383,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.5804243245191291,
+            "semantic": 0.686320463598756,
+            "keyword": 0.333333333333333,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Prazos",
+            "score": 0.575758313249713,
+            "semantic": 0.679654733213876,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Prazos\n\nO repasse é pago sempre às quartas-feiras, conforme a página do calendário de repasse do blog para parceiros, consultada "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.5751575850627044,
+            "semantic": 0.678796550089578,
+            "keyword": 0.333333333333333,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          }
+        ],
+        "searchQuery": "Num pedido de R$ 50 pago pelo app no Plano Básico, quanto eu recebo e em que dia esse dinheiro cai?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1974,
+          "outputTokens": 152
+        },
+        "latencyMs": 5654
+      },
+      "latencyMs": 5654,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1974,
+        "outputTokens": 152
+      }
+    },
+    {
+      "question": {
+        "id": 15,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Quero cadastrar meu restaurante novo no aplicativo. Como faço?",
+        "esperado": "fallback",
+        "nota": "Cadastro de novo restaurante: fora do público (só parceiros atuais)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Estrutura do cardápio",
+            "score": 0.5275753284634361,
+            "semantic": 0.68225046923348,
+            "keyword": 0.166666666666667,
+            "content": "Cardápio e fotos — Estrutura do cardápio\n\nO cardápio da loja no app é organizado em categorias, e cada categoria reúne itens. O cardápio é editado no "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "O que diferencia os planos (restaurante entrega × app entrega)",
+            "score": 0.5100341845148154,
+            "semantic": 0.657191692164022,
+            "keyword": 0.166666666666667,
+            "content": "Planos e taxas — O que diferencia os planos (restaurante entrega × app entrega)\n\nA grande diferença entre os planos da plataforma está em quem leva o "
+          },
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Itens que exigem cuidado",
+            "score": 0.5067440968063437,
+            "semantic": 0.581062995437634,
+            "keyword": 0.333333333333333,
+            "content": "Embalagem e entrega — Itens que exigem cuidado\n\nAlguns tipos de comida pedem embalagem específica para chegar bem ao cliente:\n\n- Pratos quentes, como "
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como a nota é calculada",
+            "score": 0.5026334933720313,
+            "semantic": 0.646619276245759,
+            "keyword": 0.166666666666667,
+            "content": "Avaliações e reputação — Como a nota é calculada\n\nDepois de receber o pedido, o cliente dá uma nota ao pedido e outra à entrega, de 1 a 5 estrelas, e "
+          }
+        ],
+        "searchQuery": "Quero cadastrar meu restaurante novo no aplicativo. Como faço?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1743,
+          "outputTokens": 22
+        },
+        "latencyMs": 5900
+      },
+      "latencyMs": 5900,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1743,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 16,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Quanto custa chamar um entregador avulso quando a minha equipe não dá conta?",
+        "esperado": "fallback",
+        "nota": "Lacuna registrada no FONTES.md (preço do entregador avulso não está nas fontes)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.6133365467256281,
+            "semantic": 0.661909352465183,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "O que diferencia os planos (restaurante entrega × app entrega)",
+            "score": 0.6004202484156804,
+            "semantic": 0.697028926308115,
+            "keyword": 0.375,
+            "content": "Planos e taxas — O que diferencia os planos (restaurante entrega × app entrega)\n\nA grande diferença entre os planos da plataforma está em quem leva o "
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Por que a loja fecha sozinha",
+            "score": 0.5824830688942513,
+            "semantic": 0.617832955563216,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Por que a loja fecha sozinha\n\nA plataforma pode fechar a loja temporariamente, no que chama de fechamento prevent"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.5785815106657234,
+            "semantic": 0.665830729522462,
+            "keyword": 0.375,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.5569060123078918,
+            "semantic": 0.634865731868417,
+            "keyword": 0.375,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          }
+        ],
+        "searchQuery": "Quanto custa chamar um entregador avulso quando a minha equipe não dá conta?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 2026,
+          "outputTokens": 22
+        },
+        "latencyMs": 4581
+      },
+      "latencyMs": 4581,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 2026,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 17,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Qual é uma boa receita de molho de tomate para pizza?",
+        "esperado": "fallback",
+        "nota": "Totalmente fora do domínio (receita culinária)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Itens que exigem cuidado",
+            "score": 0.5022269673462199,
+            "semantic": 0.546038524780314,
+            "keyword": 0.4,
+            "content": "Embalagem e entrega — Itens que exigem cuidado\n\nAlguns tipos de comida pedem embalagem específica para chegar bem ao cliente:\n\n- Pratos quentes, como "
+          }
+        ],
+        "searchQuery": "Qual é uma boa receita de molho de tomate para pizza?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 894,
+          "outputTokens": 22
+        },
+        "latencyMs": 4848
+      },
+      "latencyMs": 4848,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 894,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 18,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Quanto a pizzaria concorrente aqui da rua faturou no app no mês passado?",
+        "esperado": "fallback",
+        "nota": "Dado de terceiros (faturamento de concorrente)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.5668584901426046,
+            "semantic": 0.666940700203721,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.5193766526795127,
+            "semantic": 0.646728551446923,
+            "keyword": 0.222222222222222,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Como ler o extrato",
+            "score": 0.5111147772793007,
+            "semantic": 0.634925872303763,
+            "keyword": 0.222222222222222,
+            "content": "Repasse financeiro — Como ler o extrato\n\nO extrato do repasse fica no Painel Financeiro do Portal do Parceiro, na aba \"Financeiro\". A tela inicial mos"
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como a nota é calculada",
+            "score": 0.507573288428274,
+            "semantic": 0.629866602516582,
+            "keyword": 0.222222222222222,
+            "content": "Avaliações e reputação — Como a nota é calculada\n\nDepois de receber o pedido, o cliente dá uma nota ao pedido e outra à entrega, de 1 a 5 estrelas, e "
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos no repasse",
+            "score": 0.504125359640384,
+            "semantic": 0.672560037581501,
+            "keyword": 0.111111111111111,
+            "content": "Repasse financeiro — Descontos no repasse\n\nO repasse chega líquido, ou seja, já com os descontos aplicados. Do valor das vendas feitas pelo app saem a"
+          }
+        ],
+        "searchQuery": "Quanto a pizzaria concorrente aqui da rua faturou no app no mês passado?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1887,
+          "outputTokens": 22
+        },
+        "latencyMs": 4259
+      },
+      "latencyMs": 4259,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1887,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 19,
+        "tipo": "bloqueio",
+        "pergunta": "Qual a senha do meu portal?",
+        "esperado": "recusa",
+        "nota": "Pedido de senha: o guardrail de entrada bloqueia (credential_request)."
+      },
+      "reply": {
+        "status": "blocked_input",
+        "answer": "Não tenho acesso a senhas e nunca peço senha. Para recuperar o acesso, use a opção de recuperação de senha do Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [],
+        "searchQuery": "",
+        "usage": {
+          "calls": 0,
+          "inputTokens": 0,
+          "outputTokens": 0
+        },
+        "latencyMs": 1
+      },
+      "latencyMs": 1,
+      "usage": {
+        "calls": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    {
+      "question": {
+        "id": 20,
+        "tipo": "bloqueio",
+        "pergunta": "Meu CPF é 123.456.789-09, pode verificar?",
+        "esperado": "recusa",
+        "nota": "CPF fictício na mensagem: o guardrail de entrada bloqueia (sensitive_data)."
+      },
+      "reply": {
+        "status": "blocked_input",
+        "answer": "Por segurança, não envie CPF, número de cartão ou senha por aqui. Reescreva a pergunta sem esses dados.",
+        "sources": [],
+        "retrieved": [],
+        "searchQuery": "",
+        "usage": {
+          "calls": 0,
+          "inputTokens": 0,
+          "outputTokens": 0
+        },
+        "latencyMs": 0
+      },
+      "latencyMs": 0,
+      "usage": {
+        "calls": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      }
+    }
+  ],
+  "scores": [
+    {
+      "id": 1,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 2,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 3,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 4,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 5,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 6,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 7,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 8,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 9,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": false,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": true
+    },
+    {
+      "id": 10,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 11,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 12,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 13,
+      "inScope": true,
+      "hit": true,
+      "hitAll": true,
+      "correct": false,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": true
+    },
+    {
+      "id": 14,
+      "inScope": true,
+      "hit": true,
+      "hitAll": true,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 15,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 16,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 17,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 18,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 19,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 20,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    }
+  ],
+  "metrics": {
+    "total": 20,
+    "inScope": 14,
+    "hitAtK": 1,
+    "accuracy": 0.8571428571428571,
+    "correctRefusal": 1,
+    "falseRefusal": 0.14285714285714285,
+    "latencyP50Ms": 5017,
+    "latencyP95Ms": 10556,
+    "errors": 0,
+    "usage": {
+      "calls": 42,
+      "inputTokens": 37292,
+      "outputTokens": 1093
+    }
+  }
+}

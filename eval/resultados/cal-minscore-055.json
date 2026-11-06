@@ -1,0 +1,506 @@
+{
+  "label": "cal-minscore-055",
+  "preset": "padrao",
+  "date": "2026-11-06T14:10:13.071Z",
+  "commit": "8a91048",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.55,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": true
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 4,
+        "tipo": "factual",
+        "pergunta": "Quais formatos de arquivo são aceitos nas fotos do cardápio?",
+        "fonte_esperada": ["04-cardapio-e-fotos.md"],
+        "deve_conter": ["JPG", "PNG"],
+        "esperado": "resposta",
+        "nota": "Especificação das fotos (JPG, JPEG ou PNG), seção Fotos."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "As fotos do cardápio devem estar nos seguintes formatos:\n\n1. JPG\n2. JPEG\n3. PNG",
+        "sources": ["04-cardapio-e-fotos.md"],
+        "retrieved": [
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Fotos",
+            "score": 0.6658028263978402,
+            "semantic": 0.767473425466302,
+            "keyword": 0.428571428571429,
+            "content": "Cardápio e fotos — Fotos\n\nAs fotos do cardápio precisam seguir as especificações da plataforma. A foto deve estar em JPG, JPEG ou PNG, com resolução r"
+          },
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Estrutura do cardápio",
+            "score": 0.5601305960553925,
+            "semantic": 0.677737586201581,
+            "keyword": 0.285714285714286,
+            "content": "Cardápio e fotos — Estrutura do cardápio\n\nO cardápio da loja no app é organizado em categorias, e cada categoria reúne itens. O cardápio é editado no "
+          }
+        ],
+        "searchQuery": "Quais formatos de arquivo são aceitos nas fotos do cardápio?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1139,
+          "outputTokens": 24
+        },
+        "latencyMs": 5782
+      },
+      "latencyMs": 5782,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1139,
+        "outputTokens": 24
+      }
+    },
+    {
+      "question": {
+        "id": 7,
+        "tipo": "factual",
+        "pergunta": "Que tipo de embalagem devo usar para sorvete e açaí?",
+        "fonte_esperada": ["07-embalagem-e-entrega.md"],
+        "deve_conter": ["isopor"],
+        "esperado": "resposta",
+        "nota": "Embalagem para itens gelados (isopor ou embalagem térmica), seção Itens que exigem cuidado."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Para sorvete e açaí, que são itens gelados, use isopor ou embalagens térmicas para evitar que derretam no caminho.",
+        "sources": ["07-embalagem-e-entrega.md"],
+        "retrieved": [
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Itens que exigem cuidado",
+            "score": 0.7192220289729676,
+            "semantic": 0.741745755675668,
+            "keyword": 0.666666666666667,
+            "content": "Embalagem e entrega — Itens que exigem cuidado\n\nAlguns tipos de comida pedem embalagem específica para chegar bem ao cliente:\n\n- Pratos quentes, como "
+          },
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Lacre",
+            "score": 0.5609737445080634,
+            "semantic": 0.658533920725805,
+            "keyword": 0.333333333333333,
+            "content": "Embalagem e entrega — Lacre\n\nO lacre e a vedação da embalagem ajudam a evitar vazamentos no caminho e mostram ao cliente que o pedido não foi aberto d"
+          }
+        ],
+        "searchQuery": "Que tipo de embalagem devo usar para sorvete e açaí?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1128,
+          "outputTokens": 32
+        },
+        "latencyMs": 4589
+      },
+      "latencyMs": 4589,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1128,
+        "outputTokens": 32
+      }
+    },
+    {
+      "question": {
+        "id": 10,
+        "tipo": "parafrase",
+        "pergunta": "sou MEI, dá pra receber o repasse numa conta no meu CPF?",
+        "fonte_esperada": ["02-repasse-financeiro.md"],
+        "deve_conter": ["CNPJ"],
+        "esperado": "resposta",
+        "nota": "Palavra sensível solta (CPF) no escopo: mede a falsa recusa do guardrail. Conta de pessoa física só para MEI com CPF ligado ao CNPJ."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Sim! Conta de pessoa física só é aceita para MEI, desde que o CPF esteja ligado ao CNPJ da loja. \n\nLembre-se de que o repasse também exige conta em banco homologado pela Câmara Interbancária de Pagamentos (CIP) e com o mesmo CNPJ da loja.",
+        "sources": ["02-repasse-financeiro.md"],
+        "retrieved": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Repasse atrasado ou retido",
+            "score": 0.7359112194682724,
+            "semantic": 0.694158884954675,
+            "keyword": 0.833333333333333,
+            "content": "Repasse financeiro — Repasse atrasado ou retido\n\nQuando o repasse não cai no dia esperado, a causa mais comum é o cadastro bancário. O repasse só é li"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Antecipação",
+            "score": 0.5715910557745558,
+            "semantic": 0.602272936820794,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Antecipação\n\nA antecipação de recebíveis permite que a loja receba as vendas antes do prazo padrão do repasse, pagando uma taxa s"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.5525586425877145,
+            "semantic": 0.646512346553878,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          }
+        ],
+        "searchQuery": "sou MEI, dá pra receber o repasse numa conta no meu CPF?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1299,
+          "outputTokens": 65
+        },
+        "latencyMs": 5134
+      },
+      "latencyMs": 5134,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1299,
+        "outputTokens": 65
+      }
+    },
+    {
+      "question": {
+        "id": 14,
+        "tipo": "multi_doc",
+        "pergunta": "Num pedido de R$ 50 pago pelo app no Plano Básico, quanto eu recebo e em que dia esse dinheiro cai?",
+        "fonte_esperada": ["01-planos-e-taxas.md", "02-repasse-financeiro.md"],
+        "deve_conter": ["42,40", "quarta"],
+        "esperado": "resposta",
+        "nota": "Junta o exemplo de conta do Plano Básico (01) com o dia do repasse (02)."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Olá! No Plano Básico, num pedido de R$ 50,00 pago pelo app, o repasse do pedido fica em R$ 42,40 (já descontados a comissão e a taxa de pagamento online). \n\nSobre o dia em que o dinheiro cai, o repasse funciona assim:\n1. As vendas formam um período de apuração de 7 dias (de segunda a domingo).\n2. O pagamento é feito sempre às quartas-feiras, após o ciclo definido no seu plano (no padrão, por exemplo, acontece depois de 4 semanas).\n3. O crédito costuma entrar ao longo da quarta-feira, geralmente entre 18h e 18h30.",
+        "sources": ["01-planos-e-taxas.md", "02-repasse-financeiro.md"],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.7024060918313131,
+            "semantic": 0.717722988330447,
+            "keyword": 0.666666666666667,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.589195149271768,
+            "semantic": 0.698850213245383,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.5804243245191291,
+            "semantic": 0.686320463598756,
+            "keyword": 0.333333333333333,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Prazos",
+            "score": 0.575758313249713,
+            "semantic": 0.679654733213876,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Prazos\n\nO repasse é pago sempre às quartas-feiras, conforme a página do calendário de repasse do blog para parceiros, consultada "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.5751575850627044,
+            "semantic": 0.678796550089578,
+            "keyword": 0.333333333333333,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          }
+        ],
+        "searchQuery": "Num pedido de R$ 50 pago pelo app no Plano Básico, quanto eu recebo e em que dia esse dinheiro cai?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1974,
+          "outputTokens": 155
+        },
+        "latencyMs": 5107
+      },
+      "latencyMs": 5107,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1974,
+        "outputTokens": 155
+      }
+    },
+    {
+      "question": {
+        "id": 15,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Quero cadastrar meu restaurante novo no aplicativo. Como faço?",
+        "esperado": "fallback",
+        "nota": "Cadastro de novo restaurante: fora do público (só parceiros atuais)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [],
+        "searchQuery": "Quero cadastrar meu restaurante novo no aplicativo. Como faço?",
+        "usage": {
+          "calls": 1,
+          "inputTokens": 0,
+          "outputTokens": 0
+        },
+        "latencyMs": 3606
+      },
+      "latencyMs": 3606,
+      "usage": {
+        "calls": 1,
+        "inputTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    {
+      "question": {
+        "id": 16,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Quanto custa chamar um entregador avulso quando a minha equipe não dá conta?",
+        "esperado": "fallback",
+        "nota": "Lacuna registrada no FONTES.md (preço do entregador avulso não está nas fontes)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.6133365467256281,
+            "semantic": 0.661909352465183,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "O que diferencia os planos (restaurante entrega × app entrega)",
+            "score": 0.6004202484156804,
+            "semantic": 0.697028926308115,
+            "keyword": 0.375,
+            "content": "Planos e taxas — O que diferencia os planos (restaurante entrega × app entrega)\n\nA grande diferença entre os planos da plataforma está em quem leva o "
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Por que a loja fecha sozinha",
+            "score": 0.5824830688942513,
+            "semantic": 0.617832955563216,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Por que a loja fecha sozinha\n\nA plataforma pode fechar a loja temporariamente, no que chama de fechamento prevent"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.5785815106657234,
+            "semantic": 0.665830729522462,
+            "keyword": 0.375,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.5569060123078918,
+            "semantic": 0.634865731868417,
+            "keyword": 0.375,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          }
+        ],
+        "searchQuery": "Quanto custa chamar um entregador avulso quando a minha equipe não dá conta?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 2026,
+          "outputTokens": 22
+        },
+        "latencyMs": 5047
+      },
+      "latencyMs": 5047,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 2026,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 17,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Qual é uma boa receita de molho de tomate para pizza?",
+        "esperado": "fallback",
+        "nota": "Totalmente fora do domínio (receita culinária)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [],
+        "searchQuery": "Qual é uma boa receita de molho de tomate para pizza?",
+        "usage": {
+          "calls": 1,
+          "inputTokens": 0,
+          "outputTokens": 0
+        },
+        "latencyMs": 4069
+      },
+      "latencyMs": 4069,
+      "usage": {
+        "calls": 1,
+        "inputTokens": 0,
+        "outputTokens": 0
+      }
+    },
+    {
+      "question": {
+        "id": 18,
+        "tipo": "fora_de_escopo",
+        "pergunta": "Quanto a pizzaria concorrente aqui da rua faturou no app no mês passado?",
+        "esperado": "fallback",
+        "nota": "Dado de terceiros (faturamento de concorrente)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.5668584901426046,
+            "semantic": 0.666940700203721,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          }
+        ],
+        "searchQuery": "Quanto a pizzaria concorrente aqui da rua faturou no app no mês passado?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 816,
+          "outputTokens": 22
+        },
+        "latencyMs": 4574
+      },
+      "latencyMs": 4574,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 816,
+        "outputTokens": 22
+      }
+    }
+  ],
+  "scores": [
+    {
+      "id": 4,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 7,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 10,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 14,
+      "inScope": true,
+      "hit": true,
+      "hitAll": true,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 15,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 16,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 17,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    },
+    {
+      "id": 18,
+      "inScope": false,
+      "hit": null,
+      "hitAll": null,
+      "correct": null,
+      "refusedCorrectly": true,
+      "refusalTypeMatches": true,
+      "falseRefusal": null
+    }
+  ],
+  "metrics": {
+    "total": 8,
+    "inScope": 4,
+    "hitAtK": 1,
+    "accuracy": 1,
+    "correctRefusal": 1,
+    "falseRefusal": 0,
+    "latencyP50Ms": 4589,
+    "latencyP95Ms": 5782,
+    "errors": 0,
+    "usage": {
+      "calls": 14,
+      "inputTokens": 8382,
+      "outputTokens": 320
+    }
+  }
+}
