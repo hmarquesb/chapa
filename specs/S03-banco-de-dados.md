@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S03 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S00 |
 | **Chamadas reais de API** | Não. A aplicação da migração no Supabase `dev` é feita pela pessoa no checkpoint H2 |
 
