@@ -13,9 +13,9 @@ Legenda: 🟡 Aguardando aprovação · ✅ Aprovada · 🔵 Em andamento · �
 | ID | Spec | Onda | Depende de | Esforço | Usa API | Status |
 |---|---|---|---|---|---|---|
 | S00 | [Bootstrap do projeto Next.js](S00-bootstrap.md) | 0 | commit 0 | 45 min | não | 🟢 |
-| S01 | [Configuração e cliente do Gemini](S01-config-e-cliente-llm.md) | 1 | S00 | 1h | fumaça (H1) | ✅ |
-| S02 | [Base de conhecimento](S02-base-de-conhecimento.md) | 1 | S00 | 1h30 | não (web) | ✅ |
-| S03 | [Banco de dados e repositórios](S03-banco-de-dados.md) | 1 | S00 | 1h15 | não (banco no H2) | ✅ |
+| S01 | [Configuração e cliente do Gemini](S01-config-e-cliente-llm.md) | 1 | S00 | 1h | fumaça (H1) | 🟢 |
+| S02 | [Base de conhecimento](S02-base-de-conhecimento.md) | 1 | S00 | 1h30 | não (web) | 🟢 |
+| S03 | [Banco de dados e repositórios](S03-banco-de-dados.md) | 1 | S00 | 1h15 | não (banco no H2) | 🟢 |
 | S04 | [Ingestão e busca híbrida](S04-ingestao-e-busca.md) | 2 | S01, S03 | 1h15 | ingest | ✅ |
 | S07 | [Interface de chat](S07-interface-de-chat.md) | 2 | S00 | 2h | manual | ✅ |
 | S05 | [Assistente: guardrails, memória, prompts e CLI](S05-assistente.md) | 3 | S01, S03, S04 | 2h | manual | ✅ |
@@ -82,7 +82,7 @@ Parte das ações abaixo já está autorizada. Veja a seção "Autorizações pr
 | **H0** | Antes do commit 0 | Aprovar as specs. |
 | **H0b** | Depois do commit 0 | Criar o repositório no GitHub (pode ser privado até o H5), fazer o push da `main` e conferir que o `gh` está autenticado. Opcional: proteger a `main` exigindo PR e a CI verde. |
 | **H1** | Antes da fumaça da S01 | Criar a chave do Gemini no Google AI Studio, sem cartão, e colocá-la no `.env.local` como `GEMINI_API_KEY`. |
-| **H2** | Depois da S03 | Criar os projetos Supabase `dev` e `prod` em `sa-east-1`. Colocar a connection string do pooler em modo transação (porta 6543) do `dev` no `.env.local` como `DATABASE_URL`. Gerar `IP_HASH_SECRET` e `CRON_SECRET` com `openssl rand -hex 32`. Rodar `npx supabase link --project-ref <dev>` e `npx supabase db push`. Autorizar (ou não) o agente a usar o `dev` nas verificações manuais. |
+| **H2** | Depois da S03 | Criar os projetos Supabase `dev` e `prod` em `sa-east-1`. Colocar a connection string do pooler em modo transação (porta 6543) do `dev` no `.env.local` como `DATABASE_URL`. Gerar `IP_HASH_SECRET` e `CRON_SECRET` com `openssl rand -hex 32`. Rodar `npx supabase link --project-ref <dev>` e `npx supabase db push --remote` (no CLI 3, sem `--remote` o comando mira o banco local). Autorizar (ou não) o agente a usar o `dev` nas verificações manuais. |
 | **H3** | Depois da S02 | Revisar os 7 documentos da base: números, procedimentos e tom. A ingestão só roda depois disso. |
 | **H4** | Depois da S08 | Autorizar as rodadas de avaliação (v1, calibração e v2) no plano gratuito do Gemini. |
 | **H5** | S09 | Tornar o repositório público, se ainda for privado; aplicar a migração e a ingestão no `prod`; criar o projeto na Vercel e configurar as variáveis de Production e Preview; autorizar o smoke contra a produção. |

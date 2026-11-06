@@ -35,7 +35,7 @@ npm run ingest           # ⚠️ chama a API de embeddings e grava no banco (pa
 npm run chat -- --nome "Pizzaria Bella" --debug        # ⚠️ chama a API
 npm run eval -- --label v2 --preset padrao             # ⚠️ chama a API (60 a 90 chamadas)
 npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada
-npm run db -- db push    # Supabase CLI (só a pessoa, no checkpoint)
+npm run db -- db push --remote   # Supabase CLI, no projeto linkado (só no checkpoint)
 ```
 
 As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts locais usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis já definidas no shell.

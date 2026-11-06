@@ -218,7 +218,7 @@ O SQL acima é a referência. Se algum detalhe não funcionar no Supabase (por e
 
 Rode `npx supabase init` (não precisa de Docker) e crie a migração com o SQL da seção "Contratos". O nome segue o padrão da CLI: `<AAAAMMDDHHMMSS>_schema_inicial.sql`.
 
-- **Critério de aceite:** *(H2, feito pela pessoa)* Dado o projeto `dev` linkado, quando ela roda `npx supabase db push`, então a migração aplica sem erro, e `select to_tsvector('public.pt_unaccent', 'Cartão de crédito')` devolve lexemas sem acento.
+- **Critério de aceite:** *(H2, feito pela pessoa)* Dado o projeto `dev` linkado, quando ela roda `npx supabase db push --remote`, então a migração aplica sem erro, e `select to_tsvector('public.pt_unaccent', 'Cartão de crédito')` devolve lexemas sem acento.
 
 ### RF2. Cliente `postgres`
 

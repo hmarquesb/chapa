@@ -254,7 +254,7 @@ Cria o `GoogleGenAI` só na primeira chamada, com `requireEnv("GEMINI_API_KEY")`
 
 - **RNF1. Testes:** `npm test`, `npm run typecheck` e `npm run lint` passam sem rede e sem chave de API. *Verificação:* rodar com `env -i PATH="$PATH" HOME="$HOME"`.
 - **RNF2. Isolamento do SDK:** só arquivos de `src/infra/llm/` importam `@google/genai`. *Verificação:* o teste de arquitetura da S00 passa, e `grep -rn "@google/genai" src scripts --include=*.ts | grep -v "src/infra/llm/"` volta vazio.
-- **RNF3. Nenhum nome de modelo fora do config:** *Verificação:* `grep -rnE "gemini-|embedding-0" src scripts --include=*.ts | grep -v "src/config"` volta vazio.
+- **RNF3. Nenhum nome de modelo fora do config:** *Verificação:* `grep -rnE "gemini-[0-9]|gemini-embedding|embedding-0" src scripts --include='*.ts' | grep -v "src/config"` volta vazio. O padrão não usa só `gemini-` porque o nome de arquivo `gemini-client.ts`, exigido pela spec, casaria.
 - **RNF4. Privacidade:** nenhum log ou mensagem de erro inclui o conteúdo de `messages`, `system` ou `texts`. *Verificação:* teste que força um erro com um texto marcado (`"SEGREDO-123"`) e confere que a mensagem do erro lançado não o contém.
 
 ## Você deve

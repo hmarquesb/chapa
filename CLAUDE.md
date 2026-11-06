@@ -64,10 +64,10 @@ A pessoa já autorizou as ações abaixo (registrado em 05/11/2026). Elas valem 
 | Checkpoint | O que está autorizado | Limites |
 |---|---|---|
 | H1 | Teste de fumaça da S01 (1 `generate` e 1 `embed`) com a `GEMINI_API_KEY` do `.env.local` | Só esse teste |
-| H2 | Depois que a S03 estiver no worktree: `npx supabase link --project-ref <dev>` e `npx supabase db push` no projeto **`dev`**, e as verificações manuais da S03 contra o `dev` | Só o `dev`. Se o comando pedir senha ou outra entrada interativa, pare e peça à pessoa |
+| H2 | Depois que a S03 estiver no worktree: `npx supabase link --project-ref <dev>` e `npx supabase db push --remote --yes` no projeto **`dev`**, e as verificações manuais da S03 contra o `dev` | Só o `dev`. Se o comando pedir senha ou outra entrada interativa, pare e peça à pessoa |
 | — | Usar o `dev` nas verificações manuais da S04, S05 e S06, e rodar `npm run ingest` no `dev` depois do H3 | Só o `dev` |
 | H4 | As rodadas de avaliação da S08 (v1, v2-inicial, calibração e v2) contra o `dev`, seguindo o protocolo do RF7 | Use `--delay-ms` e `--only` para respeitar a cota gratuita. Se a cota estourar, espere e retome, sem trocar de modelo |
-| H5 (parcial) | Na S09: `supabase link` e `db push` no projeto **`prod`** e `npm run ingest` no `prod` | A connection string do `prod` fica em `.env.prod.local`, na raiz do repositório principal (`chapa/`, coberto pelo `.gitignore`), não nos worktrees. A partir do worktree, use só com `set -a; . ../../chapa/.env.prod.local; set +a` antes do comando. Nunca leia, imprima ou copie o arquivo |
+| H5 (parcial) | Na S09: `supabase link` e `db push --remote --yes` no projeto **`prod`** e `npm run ingest` no `prod` | A connection string do `prod` fica em `.env.prod.local`, na raiz do repositório principal (`chapa/`, coberto pelo `.gitignore`), não nos worktrees. A partir do worktree, use só com `set -a; . ../../chapa/.env.prod.local; set +a` antes do comando. Nunca leia, imprima ou copie o arquivo |
 
 **Continuam com a pessoa:**
 
