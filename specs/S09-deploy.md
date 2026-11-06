@@ -82,7 +82,7 @@ Roteiro em PT-BR, na ordem abaixo. Cada passo diz quem faz (pessoa ou orquestrad
 
 1. **Verificar limites dos planos gratuitos** e registrar no próprio `DEPLOY.md`, com data e URL da fonte: duração máxima de função e frequência mínima de cron na Vercel Hobby; pausa por inatividade e limites do Supabase Free; RPM e RPD dos modelos configurados no Gemini. Se a duração máxima for menor que o `maxDuration` da rota de chat, ou se o cron diário não for permitido, pare e reporte.
 2. **GitHub:** conferir que a CI da `main` está verde e decidir se o repositório fica público a partir de agora.
-3. **Supabase `prod`:** `npx supabase link --project-ref <prod>` e `npx supabase db push`. Conferir o RLS das 4 tabelas.
+3. **Supabase `prod`:** `npx supabase link --project-ref <prod>` e `npx supabase db push --remote` (`--yes` quando roda em modo agente). Conferir o RLS das 4 tabelas.
 4. **Ingestão no `prod`:** `DATABASE_URL="<pooler do prod>" npm run ingest`. Conferir o total impresso.
 5. **Vercel:** importar o repositório, região `gru1` (já no `vercel.json`), Node 24. Variáveis em **Production** (banco `prod`) e em **Preview** (banco `dev`), com `IP_HASH_SECRET` e `CRON_SECRET` diferentes em cada ambiente. Nenhuma variável `NEXT_PUBLIC_`.
 6. **Primeiro deploy de produção:** rodar `npm run smoke -- --url <produção>`.
