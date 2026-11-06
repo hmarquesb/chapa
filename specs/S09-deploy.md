@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S09 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S06, S07 (e S08 com a v2 calibrada, para o preset `padrao` final) |
 | **Chamadas reais de API** | Só com autorização (H5): ingestão no `prod` e o teste de fumaça contra o preview e a produção |
 
