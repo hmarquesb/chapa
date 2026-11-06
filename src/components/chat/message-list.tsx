@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { MessageItem } from "@/components/chat/message-item"
 import type { UiMessage } from "@/lib/chat-state"
+import { cn } from "@/lib/utils"
 
 type MessageListProps = {
   messages: UiMessage[]
@@ -21,6 +22,9 @@ export function MessageList({ messages, sending, loading }: MessageListProps) {
   }, [messages, sending])
 
   const empty = messages.length === 0
+  // With nothing to show, a bordered box reads as a text field. Keep only the hint until the
+  // conversation starts (the log region itself stays, so screen readers announce new messages).
+  const idle = empty && !loading && !sending
 
   return (
     <div
@@ -32,10 +36,13 @@ export function MessageList({ messages, sending, loading }: MessageListProps) {
       // Focusable so keyboard users can scroll the conversation.
       // biome-ignore lint/a11y/noNoninteractiveTabindex: scrollable region must be reachable by keyboard
       tabIndex={0}
-      className="max-h-[60dvh] min-h-40 overflow-y-auto rounded-xl border bg-muted/30 p-3 sm:p-4"
+      className={cn(
+        "max-h-[60dvh] overflow-y-auto",
+        idle ? "px-1" : "min-h-40 rounded-xl border bg-muted/30 p-3 sm:p-4",
+      )}
     >
       {loading && <p className="text-sm text-muted-foreground">Carregando conversa…</p>}
-      {!loading && empty && !sending && (
+      {idle && (
         <p className="text-sm text-muted-foreground">
           Faça uma pergunta sobre a operação do seu restaurante ou escolha um exemplo abaixo.
         </p>

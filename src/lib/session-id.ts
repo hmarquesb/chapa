@@ -22,6 +22,21 @@ export function resolveInitialSession(input: {
   return { sessionId: input.newId(), source: "new" }
 }
 
+export const INVALID_LINK_NOTICE_STORAGE =
+  "Este link de conversa não é válido. Mostramos a conversa salva neste navegador."
+export const INVALID_LINK_NOTICE_NEW =
+  "Este link de conversa não é válido. Começamos uma nova conversa."
+
+// A malformed ?sessao= is ignored (resolveInitialSession), but silently falling back to the stored
+// session makes a truncated link look like it worked. Tell the user what happened instead.
+export function invalidLinkNotice(
+  queryValue: string | null,
+  source: "link" | "storage" | "new",
+): string | null {
+  if (queryValue === null || source === "link") return null
+  return source === "storage" ? INVALID_LINK_NOTICE_STORAGE : INVALID_LINK_NOTICE_NEW
+}
+
 export function buildContinueLink(origin: string, sessionId: string): string {
   const base = origin.replace(/\/+$/, "")
   return `${base}/?${SESSION_QUERY_PARAM}=${encodeURIComponent(sessionId)}`
