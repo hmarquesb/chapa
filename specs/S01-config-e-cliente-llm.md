@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S01 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S00 |
 | **Chamadas reais de API** | Só com autorização (H1): um teste de fumaça com 1 `generate` e 1 `embed` |
 
