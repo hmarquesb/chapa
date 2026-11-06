@@ -1,0 +1,280 @@
+# Deploy do Chapa
+
+Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Supabase `prod` com a migração e a base ingerida, variáveis de ambiente e cron. Segue a spec [S09](specs/S09-deploy.md) e as decisões dos ADRs [0003](docs/adr/0003-github-actions-e-vercel-cron.md), [0006](docs/adr/0006-bancos-dev-e-prod-separados.md) e [0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md).
+
+**Quem faz o quê.** "Pessoa" é a dona do projeto: só ela mexe em conta, segredo, visibilidade do repositório e Vercel. "Orquestrador" é o agente, e só executa um passo com a autorização registrada no `CLAUDE.md` (checkpoint H5).
+
+**Regras que valem para todos os passos:**
+
+- Nenhum valor de segredo entra em arquivo versionado, log, print ou mensagem. As variáveis ficam no `.env.local` (`dev`), no `.env.prod.local` (`prod`, só na raiz do checkout principal) e na Vercel.
+- Local e preview usam o Supabase `dev`. Só a produção da Vercel e os passos 3 e 4 tocam o `prod`.
+- Os comandos `npx supabase ...` e `npm run ...` rodam na raiz do repositório (ou no worktree da S09).
+
+## Resumo
+
+| # | Passo | Quem | Como verificar |
+|---|---|---|---|
+| 1 | Limites dos planos gratuitos | Orquestrador | Tabelas abaixo, com fonte e data; nenhuma condição de parada |
+| 2 | GitHub: CI verde e visibilidade | Pessoa | `gh run list --branch main --limit 1` → `success`; varredura de segredos vazia |
+| 3 | Supabase `prod`: link e migração | Orquestrador (H5) | `db push` sem erro; RLS ligado nas 4 tabelas e 0 policies |
+| 4 | Ingestão no `prod` | Orquestrador (H5) | Total impresso igual ao `count` e ao `/api/health` do passo 6 |
+| 5 | Projeto e variáveis na Vercel | Pessoa | 4 variáveis em Production e 4 em Preview, nenhuma `NEXT_PUBLIC_` |
+| 6 | Primeiro deploy de produção + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <produção>` → 7 ✅ |
+| 7 | Preview + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <preview>` → 7 ✅, contra o `dev` |
+| 8 | Cron | Pessoa | Cron listado; log da primeira execução com status 200 |
+| 9 | Teste manual no navegador | Pessoa | Checklist do passo 9 inteiro marcado |
+| 10 | Registrar a URL de produção | Pessoa ou orquestrador | Seção "Links da demo" preenchida |
+
+---
+
+## 1. Verificar os limites dos planos gratuitos
+
+**Quem:** orquestrador. **Conferido em:** 06/11/2026. Os limites mudam: confira de novo se este passo tiver mais de um mês.
+
+**Condições de parada da spec:** (a) duração máxima de função menor que o `maxDuration` da rota de chat (60 s, em `src/app/api/chat/route.ts`); (b) cron diário não permitido. **Nenhuma das duas acontece** (300 s ≥ 60 s; o plano Hobby permite cron uma vez por dia). O `vercel.json` não precisou mudar.
+
+### Vercel Hobby
+
+| Limite | Valor | Impacto no Chapa | Fonte (consultada em 06/11/2026) |
+|---|---|---|---|
+| Duração máxima de função (Fluid compute, Node.js) | 300 s, padrão e máximo | A rota de chat pede 60 s: cabe | [Functions Limits](https://vercel.com/docs/functions/limitations) (página atualizada em 24/08/2026) |
+| Cron jobs | 100 por projeto; intervalo mínimo de **uma vez por dia**; precisão por hora (±59 min). Expressão mais frequente falha no deploy | `0 6 * * *` é diário: roda entre 06:00 e 06:59 UTC (03:00 a 03:59 em Brasília) | [Usage & Pricing for Cron Jobs](https://vercel.com/docs/cron-jobs/usage-and-pricing) (15/07/2026) |
+| Cron: ambiente e retentativa | Roda só no deploy de produção; não tenta de novo se falhar; pode pular ou repetir uma execução | A limpeza é idempotente (apaga por data); preview nunca roda o cron | [Managing Cron Jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs) (11/08/2026) |
+| Cron Jobs como recurso | Marcado como "legado", com migração futura para Schedules | Continua funcionando pelo `vercel.json`; migrar fica para outra tarefa se a Vercel exigir | Mesma página |
+| Uso mensal incluído | 1.000.000 de invocações; 4 h de Active CPU; 360 GB-h de memória provisionada; 100 GB de Fast Data Transfer; 10 GB de Fast Origin Transfer | Muito acima do uso de uma demo | [Fair Use Guidelines](https://vercel.com/docs/limits/fair-use-guidelines) (14/09/2026) |
+| Uso comercial | Hobby é só para uso pessoal e não comercial | Projeto de estudo, sem anúncio nem cobrança: ok | Mesma página |
+| Logs de runtime | Guardados por **1 hora** no Hobby | No passo 8, leia o log do cron logo depois da execução | [Limits](https://vercel.com/docs/limits) (16/09/2026) |
+| Repositório Git | Projeto Hobby não conecta a repositório de **organização** do GitHub | O repositório precisa estar na conta pessoal | Mesma página |
+| Deploys | 100 por dia; 1 build por vez; 45 min por build | Suficiente | Mesma página |
+| Corpo da requisição | 4,5 MB | A API já limita a 4 KB | [Functions Limits](https://vercel.com/docs/functions/limitations) |
+| Deployment Protection | "Standard Protection" com Vercel Authentication protege tudo menos os domínios de produção; "Protection Bypass for Automation" existe em todos os planos (header `x-vercel-protection-bypass`) | O preview responde 401/redirect para quem não está logado. O smoke usa `VERCEL_AUTOMATION_BYPASS_SECRET` (passo 7) | [Deployment Protection](https://vercel.com/docs/deployment-protection) e [Protection Bypass for Automation](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation) (15 e 16/09/2026) |
+| Instant Rollback | No Hobby, só para o deploy de produção **imediatamente anterior** | Ver "Como desfazer" | [Instant Rollback](https://vercel.com/docs/instant-rollback) (07/07/2026) |
+
+### Supabase Free
+
+| Limite | Valor | Impacto no Chapa | Fonte (consultada em 06/11/2026) |
+|---|---|---|---|
+| Projetos | 2 projetos ativos grátis (projetos pausados não contam) | Exatamente o `dev` e o `prod`: não sobra vaga | [Pricing](https://supabase.com/pricing) e [Billing on Supabase](https://supabase.com/docs/guides/platform/billing-on-supabase) |
+| Banco | 500 MB por projeto; 5 GB de egress (mais 5 GB em cache) | A base tem 35 trechos de 768 dimensões (passo 4): bem abaixo | [Pricing](https://supabase.com/pricing) |
+| Pausa por inatividade | Projeto com pouca atividade no banco num período de **7 dias** é pausado. "Algumas requisições ao banco por dia" na última semana evitam a pausa. Pausado, volta pelo painel (**Resume project**) em até 1 ano, com os dados | `prod`: o cron diário faz consultas no banco e mantém o projeto ativo (ADR 0003). `dev`: não tem cron; se ficar 7 dias sem uso, o preview responde 503 até a pessoa clicar em Resume | [Free plan pausing](https://supabase.com/docs/guides/platform/free-plan-pausing) (página sem data) |
+
+### Gemini (Google AI Studio, plano gratuito)
+
+Modelos configurados em `src/config.ts` hoje: **`gemini-3.5-flash-lite`** (chat e tarefas auxiliares, ADR 0014) e **`gemini-embedding-001`** (embeddings, 768 dimensões).
+
+| Item | Valor | Fonte |
+|---|---|---|
+| Preço no plano gratuito | Os dois modelos são "Free of charge". No plano gratuito, o conteúdo enviado **pode ser usado** para melhorar os produtos do Google (a base só tem texto público e o smoke só usa dados fictícios) | [Pricing](https://aistudio.google.com/docs/pricing), consultada em 06/11/2026 |
+| Onde ficam os limites por modelo | A página oficial não publica mais os números do plano gratuito: "Rate limits ... can be viewed in Google AI Studio" | [Rate limits](https://aistudio.google.com/docs/rate-limits) (antiga `ai.google.dev/gemini-api/docs/rate-limits`), consultada em 06/11/2026 |
+| Escopo | Os limites valem **por projeto do Google Cloud, não por chave**. Se a chave da Vercel for do mesmo projeto que a do `.env.local`, a demo, o eval e a CLI dividem a mesma cota | Mesma página |
+| Renovação diária | O RPD zera à meia-noite do horário do Pacífico (05:00 ou 06:00 em Brasília, conforme o horário de verão dos EUA) | Mesma página |
+| Erro ao estourar | 429 `RESOURCE_EXHAUSTED`. A API do Chapa devolve 429 com "A demo atingiu o limite de uso do provedor de IA. Tente mais tarde." | Mesma página e `src/app/api/_lib/errors.ts` |
+
+Cotas por modelo no painel de cotas do AI Studio (preencher pela pessoa, que tem acesso ao painel):
+
+| Modelo | RPM | RPD | Fonte |
+|---|---|---|---|
+| `gemini-3.5-flash-lite` | _a conferir no painel_ | 500 | Painel de cotas do AI Studio da conta, consultado em 06/11/2026 ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)) |
+| `gemini-embedding-001` | _a conferir no painel_ | _a conferir no painel_ | Painel de cotas do AI Studio |
+| `gemini-3.8-flash` (só se usado via `CHAT_MODEL`) | _a conferir no painel_ | 20 | Painel de cotas, 06/11/2026 (ADR 0014) |
+
+**Capacidade estimada da demo:** uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding. Com 500 gerações por dia, a demo aguenta perto de **160 mensagens por dia**, menos o que o eval e a CLI gastarem no mesmo projeto do Google. Além disso, a API limita cada IP a 10 mensagens por minuto e 100 por dia (`src/config.ts`).
+
+---
+
+## 2. GitHub: CI verde e visibilidade
+
+**Quem:** pessoa.
+
+1. Conferir que a CI da `main` está verde:
+   ```bash
+   gh run list --branch main --limit 1
+   ```
+   **Verificação:** a última execução está `completed` com `success`.
+2. Antes de tornar o repositório público, rodar a varredura de segredos da spec (RF3):
+   ```bash
+   git grep -nE "AIza[0-9A-Za-z_-]{20,}|postgres(ql)?://[^ ]*:[^ @]+@|CRON_SECRET[=].+|IP_HASH_SECRET[=].+" -- ':!specs/S09-deploy.md'
+   git log --all --name-only --format= | grep -E '(^|/)\.env' | sort -u
+   ```
+   **Verificação:** o primeiro comando não imprime nada; o segundo imprime só `.env.example`. O `[=]` é o mesmo `=` da regex da spec, escrito de um jeito que não casa com o próprio texto do comando; a spec S09 fica de fora porque traz a regex original, que casa consigo mesma.
+3. Decidir se o repositório fica público a partir de agora (GitHub → Settings → General → Danger Zone → Change visibility). Lembrete: o plano Hobby da Vercel só importa repositório da conta pessoal, não de organização.
+
+## 3. Supabase `prod`: link e migração
+
+**Quem:** orquestrador, com a autorização do H5. Se a CLI pedir senha ou outra entrada interativa, parar e chamar a pessoa.
+
+```bash
+npx supabase projects list                    # o REFERENCE ID do projeto prod
+npx supabase link --project-ref <ref-do-prod>
+npx supabase db push --remote --yes           # --yes só em modo agente
+```
+
+**Verificação:** o `db push` aplica a migração sem erro, e as consultas abaixo (somente leitura) mostram o RLS ligado nas 4 tabelas e nenhuma policy:
+
+```bash
+npx supabase db query --remote --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname"
+npx supabase db query --remote --read-only "select count(*) as policies from pg_policies where schemaname = 'public'"
+```
+
+Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`.
+
+**Atenção:** o link fica gravado em `supabase/.temp/` do diretório onde o comando rodou. Depois deste passo, qualquer `db push --remote` naquele diretório vai para o `prod`. Para voltar ao `dev`, rode `npx supabase link --project-ref <ref-do-dev>`.
+
+**Resultado:** ver "Registro da execução", no fim deste arquivo.
+
+## 4. Ingestão no `prod`
+
+**Quem:** orquestrador, com a autorização do H5.
+
+A connection string do `prod` (pooler em modo transação, porta 6543) fica em `.env.prod.local`, na raiz do checkout principal, coberto pelo `.gitignore`. Carregue o arquivo **só dentro de um subshell**, para o `DATABASE_URL` do `prod` não ficar no seu terminal:
+
+```bash
+# na raiz do checkout principal
+( set -a; . ./.env.prod.local; set +a; npm run ingest )
+# a partir do worktree da S09
+( set -a; . ../../chapa/.env.prod.local; set +a; npm run ingest )
+```
+
+Os scripts usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis do shell: o `DATABASE_URL` vem do `.env.prod.local`, e a `GEMINI_API_KEY`, do `.env.local`. Nunca rode `cat`, `echo` ou `grep` nesses arquivos.
+
+**Verificação:** a saída lista cada arquivo da base, o `Total gravado`, o `Preset: padrao`, o modelo `gemini-embedding-001`, o `chunkConfig: markdown:1200:150` e a linha `Trechos no banco para este conjunto (count)`, que precisa ser igual ao total. A linha `Banco:` mostra só o host do pooler, que é o mesmo para `dev` e `prod` na mesma região: a confirmação de que o dado foi para o `prod` é o `chunks` do `/api/health` da produção no passo 6.
+
+A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkConfig`. Rodar de novo não duplica nada.
+
+## 5. Vercel: projeto e variáveis
+
+**Quem:** pessoa.
+
+1. Vercel → **Add New → Project** → importar o repositório do GitHub. O framework (Next.js) é detectado sozinho. Não altere os comandos de build.
+2. **Settings → Build and Deployment → Node.js Version:** 24.x (o `package.json` já pede `>=24 <25`).
+3. **Settings → Functions:** conferir que a região é `gru1` (São Paulo), que vem do `vercel.json`, e que o Fluid compute está ligado (padrão em projeto novo; é ele que dá os 300 s).
+4. **Settings → Environment Variables.** Marque todas como **Sensitive**. Não crie nada em **Development** (o local usa o `.env.local`).
+
+   | Variável | Production | Preview |
+   |---|---|---|
+   | `GEMINI_API_KEY` | chave do AI Studio | chave do AI Studio (a mesma ou outra; ver "Escopo" no passo 1) |
+   | `DATABASE_URL` | pooler do **`prod`**, porta 6543 | pooler do **`dev`**, porta 6543 |
+   | `IP_HASH_SECRET` | `openssl rand -hex 32` | outro `openssl rand -hex 32` |
+   | `CRON_SECRET` | `openssl rand -hex 32` | outro `openssl rand -hex 32` |
+   | `CHAT_MODEL`, `FAST_MODEL`, `EMBEDDING_MODEL` | não criar (valem os padrões de `src/config.ts`) | não criar |
+
+   Nenhuma variável com prefixo `NEXT_PUBLIC_`. Gere os segredos direto no terminal e cole no painel; não os salve em arquivo do repositório. O `CRON_SECRET` só pode ter letras e números (vai num header HTTP); o `openssl rand -hex` já garante isso.
+5. **Settings → Deployment Protection:** manter a **Standard Protection** (Vercel Authentication nos previews, produção pública). Em **Protection Bypass for Automation**, gerar um segredo para o smoke do passo 7.
+
+**Verificação (RNF2):** a lista de variáveis mostra 4 em Production e 4 em Preview, nenhuma `NEXT_PUBLIC_`; abrindo o valor do `DATABASE_URL` de Preview no painel, o usuário do pooler (`postgres.<ref>`) é o do projeto `dev`, nunca o do `prod`. Mudança de variável só vale para deploys novos: depois de editar, faça **Redeploy**.
+
+## 6. Primeiro deploy de produção
+
+**Quem:** pessoa (o smoke também pode ser rodado pelo orquestrador, com autorização explícita).
+
+1. O import do passo 5 dispara o primeiro deploy da `main`. Esperar o status **Ready**.
+2. Rodar o smoke contra a URL de produção (`https://<projeto>.vercel.app`):
+   ```bash
+   npm run smoke -- --url https://<projeto>.vercel.app
+   ```
+
+**Verificação:** os 7 passos aparecem com ✅ e o comando sai com código 0. O passo 1 mostra o mesmo número de trechos do passo 4.
+
+O smoke faz 3 chamadas ao chat, com 2 s entre elas: a pergunta no escopo e a fora do escopo gastam cota do Gemini; a do CPF é barrada antes. Ele grava uma sessão fictícia no banco, que o cron apaga depois de 7 dias sem uso.
+
+Se falhar:
+
+| Sintoma | Causa provável |
+|---|---|
+| Passo 1 com **500** | Variável de ambiente faltando na Vercel (o container nem é montado). Confira as 4 variáveis de Production e faça Redeploy |
+| Passo 1 com **503** | Banco inacessível: `DATABASE_URL` errado ou projeto Supabase pausado |
+| Passo 1 com `chunks = 0` | Ingestão não rodou no `prod` (passo 4) ou rodou com outro modelo/preset |
+| Passo 2 com 429 | Cota do Gemini ou rate limit por IP. Espere e rode de novo |
+| Passo 7 sem os headers | `next.config.ts` não está no deploy (confira o commit) |
+
+## 7. Preview
+
+**Quem:** pessoa.
+
+1. Abrir um PR de teste (por exemplo, a branch `chore/preview-check` com uma mudança trivial num comentário). A Vercel comenta no PR com a URL de preview.
+2. Como o preview fica atrás da Vercel Authentication, o smoke precisa do segredo de bypass do passo 5. Digite o segredo sem deixá-lo no histórico do shell:
+   ```bash
+   read -rs VERCEL_AUTOMATION_BYPASS_SECRET && export VERCEL_AUTOMATION_BYPASS_SECRET
+   npm run smoke -- --url https://<preview>.vercel.app
+   unset VERCEL_AUTOMATION_BYPASS_SECRET
+   ```
+3. Fechar o PR **sem merge** e apagar a branch.
+
+**Verificação:** 7 ✅. O passo 1 mostra o total de trechos do `dev` (não do `prod`), e a sessão fictícia aparece no `dev`. Um 401 em todos os passos indica que o bypass não foi enviado ou está errado.
+
+## 8. Cron
+
+**Quem:** pessoa.
+
+1. **Settings → Cron Jobs:** conferir que `/api/cron/cleanup` aparece com `0 6 * * *` e que os cron jobs não estão desabilitados.
+2. A primeira execução acontece entre 06:00 e 06:59 UTC (03:00 a 03:59 em Brasília). Como o Hobby guarda os logs por só 1 hora, leia logo depois: **Cron Jobs → View Log**, ou **Logs** filtrando `requestPath:/api/cron/cleanup`. Para não esperar, a CLI da Vercel dispara o cron do deploy de produção na hora: `npx vercel crons run /api/cron/cleanup` (comando em beta; precisa de `npx vercel login` e `npx vercel link` antes).
+
+**Verificação:** o log mostra status **200** e a linha `{"route":"/api/cron/cleanup","method":"GET","status":200,...}`. Esta é a primeira vez que o caminho de sucesso roda com o `CRON_SECRET` real.
+
+- **401** em toda execução: o `CRON_SECRET` não está em Production, ou o deploy de produção é anterior à variável. Configure e faça Redeploy. O smoke não pega esse caso, porque testa justamente a chamada sem header.
+- **500:** outra variável faltando (`DATABASE_URL`, por exemplo).
+
+## 9. Teste manual no navegador
+
+**Quem:** pessoa, na URL de produção, com o DevTools aberto na aba Network. Cobre também as checagens manuais da S07 que ficaram pendentes.
+
+- [ ] Preencher o perfil do restaurante com dados fictícios.
+- [ ] 3 perguntas no escopo (pode usar as 3 perguntas de exemplo): cada uma responde com fontes em badges.
+- [ ] 1 pergunta fora do escopo ("Me passa uma receita de lasanha?"): mostra o aviso de fallback, **sem** badges de fonte.
+- [ ] 1 mensagem bloqueada ("Meu CPF é 123.456.789-09"): aviso de bloqueio, e a mensagem não volta no histórico.
+- [ ] Recarregar a página: o histórico volta igual (sem a mensagem bloqueada).
+- [ ] **"Continuar depois":** copiar o link, abrir numa janela anônima e ver a mesma conversa; o `?sessao=` some da barra de endereço.
+- [ ] Abrir `/?sessao=` com um UUID que não existe: aviso de que a conversa não existe mais e começo de uma nova.
+- [ ] **"Nova conversa":** a tela limpa e a próxima mensagem abre outra sessão.
+- [ ] **Teclado:** só com Tab, Shift+Tab e Enter, dá para enviar uma mensagem, abrir o perfil e copiar o link; o foco fica visível.
+- [ ] **Modo escuro:** com o sistema em modo escuro, a página fica escura e legível.
+- [ ] Largura de celular (DevTools, ~375 px): sem rolagem horizontal.
+- [ ] Rodapé com o aviso de projeto não oficial.
+- [ ] Na aba Network, o navegador só chama o próprio domínio (`/api/*`), nunca `generativelanguage.googleapis.com` nem `*.supabase.co`.
+
+**Verificação:** todos os itens marcados. Um item que falhar vira tarefa separada (a S09 não muda código da aplicação).
+
+## 10. Registrar a URL de produção
+
+**Quem:** pessoa ou orquestrador. Preencher a seção "Links da demo" no fim deste arquivo, num PR. A S10 leva a URL para o README.
+
+---
+
+## Como desfazer
+
+**Voltar a um deploy anterior (Vercel Instant Rollback).** No Hobby, só para o deploy de produção imediatamente anterior. Na página do projeto, no card **Production Deployment**, clique em **Instant Rollback**, confira e confirme. A troca é imediata. Depois do rollback, a Vercel **para de promover sozinha** os pushes na `main`; para voltar ao normal, use **Undo Rollback** no mesmo card (ou promova outro deploy). O rollback restaura também a definição do cron e o `CRON_SECRET` daquele deploy. Variáveis de ambiente editadas depois não entram no deploy restaurado.
+
+**Corrigir pra frente.** Para qualquer outra coisa, abra um PR com o `git revert` do commit problemático; o merge na `main` gera um deploy novo.
+
+**Reingerir a base no `prod`.** Rode de novo o passo 4. A ingestão substitui os trechos do mesmo modelo e `chunkConfig`, então serve tanto para atualizar a base quanto para recuperar de uma ingestão incompleta. Confira depois com o `/api/health` da produção (ou `npm run smoke`).
+
+**Migração.** Não há migração de volta. Uma correção de schema vira uma migração nova, por PR, aplicada primeiro no `dev` e depois no `prod` (passo 3).
+
+**Cron.** Para parar a limpeza sem deploy: **Settings → Cron Jobs → Disable Cron Jobs** (o ajuste persiste entre deploys e rollbacks). Lembre que sem o cron o `prod` pode ser pausado depois de 7 dias sem uso.
+
+**Segredo vazado.** Gere outro (AI Studio para a `GEMINI_API_KEY`; Supabase → Database → Reset password para o `DATABASE_URL`; `openssl rand -hex 32` para os outros), atualize na Vercel e no `.env*.local`, e faça Redeploy.
+
+---
+
+## Registro da execução
+
+### Passos 3 e 4 (H5 parcial, orquestrador, 06/11/2026)
+
+Executados no worktree da S09 com a Supabase CLI 3.0.0, no projeto `chapa-prod` (`sa-east-1`). Nenhum comando pediu senha ou entrada interativa.
+
+| Verificação | Resultado |
+|---|---|
+| `npx supabase db push --remote --dry-run` | 1 migração pendente: `20261106003144_schema_inicial.sql`, alvo `chapa-prod` |
+| `npx supabase db push --remote --yes` | Aplicou `20261106003144_schema_inicial.sql` sem erro |
+| RLS (`pg_class.relrowsecurity`) | `true` em `document_chunks`, `messages`, `rate_limits` e `sessions` |
+| Policies em `public` (`pg_policies`) | 0 |
+| `npm run ingest` (preset `padrao`) | 7 arquivos; `Total gravado: 35 trechos`; `gemini-embedding-001`; `markdown:1200:150`; `count` = 35; 1 chamada de embedding |
+| Conferência direta no `chapa-prod` | 35 trechos de 7 arquivos, todos com `gemini-embedding-001` e `markdown:1200:150` |
+
+Depois da conferência, o worktree voltou a ser linkado ao `dev`. O passo 6 confirma o mesmo total pelo `/api/health` da produção.
+
+## Links da demo
+
+- **Produção:** _a preencher no passo 10_
+- **Data do primeiro deploy:** _a preencher_
+- **Commit da `main` no deploy:** _a preencher_
