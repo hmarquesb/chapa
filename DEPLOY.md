@@ -70,15 +70,15 @@ Modelos configurados em `src/config.ts` hoje: **`gemini-3.5-flash-lite`** (chat 
 | Renovação diária | O RPD zera à meia-noite do horário do Pacífico (05:00 ou 06:00 em Brasília, conforme o horário de verão dos EUA) | Mesma página |
 | Erro ao estourar | 429 `RESOURCE_EXHAUSTED`. A API do Chapa devolve 429 com "A demo atingiu o limite de uso do provedor de IA. Tente mais tarde." | Mesma página e `src/app/api/_lib/errors.ts` |
 
-Cotas por modelo no painel de cotas do AI Studio (preencher pela pessoa, que tem acesso ao painel):
+Cotas por modelo no painel de cotas do AI Studio, informadas pela pessoa em 06/11/2026:
 
 | Modelo | RPM | RPD | Fonte |
 |---|---|---|---|
-| `gemini-3.5-flash-lite` | _a conferir no painel_ | 500 | Painel de cotas do AI Studio da conta, consultado em 06/11/2026 ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)) |
-| `gemini-embedding-001` | _a conferir no painel_ | _a conferir no painel_ | Painel de cotas do AI Studio |
+| `gemini-3.5-flash-lite` | 15 | 500 | Painel de cotas do AI Studio da conta, consultado em 06/11/2026 ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)) |
+| `gemini-embedding-001` | 100 | 1.000 | Painel de cotas do AI Studio da conta, consultado em 06/11/2026 |
 | `gemini-3.8-flash` (só se usado via `CHAT_MODEL`) | _a conferir no painel_ | 20 | Painel de cotas, 06/11/2026 (ADR 0014) |
 
-**Capacidade estimada da demo:** uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding. Com 500 gerações por dia, a demo aguenta perto de **160 mensagens por dia**, menos o que o eval e a CLI gastarem no mesmo projeto do Google. Além disso, a API limita cada IP a 10 mensagens por minuto e 100 por dia (`src/config.ts`).
+**Capacidade estimada da demo:** uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding. Com 500 gerações por dia, a demo aguenta perto de **160 mensagens por dia**, menos o que o eval e a CLI gastarem no mesmo projeto do Google. Por minuto, as 15 gerações dão cerca de **5 mensagens por minuto** somando todos os usuários. Os embeddings (100 por minuto e 1.000 por dia) não são o gargalo. Além disso, a API limita cada IP a 10 mensagens por minuto e 100 por dia (`src/config.ts`).
 
 ---
 
@@ -185,6 +185,7 @@ Se falhar:
 | Passo 1 com **503** | Banco inacessível: `DATABASE_URL` errado ou projeto Supabase pausado |
 | Passo 1 com `chunks = 0` | Ingestão não rodou no `prod` (passo 4) ou rodou com outro modelo/preset |
 | Passo 2 com 429 | Cota do Gemini ou rate limit por IP. Espere e rode de novo |
+| Passos 2 e 3 com **500** e o log da Vercel com `"error":"LlmRequestError"` | O Gemini recusou a chave (erro 4xx). Aconteceu em 06/11/2026: a `GEMINI_API_KEY` tinha sido colada com um espaço antes. Cole o valor de novo, sem aspas nem espaços, confira se a chave não tem restrição de IP ou referrer no Google Cloud e faça Redeploy |
 | Passo 7 sem os headers | `next.config.ts` não está no deploy (confira o commit) |
 
 ## 7. Preview
@@ -275,6 +276,6 @@ Depois da conferência, o worktree voltou a ser linkado ao `dev`. O passo 6 conf
 
 ## Links da demo
 
-- **Produção:** _a preencher no passo 10_
-- **Data do primeiro deploy:** _a preencher_
-- **Commit da `main` no deploy:** _a preencher_
+- **Produção:** https://chapa-mu.vercel.app
+- **Data do primeiro deploy:** 06/11/2026
+- **Último smoke verde:** 06/11/2026, 7 de 7 passos e 37 trechos, com a `main` em `d383ad5` (#18)
