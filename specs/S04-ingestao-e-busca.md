@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S04 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S01, S03 (para rodar a ingestão real, também S02 com H3 e o banco `dev` com H2) |
 | **Chamadas reais de API** | Só com autorização: `npm run ingest` no `dev` (cerca de 1 a 3 chamadas de embedding em lote por preset) |
 
