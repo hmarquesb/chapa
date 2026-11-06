@@ -18,7 +18,6 @@ describe("loadConfig defaults (RF1)", () => {
     expect(cfg.models.chat.length).toBeGreaterThan(0)
     expect(cfg.models.fast).toBeTypeOf("string")
     expect(cfg.models.fast.length).toBeGreaterThan(0)
-    expect(cfg.models.chat).not.toBe(cfg.models.fast)
     // Model ids are asserted only by shape: RNF3 forbids model names outside src/config.ts.
     expect(cfg.models.embedding).toBeTypeOf("string")
     expect(cfg.models.embedding.length).toBeGreaterThan(0)
@@ -50,9 +49,14 @@ describe("loadConfig defaults (RF1)", () => {
     expect(config.models.embeddingDimensions).toBe(768)
   })
 
+  it("uses the same model for chat and fast by default (ADR 0014)", () => {
+    const cfg = loadConfig({})
+    expect(cfg.models.chat).toBe(cfg.models.fast)
+  })
+
   it("declares the minimum thinking level for the default chat and fast models", () => {
     const cfg = loadConfig({})
-    expect(MODEL_THINKING_LEVEL[cfg.models.chat]).toBe("low")
+    expect(MODEL_THINKING_LEVEL[cfg.models.chat]).toBe("minimal")
     expect(MODEL_THINKING_LEVEL[cfg.models.fast]).toBe("minimal")
   })
 })

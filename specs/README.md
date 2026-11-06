@@ -92,7 +92,7 @@ Parte das ações abaixo já está autorizada. Veja a seção "Autorizações pr
 
 | Risco | Mitigação |
 |---|---|
-| Cota gratuita do Gemini estoura no eval ou na demo | `--delay-ms` e `--only` no eval, Flash-Lite nas tarefas auxiliares, juiz opcional, rate limit por IP por minuto e por dia |
+| Cota gratuita do Gemini estoura no eval ou na demo | `--delay-ms` e `--only` no eval, Flash-Lite no chat e nas tarefas auxiliares ([ADR 0014](../docs/adr/0014-flash-lite-como-modelo-de-chat.md)), juiz opcional, rate limit por IP por minuto e por dia |
 | Limites dos planos gratuitos mudaram | Conferência obrigatória no passo 1 do `DEPLOY.md` (S09), antes do deploy |
 | As páginas oficiais não trazem os números | Texto genérico na base, e a lacuna vira pergunta de fallback no eval |
 | `minScore` mal calibrado (falsa recusa ou alucinação) | Calibração de uma variável por vez, registrada em `CALIBRACAO.md` |

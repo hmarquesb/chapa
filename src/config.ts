@@ -44,12 +44,14 @@ export type AppConfig = {
 // conferido em 05/11/2026 em https://aistudio.google.com/docs/models (antiga
 // ai.google.dev/gemini-api/docs/models), https://aistudio.google.com/docs/pricing (plano
 // gratuito) e https://aistudio.google.com/docs/embeddings.
-// - gemini-3.8-flash: Flash estável mais recente, com plano gratuito.
-// - gemini-3.5-flash-lite: Flash-Lite estável mais recente, com plano gratuito.
+// - gemini-3.5-flash-lite: Flash-Lite estável mais recente, com plano gratuito. Faz o chat e
+//   as tarefas auxiliares (ADR 0014): no plano gratuito da conta, o gemini-3.8-flash tem só
+//   20 requisições por dia, contra 500 do Flash-Lite (painel de cotas do AI Studio,
+//   consultado em 06/11/2026). Para testar outro modelo de chat, use CHAT_MODEL.
 // - gemini-embedding-001: o gemini-embedding-2 não aceita taskType (RETRIEVAL_QUERY e
 //   RETRIEVAL_DOCUMENT), que a busca usa. Por isso fica o 001.
 const DEFAULT_MODELS = {
-  chat: "gemini-3.8-flash",
+  chat: "gemini-3.5-flash-lite",
   fast: "gemini-3.5-flash-lite",
   embedding: "gemini-embedding-001",
   embeddingDimensions: 768,
@@ -60,10 +62,11 @@ export type ThinkingLevel = "minimal" | "low"
 // Menor nível de "thinking" que cada modelo aceita, para economizar cota e latência.
 // conferido em 05/11/2026 em https://aistudio.google.com/docs/thinking: o gemini-3.8-flash
 // aceita low, medium e high (padrão medium; minimal dá erro), e o gemini-3.5-flash-lite
-// aceita minimal (padrão minimal). Um modelo fora da lista usa o padrão dele.
+// aceita minimal (padrão minimal). Um modelo fora da lista usa o padrão dele. O
+// gemini-3.8-flash continua na lista para quem o escolher via CHAT_MODEL.
 export const MODEL_THINKING_LEVEL: Readonly<Record<string, ThinkingLevel>> = Object.freeze({
-  [DEFAULT_MODELS.chat]: "low",
-  [DEFAULT_MODELS.fast]: "minimal",
+  "gemini-3.5-flash-lite": "minimal",
+  "gemini-3.8-flash": "low",
 })
 
 export const RAG_PRESETS: { padrao: RagConfig; baseline: RagConfig } = Object.freeze({

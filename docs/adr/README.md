@@ -19,6 +19,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0011](0011-somente-parceiros-atuais.md) | Restringir o assistente a restaurantes que já são parceiros | Aceito |
 | [0012](0012-rag-e-prompt-em-vez-de-fine-tuning.md) | Personalizar com RAG e engenharia de prompt, não com fine-tuning | Aceito |
 | [0013](0013-fluxo-de-branch-por-spec.md) | Uma branch, um worktree e um PR por spec | Aceito |
+| [0014](0014-flash-lite-como-modelo-de-chat.md) | Usar o Flash-Lite também como modelo de chat | Aceito |
 
 ## Modelo
 
