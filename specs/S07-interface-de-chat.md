@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | S07 |
-| **Status** | ✅ Aprovada |
+| **Status** | 🟢 Concluída |
 | **Depende de** | S00 (código). Para o teste manual de ponta a ponta, também S06 |
 | **Chamadas reais de API** | Só com autorização: teste manual no navegador contra a API local (algumas perguntas) |
 
