@@ -286,6 +286,7 @@ npm run chat -- --sessao <uuid> --debug
 ```
 
 - Argumentos (via `scripts/lib/args.ts`): `--sessao`, `--nome`, `--plano`, `--cozinha`, `--cidade`, `--horario`, `--debug`.
+  - O `parseArgs` só trata como flag sem valor as chaves de um conjunto fixo (`debug`, `judge`, `compare`). Qualquer outra `--chave` consome o próximo argumento como valor. Os valores chegam como `string`: `--plano` e os demais campos do perfil passam direto, e `--debug` vira `true`.
 - Sem `--sessao`, gera um id com `crypto.randomUUID()`. Usa `channel: "cli"`.
 - Cabeçalho: modelo de chat, `chunkConfig` e total de trechos no banco (`chunks.count`). Se for 0, avisa para rodar `npm run ingest` e sai.
 - Loop com `node:readline/promises`. Mostra a resposta e, quando `status === "answered"`, `Fontes: a.md, b.md`. Para os outros status, mostra o status entre colchetes antes da resposta.

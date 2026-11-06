@@ -157,6 +157,9 @@ export interface LlmClient { generate(input: GenerateInput): Promise<{ text: str
 // src/infra (S01, S03): getLlmClient(), getSql(), createChunkRepository(sql),
 //   createSessionRepository(sql), closeSql()
 // scripts/lib/args.ts (S04): parseArgs(argv)
+//   Flags sem valor: só debug, judge e compare (conjunto fixo em args.ts).
+//   Qualquer outra --chave consome o próximo argumento. --no-x vira x: "false".
+//   Com --compare, os dois caminhos ficam em positionals.
 ```
 
 ## Requisitos funcionais
@@ -249,7 +252,7 @@ Tabela com uma coluna por rodada (pelo label) e uma linha por métrica do RF2, m
 
 ### RF7. Protocolo de calibração (orquestrador com a pessoa, depois do H4)
 
-1. **v1 (baseline):** `npm run ingest -- --preset baseline` e `npm run eval -- --label v1 --preset baseline`.
+1. **v1 (baseline):** `npm run ingest -- --preset baseline` e `npm run eval -- --label v1 --preset baseline`. Os dois conjuntos de trechos (`baseline` e `padrao`) já estão no `dev` desde a S04: confira com `chunks.count` antes de reingerir. Espere cerca de 90 s entre uma ingestão e a rodada seguinte, porque a S04 estourou o limite por minuto de embeddings ao rodar duas ingestões seguidas.
 2. **Ponto de partida do padrão:** `npm run ingest` e `npm run eval -- --label v2-inicial --preset padrao`.
 3. **Calibração:** a partir das falhas, ajuste **uma variável de cada vez** com as flags e `--only` nas perguntas afetadas, para economizar cota: `minScore` (0.4 / 0.45 / 0.5 / 0.55) → `topK` (3 / 5) → `alpha` (0.5 / 0.7) → `rewriteQuery`. Para testar outro `chunkSize`, altere o preset localmente, reingira e registre. Cada tentativa vira uma linha em `eval/resultados/CALIBRACAO.md` (data, variável, valor, perguntas, efeito).
 4. **v2:** grave os melhores valores em `RAG_PRESETS.padrao` (só esse objeto de `src/config.ts`), rode `npm run ingest` se o chunking mudou e rode `npm run eval -- --label v2 --preset padrao` com as 20 perguntas.
