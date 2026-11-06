@@ -1,0 +1,607 @@
+import { describe, expect, it } from "vitest"
+import {
+  createChatHandler,
+  createCleanupHandler,
+  createHealthHandler,
+  createHistoryHandler,
+  createLazyHandler,
+} from "@/app/api/_lib/handlers"
+import type { LogEntry } from "@/app/api/_lib/log"
+import { chunkConfigKey, config } from "@/config"
+import { LlmQuotaError, LlmRequestError, LlmUnavailableError, MissingEnvError } from "@/core/errors"
+import type {
+  Assistant,
+  AssistantReply,
+  ChunkRepository,
+  ChunkSetKey,
+  HandleMessageInput,
+  RateLimitRepository,
+  SessionRecord,
+  SessionRepository,
+  StoredMessage,
+} from "@/core/types"
+
+const SESSION_ID = "0b7c9a52-3f0e-4d4f-9a55-2a1f3c1d9e10"
+const OTHER_ID = "5f1d2c3b-4a59-4e6f-8a7b-9c0d1e2f3a4b"
+const IP = "203.0.113.77"
+const NOW = new Date("2026-11-06T12:00:15.000Z")
+
+// ---------- fakes ----------
+
+class MemoryRateLimits implements RateLimitRepository {
+  counts = new Map<string, number>()
+  hits = 0
+  deletedBefore: Date[] = []
+
+  async hit(input: { ipHash: string; bucket: "minute" | "day"; windowStart: Date }) {
+    this.hits += 1
+    const key = `${input.ipHash}|${input.bucket}|${input.windowStart.toISOString()}`
+    const count = (this.counts.get(key) ?? 0) + 1
+    this.counts.set(key, count)
+    return count
+  }
+
+  async deleteBefore(date: Date) {
+    this.deletedBefore.push(date)
+    return 4
+  }
+}
+
+const REPLY: AssistantReply = {
+  status: "answered",
+  answer: "O repasse segue o ciclo do portal.",
+  sources: ["02-repasse-financeiro.md"],
+  retrieved: [
+    {
+      id: 1,
+      source: "02-repasse-financeiro.md",
+      section: "Ciclo",
+      content: "TRECHO-INTERNO",
+      semantic: 0.9,
+      keyword: 1,
+      score: 0.93,
+    },
+  ],
+  searchQuery: "CONSULTA-INTERNA",
+  usage: { calls: 3, inputTokens: 1200, outputTokens: 150 },
+  latencyMs: 800,
+}
+
+class FakeAssistant implements Assistant {
+  inputs: HandleMessageInput[] = []
+  failWith: unknown = null
+
+  async handleMessage(input: HandleMessageInput): Promise<AssistantReply> {
+    this.inputs.push(input)
+    if (this.failWith !== null) throw this.failWith
+    return REPLY
+  }
+}
+
+function chatSetup(overrides: { secret?: () => string } = {}) {
+  const assistant = new FakeAssistant()
+  const rateLimits = new MemoryRateLimits()
+  const logs: LogEntry[] = []
+  let secretReads = 0
+  const handler = createChatHandler({
+    assistant,
+    rateLimits,
+    config,
+    ipHashSecret:
+      overrides.secret ??
+      (() => {
+        secretReads += 1
+        return "segredo-de-teste"
+      }),
+    now: () => NOW,
+    log: (entry) => logs.push(entry),
+  })
+  return { handler, assistant, rateLimits, logs, secretReads: () => secretReads }
+}
+
+function chatRequest(
+  body: unknown,
+  init: { contentType?: string; ip?: string; raw?: string } = {},
+): Request {
+  return new Request("http://localhost/api/chat", {
+    method: "POST",
+    headers: {
+      "content-type": init.contentType ?? "application/json",
+      "x-forwarded-for": init.ip ?? IP,
+    },
+    body: init.raw ?? JSON.stringify(body),
+  })
+}
+
+const VALID = { sessionId: SESSION_ID, message: "Quando cai o repasse?" }
+
+// ---------- POST /api/chat ----------
+
+describe("createChatHandler", () => {
+  it("answers a valid request with exactly status, answer and sources", async () => {
+    const { handler, assistant } = chatSetup()
+    const profile = { name: "Pizzaria Bella", city: "Recife" }
+    const res = await handler(chatRequest({ ...VALID, profile }))
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as Record<string, unknown>
+    expect(Object.keys(body).sort()).toEqual(["answer", "sources", "status"])
+    expect(body).toEqual({ status: REPLY.status, answer: REPLY.answer, sources: REPLY.sources })
+    expect(assistant.inputs).toEqual([{ ...VALID, profile, channel: "web" }])
+  })
+
+  it("never exposes retrieved chunks, the search query or usage", async () => {
+    const { handler } = chatSetup()
+    const text = await (await handler(chatRequest(VALID))).text()
+    expect(text).not.toContain("TRECHO-INTERNO")
+    expect(text).not.toContain("CONSULTA-INTERNA")
+    expect(text).not.toContain("inputTokens")
+  })
+
+  it("refuses a body larger than 4 KB with 413", async () => {
+    const { handler, assistant } = chatSetup()
+    const res = await handler(chatRequest({ ...VALID, message: "x".repeat(5 * 1024) }))
+    expect(res.status).toBe(413)
+    expect(((await res.json()) as { error: string }).error).toMatch(/\S/)
+    expect(assistant.inputs).toEqual([])
+  })
+
+  it("refuses an invalid sessionId with 400", async () => {
+    const { handler, assistant, rateLimits } = chatSetup()
+    const res = await handler(chatRequest({ ...VALID, sessionId: "abc" }))
+    expect(res.status).toBe(400)
+    expect(assistant.inputs).toEqual([])
+    expect(rateLimits.hits).toBe(0)
+  })
+
+  it("refuses a profile with an unknown key with 400", async () => {
+    const { handler } = chatSetup()
+    const res = await handler(chatRequest({ ...VALID, profile: { name: "Bella", cpf: "1" } }))
+    expect(res.status).toBe(400)
+  })
+
+  it("refuses invalid JSON with 400", async () => {
+    const { handler } = chatSetup()
+    expect((await handler(chatRequest(null, { raw: "{oops" }))).status).toBe(400)
+  })
+
+  it("refuses a non-JSON Content-Type with 415", async () => {
+    const { handler, assistant } = chatSetup()
+    const res = await handler(chatRequest(VALID, { contentType: "text/plain" }))
+    expect(res.status).toBe(415)
+    expect(assistant.inputs).toEqual([])
+  })
+
+  it("accepts a JSON Content-Type with charset", async () => {
+    const { handler } = chatSetup()
+    const res = await handler(
+      chatRequest(VALID, { contentType: "application/json; charset=utf-8" }),
+    )
+    expect(res.status).toBe(200)
+  })
+
+  it("maps LlmQuotaError to 429 with the provider-quota text", async () => {
+    const { handler, assistant } = chatSetup()
+    assistant.failWith = new LlmQuotaError("RESOURCE_EXHAUSTED: detalhe do provedor")
+    const res = await handler(chatRequest(VALID))
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({
+      error: "A demo atingiu o limite de uso do provedor de IA. Tente mais tarde.",
+    })
+  })
+
+  it("maps LlmUnavailableError and database connection errors to 503", async () => {
+    const text = "O assistente está indisponível agora. Tente de novo em instantes."
+    const connectionError = Object.assign(new Error("connect ECONNREFUSED"), {
+      code: "ECONNREFUSED",
+    })
+    const sqlStateError = Object.assign(new Error("too many connections"), { code: "53300" })
+    for (const failure of [new LlmUnavailableError("timeout"), connectionError, sqlStateError]) {
+      const { handler, assistant } = chatSetup()
+      assistant.failWith = failure
+      const res = await handler(chatRequest(VALID))
+      expect(res.status).toBe(503)
+      expect(await res.json()).toEqual({ error: text })
+    }
+  })
+
+  it("maps every other error to 500 without leaking its message or stack", async () => {
+    const text = "Algo deu errado do nosso lado. Tente de novo."
+    for (const failure of [
+      new LlmRequestError("API key not valid DETALHE-PROVEDOR"),
+      new MissingEnvError("Defina GEMINI_API_KEY no .env.local"),
+      new TypeError("undefined is not a function DETALHE-INTERNO"),
+      "string lançada",
+    ]) {
+      const { handler, assistant } = chatSetup()
+      assistant.failWith = failure
+      const res = await handler(chatRequest(VALID))
+      expect(res.status).toBe(500)
+      const body = await res.text()
+      expect(JSON.parse(body)).toEqual({ error: text })
+      expect(body).not.toContain("DETALHE")
+      expect(body).not.toContain("GEMINI_API_KEY")
+    }
+  })
+
+  it("answers 500 when the IP hash secret is missing", async () => {
+    const { handler, assistant } = chatSetup({
+      secret: () => {
+        throw new MissingEnvError("Defina IP_HASH_SECRET no .env.local")
+      },
+    })
+    const res = await handler(chatRequest(VALID))
+    expect(res.status).toBe(500)
+    expect(assistant.inputs).toEqual([])
+  })
+
+  it("reads the IP hash secret only once", async () => {
+    const { handler, secretReads } = chatSetup()
+    await handler(chatRequest(VALID))
+    await handler(chatRequest(VALID))
+    expect(secretReads()).toBe(1)
+  })
+
+  it("denies the 11th request of the same IP in the same minute with Retry-After", async () => {
+    const { handler, assistant } = chatSetup()
+    for (let i = 1; i <= 10; i += 1) {
+      expect((await handler(chatRequest(VALID))).status).toBe(200)
+    }
+    const res = await handler(chatRequest(VALID))
+    expect(res.status).toBe(429)
+    expect(res.headers.get("retry-after")).toBe("45")
+    expect(await res.json()).toEqual({
+      error: "Muitas mensagens em pouco tempo. Aguarde um pouco e tente de novo.",
+    })
+    expect(assistant.inputs).toHaveLength(10)
+    expect((await handler(chatRequest(VALID, { ip: "198.51.100.9" }))).status).toBe(200)
+  })
+
+  it("never stores the IP in clear text", async () => {
+    const { handler, rateLimits } = chatSetup()
+    await handler(chatRequest(VALID))
+    for (const key of rateLimits.counts.keys()) expect(key).not.toContain(IP)
+  })
+})
+
+// ---------- logs ----------
+
+describe("request logs", () => {
+  it("log once per request with status, latency, reply status and usage", async () => {
+    const { handler, logs } = chatSetup()
+    await handler(chatRequest(VALID))
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({
+      route: "/api/chat",
+      method: "POST",
+      status: 200,
+      replyStatus: "answered",
+      llmCalls: 3,
+      inputTokens: 1200,
+      outputTokens: 150,
+    })
+    expect(logs[0]?.latencyMs).toBeGreaterThanOrEqual(0)
+    expect(logs[0]?.error).toBeUndefined()
+  })
+
+  it("log only the error class name on failure", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.failWith = new LlmQuotaError("detalhe do provedor")
+    await handler(chatRequest(VALID))
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({ status: 429, error: "LlmQuotaError" })
+    expect(JSON.stringify(logs)).not.toContain("detalhe do provedor")
+  })
+
+  it("never contain the message, the profile, the sessionId or the IP", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    const body = {
+      sessionId: SESSION_ID,
+      message: "MARCADOR-SECRETO-123",
+      profile: { name: "MARCADOR-PERFIL" },
+    }
+    await handler(chatRequest(body))
+    await handler(chatRequest({ ...body, sessionId: "MARCADOR-SECRETO-123" }))
+    assistant.failWith = new Error("MARCADOR-SECRETO-123")
+    await handler(chatRequest(body))
+    for (let i = 0; i < 10; i += 1) await handler(chatRequest(body))
+
+    const history = createHistoryHandler({
+      sessions: new FakeSessions(),
+      log: (entry) => logs.push(entry),
+    })
+    await history(new Request(`http://localhost/api/sessions/${SESSION_ID}/messages`), {
+      params: Promise.resolve({ id: SESSION_ID }),
+    })
+
+    expect(logs.length).toBeGreaterThanOrEqual(14)
+    const text = JSON.stringify(logs)
+    for (const secret of ["MARCADOR-SECRETO-123", "MARCADOR-PERFIL", SESSION_ID, IP]) {
+      expect(text).not.toContain(secret)
+    }
+  })
+})
+
+// ---------- GET /api/sessions/[id]/messages ----------
+
+const SESSION: SessionRecord = {
+  id: SESSION_ID,
+  channel: "web",
+  profile: { name: "Pizzaria Bella", plan: "Básico" },
+  summary: "RESUMO-INTERNO",
+  summaryUntilId: null,
+  createdAt: new Date("2026-11-06T11:00:00.000Z"),
+  lastActivityAt: new Date("2026-11-06T11:05:00.000Z"),
+}
+
+const MESSAGES: StoredMessage[] = [
+  {
+    id: 7,
+    role: "user",
+    content: "Quando cai o repasse?",
+    status: null,
+    sources: [],
+    createdAt: new Date("2026-11-06T11:04:00.000Z"),
+  },
+  {
+    id: 8,
+    role: "assistant",
+    content: "O repasse segue o ciclo do portal.",
+    status: "answered",
+    sources: ["02-repasse-financeiro.md"],
+    createdAt: new Date("2026-11-06T11:04:03.000Z"),
+  },
+]
+
+class FakeSessions implements SessionRepository {
+  calls: string[] = []
+  listArgs: unknown[] = []
+  deleteInactiveArgs: Date[] = []
+  failWith: unknown = null
+
+  async get(id: string) {
+    this.calls.push("get")
+    if (this.failWith !== null) throw this.failWith
+    return id === SESSION_ID ? SESSION : null
+  }
+  async touch(): Promise<SessionRecord> {
+    this.calls.push("touch")
+    return SESSION
+  }
+  async listMessages(sessionId: string, opts?: { afterId?: number }) {
+    this.calls.push("listMessages")
+    this.listArgs.push([sessionId, opts])
+    return MESSAGES
+  }
+  async appendTurn() {
+    this.calls.push("appendTurn")
+  }
+  async saveSummary() {
+    this.calls.push("saveSummary")
+  }
+  async deleteInactive(olderThan: Date) {
+    this.calls.push("deleteInactive")
+    this.deleteInactiveArgs.push(olderThan)
+    return 3
+  }
+}
+
+function historyCall(id: string, sessions = new FakeSessions()) {
+  const logs: LogEntry[] = []
+  const handler = createHistoryHandler({ sessions, log: (entry) => logs.push(entry) })
+  const res = handler(new Request(`http://localhost/api/sessions/${id}/messages`), {
+    params: Promise.resolve({ id }),
+  })
+  return { res, sessions, logs }
+}
+
+describe("createHistoryHandler", () => {
+  it("returns the profile and every message in order, with ISO dates", async () => {
+    const { res, sessions, logs } = historyCall(SESSION_ID)
+    const response = await res
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      sessionId: SESSION_ID,
+      profile: SESSION.profile,
+      messages: [
+        {
+          id: 7,
+          role: "user",
+          content: "Quando cai o repasse?",
+          status: null,
+          sources: [],
+          createdAt: "2026-11-06T11:04:00.000Z",
+        },
+        {
+          id: 8,
+          role: "assistant",
+          content: "O repasse segue o ciclo do portal.",
+          status: "answered",
+          sources: ["02-repasse-financeiro.md"],
+          createdAt: "2026-11-06T11:04:03.000Z",
+        },
+      ],
+    })
+    expect(sessions.listArgs).toEqual([[SESSION_ID, undefined]])
+    expect(sessions.calls).not.toContain("touch")
+    expect(logs).toEqual([
+      expect.objectContaining({ route: "/api/sessions/[id]/messages", method: "GET", status: 200 }),
+    ])
+  })
+
+  it("answers 404 with the PT-BR text for an unknown session", async () => {
+    const response = await historyCall(OTHER_ID).res
+    expect(response.status).toBe(404)
+    expect(await response.json()).toEqual({
+      error: "Esta conversa não existe mais. Começamos uma nova.",
+    })
+  })
+
+  it("answers 400 for an id that is not a UUID, without touching the database", async () => {
+    const { res, sessions } = historyCall("nao-e-uuid")
+    expect((await res).status).toBe(400)
+    expect(sessions.calls).toEqual([])
+  })
+
+  it("answers 503 when the database is unreachable", async () => {
+    const sessions = new FakeSessions()
+    sessions.failWith = Object.assign(new Error("timeout"), { code: "CONNECT_TIMEOUT" })
+    const { res, logs } = historyCall(SESSION_ID, sessions)
+    expect((await res).status).toBe(503)
+    expect(logs[0]).toMatchObject({ status: 503, error: "Error" })
+  })
+})
+
+// ---------- GET /api/health ----------
+
+class FakeChunks implements ChunkRepository {
+  keys: ChunkSetKey[] = []
+  constructor(private readonly result: number | Error) {}
+
+  async replaceAll(): Promise<number> {
+    throw new Error("not used")
+  }
+  async search(): Promise<never[]> {
+    throw new Error("not used")
+  }
+  async count(key: ChunkSetKey) {
+    this.keys.push(key)
+    if (this.result instanceof Error) throw this.result
+    return this.result
+  }
+}
+
+describe("createHealthHandler", () => {
+  it("counts the chunks of the current set", async () => {
+    const chunks = new FakeChunks(42)
+    const logs: LogEntry[] = []
+    const handler = createHealthHandler({ chunks, config, log: (entry) => logs.push(entry) })
+    const res = await handler(new Request("http://localhost/api/health"))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      ok: true,
+      chunks: 42,
+      embeddingModel: config.models.embedding,
+    })
+    expect(chunks.keys).toEqual([
+      { embeddingModel: config.models.embedding, chunkConfig: chunkConfigKey(config.rag) },
+    ])
+    expect(logs).toEqual([expect.objectContaining({ route: "/api/health", status: 200 })])
+  })
+
+  it("answers 503 with ok false when count throws", async () => {
+    const logs: LogEntry[] = []
+    const handler = createHealthHandler({
+      chunks: new FakeChunks(new Error("ECONNREFUSED 10.0.0.1")),
+      config,
+      log: (entry) => logs.push(entry),
+    })
+    const res = await handler(new Request("http://localhost/api/health"))
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({
+      ok: false,
+      chunks: 0,
+      embeddingModel: config.models.embedding,
+    })
+    expect(logs).toEqual([expect.objectContaining({ status: 503, error: "Error" })])
+  })
+})
+
+// ---------- GET /api/cron/cleanup ----------
+
+function cleanupSetup() {
+  const sessions = new FakeSessions()
+  const rateLimits = new MemoryRateLimits()
+  const logs: LogEntry[] = []
+  const handler = createCleanupHandler({
+    sessions,
+    rateLimits,
+    config,
+    cronSecret: () => "segredo-do-cron",
+    now: () => NOW,
+    log: (entry) => logs.push(entry),
+  })
+  const call = (authorization?: string) =>
+    handler(
+      new Request("http://localhost/api/cron/cleanup", {
+        headers: authorization === undefined ? {} : { authorization },
+      }),
+    )
+  return { call, sessions, rateLimits, logs }
+}
+
+describe("createCleanupHandler", () => {
+  it.each([
+    ["no header", undefined],
+    ["a wrong secret", "Bearer segredo-errado"],
+    ["a secret of another length", "Bearer s"],
+    ["a different scheme", "Basic segredo-do-cron"],
+    ["the bare secret", "segredo-do-cron"],
+  ])("answers 401 with %s and calls no repository", async (_label, authorization) => {
+    const { call, sessions, rateLimits, logs } = cleanupSetup()
+    const res = await call(authorization)
+    expect(res.status).toBe(401)
+    expect(((await res.json()) as { error: string }).error).toMatch(/\S/)
+    expect(sessions.calls).toEqual([])
+    expect(rateLimits.deletedBefore).toEqual([])
+    expect(logs).toEqual([expect.objectContaining({ route: "/api/cron/cleanup", status: 401 })])
+  })
+
+  it("deletes sessions idle for sessionTtlDays and rate limits older than 2 days", async () => {
+    const { call, sessions, rateLimits } = cleanupSetup()
+    const res = await call("Bearer segredo-do-cron")
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ deletedSessions: 3, deletedRateLimits: 4 })
+    expect(sessions.deleteInactiveArgs).toEqual([new Date("2026-10-30T12:00:15.000Z")])
+    expect(rateLimits.deletedBefore).toEqual([new Date("2026-11-04T12:00:15.000Z")])
+  })
+})
+
+// ---------- lazy creation in the route files ----------
+
+describe("createLazyHandler", () => {
+  it("creates the handler on the first request only", async () => {
+    let created = 0
+    const handler = createLazyHandler({ route: "/api/x", method: "GET" }, () => {
+      created += 1
+      return async () => new Response("ok")
+    })
+    expect(created).toBe(0)
+    await handler(new Request("http://localhost/api/x"))
+    await handler(new Request("http://localhost/api/x"))
+    expect(created).toBe(1)
+  })
+
+  it("answers 500 and logs the error name when creation fails, then retries", async () => {
+    const logs: LogEntry[] = []
+    let attempts = 0
+    const handler = createLazyHandler(
+      { route: "/api/x", method: "GET", log: (entry) => logs.push(entry) },
+      () => {
+        attempts += 1
+        if (attempts === 1) throw new MissingEnvError("Defina DATABASE_URL no .env.local")
+        return async () => new Response("ok")
+      },
+    )
+    const first = await handler(new Request("http://localhost/api/x"))
+    expect(first.status).toBe(500)
+    const body = await first.text()
+    expect(JSON.parse(body)).toEqual({ error: "Algo deu errado do nosso lado. Tente de novo." })
+    expect(body).not.toContain("DATABASE_URL")
+    expect(logs).toEqual([
+      expect.objectContaining({ route: "/api/x", status: 500, error: "MissingEnvError" }),
+    ])
+    expect((await handler(new Request("http://localhost/api/x"))).status).toBe(200)
+  })
+
+  it("passes the route context through", async () => {
+    const handler = createLazyHandler(
+      { route: "/api/x/[id]", method: "GET" },
+      () => async (_req: Request, ctx: { params: Promise<{ id: string }> }) =>
+        new Response((await ctx.params).id),
+    )
+    const res = await handler(new Request("http://localhost/api/x/7"), {
+      params: Promise.resolve({ id: "7" }),
+    })
+    expect(await res.text()).toBe("7")
+  })
+})
