@@ -41,6 +41,13 @@ Publica a demo: projeto na Vercel com preview por PR e produção na `main`, ban
   - O repositório no GitHub já existe desde o H0b, e a `main` só recebe código por PR.
   - Variáveis: `GEMINI_API_KEY`, `DATABASE_URL`, `IP_HASH_SECRET`, `CRON_SECRET` e, opcionalmente, `CHAT_MODEL`, `FAST_MODEL` e `EMBEDDING_MODEL`. Nenhuma com prefixo `NEXT_PUBLIC_`.
   - Os limites dos planos gratuitos mudam. Antes do deploy, confira: tempo máximo das funções e frequência do cron na Vercel Hobby, pausa por inatividade no Supabase Free e cotas por modelo do Gemini.
+- Herdado da onda 4 (PRs #13 e #14):
+  - O Vercel Cron manda `Authorization: Bearer $CRON_SECRET` quando a variável existe no ambiente. Sem ela, o cron recebe 401. O caminho de sucesso do cron ainda não foi testado com o segredo real, então o passo 8 do `DEPLOY.md` é a primeira verificação dele.
+  - A rota de saúde responde 500 (não 503) quando falta variável de ambiente, porque o container não chega a ser montado. Um 500 no passo 1 do smoke costuma ser variável faltando no ambiente da Vercel.
+  - `getClientIp` confia em `x-forwarded-for` e `x-real-ip`, que a Vercel preenche.
+  - As respostas da API levam `Cache-Control: no-store`.
+  - Checagens da S07 que pedem navegador continuam pendentes (fluxo "Continuar depois", teclado, modo escuro e o fallback sem fontes). O passo 9 do `DEPLOY.md` cobre todas elas.
+  - Os JSONs de `eval/resultados/` ficam fora do Biome (fechamento da onda 4), então novas rodadas não quebram o `npm run lint`.
 
 ### Contratos
 
