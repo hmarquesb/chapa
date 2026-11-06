@@ -1,0 +1,290 @@
+{
+  "label": "cal-topk5-ms055",
+  "preset": "padrao",
+  "date": "2026-11-06T14:11:56.323Z",
+  "commit": "8a91048",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.55,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": true
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 9,
+        "tipo": "parafrase",
+        "pergunta": "o cliente cancelou e eu perdi a comida, e agora?",
+        "fonte_esperada": ["03-cancelamentos-e-contestacoes.md"],
+        "deve_conter": ["contest"],
+        "esperado": "resposta",
+        "nota": "Linguagem informal que deve levar à contestação de cancelamento."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "1. Acesse a área \"Pedidos\" no Portal do Parceiro (ou no App do Parceiro).\n2. Use o filtro para achar o pedido cancelado.\n3. Clique nos três pontinhos e em \"Ver detalhes\" (no app, toque no pedido).\n4. Confira se a contestação está liberada.\n5. Clique em \"Contestar cancelamento\", escreva a justificativa e clique em \"Abrir contestação\".\n\nSe a contestação for aprovada, a loja é ressarcida.",
+        "sources": ["03-cancelamentos-e-contestacoes.md"],
+        "retrieved": [
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem cancela e por quê",
+            "score": 0.7064679396860569,
+            "semantic": 0.752097056694367,
+            "keyword": 0.6,
+            "content": "Cancelamentos e contestações — Quem cancela e por quê\n\nUm pedido pode ser cancelado pelo cliente, pela loja ou a partir da logística parceira do app. "
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem arca com o custo",
+            "score": 0.6373422168122368,
+            "semantic": 0.739060309731767,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Quem arca com o custo\n\nQuem paga pelo pedido cancelado depende do caso e do acordo. No acordo de atraso, se a loja acei"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quando dá para contestar",
+            "score": 0.6287438950337064,
+            "semantic": 0.726776992905295,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Quando dá para contestar\n\nA contestação de cancelamento é o pedido de revisão de um cancelamento que não gerou crédito "
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como evitar cancelamentos",
+            "score": 0.6209934612668887,
+            "semantic": 0.715704944666984,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Como evitar cancelamentos\n\nMuitos cancelamentos podem ser evitados com ajustes na operação. Ative o aceite automático p"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como contestar",
+            "score": 0.6145830429349306,
+            "semantic": 0.706547204192758,
+            "keyword": 0.4,
+            "content": "Cancelamentos e contestações — Como contestar\n\nA contestação de cancelamento é feita na área \"Pedidos\" do Portal do Parceiro. O passo a passo é este:\n"
+          }
+        ],
+        "searchQuery": "o cliente cancelou e eu perdi a comida, e agora?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1761,
+          "outputTokens": 110
+        },
+        "latencyMs": 8247
+      },
+      "latencyMs": 8247,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1761,
+        "outputTokens": 110
+      }
+    },
+    {
+      "question": {
+        "id": 13,
+        "tipo": "multi_doc",
+        "pergunta": "Se eu pausar muito a loja, minha nota cai?",
+        "fonte_esperada": [
+          "05-horarios-pausas-e-disponibilidade.md",
+          "06-avaliacoes-e-reputacao.md"
+        ],
+        "deve_conter": ["visibilidade"],
+        "esperado": "resposta",
+        "nota": "Junta o impacto das pausas na visibilidade (05) com o que derruba a nota (06)."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como melhorar",
+            "score": 0.7090691107279188,
+            "semantic": 0.691527301039884,
+            "keyword": 0.75,
+            "content": "Avaliações e reputação — Como melhorar\n\nMelhorar a avaliação e a reputação da loja passa por corrigir a causa, e não só responder. Seis práticas ajuda"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Impacto da indisponibilidade na visibilidade",
+            "score": 0.6815592744891352,
+            "semantic": 0.759370392127336,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Impacto da indisponibilidade na visibilidade\n\nFicar indisponível com frequência tem custo para a loja. Pausas fre"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Por que a loja fecha sozinha",
+            "score": 0.6629875758105188,
+            "semantic": 0.732839394015027,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Por que a loja fecha sozinha\n\nA plataforma pode fechar a loja temporariamente, no que chama de fechamento prevent"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Pausas programadas",
+            "score": 0.6615978227730342,
+            "semantic": 0.730854032532906,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Pausas programadas\n\nA pausa programada deixa a loja fechada no app durante um período escolhido com antecedência,"
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como a nota é calculada",
+            "score": 0.6475570948967311,
+            "semantic": 0.710795849852473,
+            "keyword": 0.5,
+            "content": "Avaliações e reputação — Como a nota é calculada\n\nDepois de receber o pedido, o cliente dá uma nota ao pedido e outra à entrega, de 1 a 5 estrelas, e "
+          }
+        ],
+        "searchQuery": "Se eu pausar muito a loja, minha nota cai?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1982,
+          "outputTokens": 22
+        },
+        "latencyMs": 5024
+      },
+      "latencyMs": 5024,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1982,
+        "outputTokens": 22
+      }
+    },
+    {
+      "question": {
+        "id": 14,
+        "tipo": "multi_doc",
+        "pergunta": "Num pedido de R$ 50 pago pelo app no Plano Básico, quanto eu recebo e em que dia esse dinheiro cai?",
+        "fonte_esperada": ["01-planos-e-taxas.md", "02-repasse-financeiro.md"],
+        "deve_conter": ["42,40", "quarta"],
+        "esperado": "resposta",
+        "nota": "Junta o exemplo de conta do Plano Básico (01) com o dia do repasse (02)."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Olá! No Plano Básico, num pedido de R$ 50,00 pago pelo app, o repasse do pedido fica em R$ 42,40 (já descontados a comissão de R$ 6,00 e a taxa de pagamento online de R$ 1,60). \n\nSobre o dia em que o dinheiro cai, o repasse funciona assim:\n1. As vendas de segunda a domingo formam um período de apuração de 7 dias.\n2. O pagamento é feito sempre às quartas-feiras, geralmente entre 18h e 18h30, conforme o seu plano de repasse. \n\nNo plano padrão, o pagamento acontece depois de 4 semanas.",
+        "sources": ["01-planos-e-taxas.md", "02-repasse-financeiro.md"],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de pagamento online",
+            "score": 0.7024060918313131,
+            "semantic": 0.717722988330447,
+            "keyword": 0.666666666666667,
+            "content": "Planos e taxas — Taxa de pagamento online\n\nA taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Ciclo de repasse",
+            "score": 0.589195149271768,
+            "semantic": 0.698850213245383,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Ciclo de repasse\n\nO repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O c"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade",
+            "score": 0.5804243245191291,
+            "semantic": 0.686320463598756,
+            "keyword": 0.333333333333333,
+            "content": "Planos e taxas — Mensalidade\n\nA mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor d"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Prazos",
+            "score": 0.575758313249713,
+            "semantic": 0.679654733213876,
+            "keyword": 0.333333333333333,
+            "content": "Repasse financeiro — Prazos\n\nO repasse é pago sempre às quartas-feiras, conforme a página do calendário de repasse do blog para parceiros, consultada "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão",
+            "score": 0.5751575850627044,
+            "semantic": 0.678796550089578,
+            "keyword": 0.333333333333333,
+            "content": "Planos e taxas — Comissão\n\nA comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de \"a part"
+          }
+        ],
+        "searchQuery": "Num pedido de R$ 50 pago pelo app no Plano Básico, quanto eu recebo e em que dia esse dinheiro cai?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1974,
+          "outputTokens": 157
+        },
+        "latencyMs": 5035
+      },
+      "latencyMs": 5035,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1974,
+        "outputTokens": 157
+      }
+    }
+  ],
+  "scores": [
+    {
+      "id": 9,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    },
+    {
+      "id": 13,
+      "inScope": true,
+      "hit": true,
+      "hitAll": true,
+      "correct": false,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": true
+    },
+    {
+      "id": 14,
+      "inScope": true,
+      "hit": true,
+      "hitAll": true,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false
+    }
+  ],
+  "metrics": {
+    "total": 3,
+    "inScope": 3,
+    "hitAtK": 1,
+    "accuracy": 0.6666666666666666,
+    "correctRefusal": 0,
+    "falseRefusal": 0.3333333333333333,
+    "latencyP50Ms": 5035,
+    "latencyP95Ms": 8247,
+    "errors": 0,
+    "usage": {
+      "calls": 6,
+      "inputTokens": 5717,
+      "outputTokens": 289
+    }
+  }
+}
