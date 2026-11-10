@@ -38,14 +38,20 @@ function echoEmbed(dimensions: number) {
 
 function client(
   sdk: GeminiSdk,
-  overrides: Partial<{ retries: number; embedBatchSize: number }> = {},
+  overrides: Partial<{
+    retries: number
+    embedBatchSize: number
+    embedBatchDelayMs: number
+    sleep: (ms: number) => Promise<void>
+  }> = {},
 ) {
   return createGeminiClient({
     sdk,
     retries: overrides.retries ?? 3,
     baseDelayMs: 1,
     embedBatchSize: overrides.embedBatchSize ?? 50,
-    sleep: async () => {},
+    embedBatchDelayMs: overrides.embedBatchDelayMs ?? 0,
+    sleep: overrides.sleep ?? (async () => {}),
   })
 }
 
@@ -214,6 +220,43 @@ describe("embed (RF8)", () => {
     expect(result.vectors.map((v) => v[0])).toEqual(texts.map((_, i) => i))
     expect(result.vectors.every((v) => v.length === dims)).toBe(true)
     expect(result.usage).toEqual({ calls: 3, inputTokens: 0, outputTokens: 0 })
+  })
+
+  it("waits embedBatchDelayMs between batches, never after the last one", async () => {
+    const events: string[] = []
+    const { sdk } = fakeSdk({
+      embed: async (params) => {
+        events.push(`call:${(params as { contents: string[] }).contents.length}`)
+        return echoEmbed(8)(params)
+      },
+    })
+    const sleep = async (ms: number) => {
+      events.push(`sleep:${ms}`)
+    }
+    const texts = Array.from({ length: 120 }, (_, i) => `t${i}`)
+
+    await client(sdk, { embedBatchSize: 50, embedBatchDelayMs: 60000, sleep }).embed({
+      model: EMBED_MODEL,
+      texts,
+      task: "document",
+      dimensions: 8,
+    })
+
+    expect(events).toEqual(["call:50", "sleep:60000", "call:50", "sleep:60000", "call:20"])
+  })
+
+  it("does not wait when everything fits in one batch", async () => {
+    const { sdk } = fakeSdk({ embed: echoEmbed(8) })
+    const sleep = vi.fn(async (_ms: number) => {})
+
+    await client(sdk, { embedBatchDelayMs: 60000, sleep }).embed({
+      model: EMBED_MODEL,
+      texts: ["t0"],
+      task: "query",
+      dimensions: 8,
+    })
+
+    expect(sleep).not.toHaveBeenCalled()
   })
 
   it.each([

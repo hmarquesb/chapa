@@ -61,10 +61,12 @@ export function createGeminiClient(opts: {
   retries: number
   baseDelayMs: number
   embedBatchSize: number
+  embedBatchDelayMs: number
   sleep?: (ms: number) => Promise<void>
 }): LlmClient {
   const retry = { retries: opts.retries, baseDelayMs: opts.baseDelayMs, sleep: opts.sleep }
   const batchSize = Math.max(1, Math.floor(opts.embedBatchSize))
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
 
   return {
     async generate(input) {
@@ -89,8 +91,10 @@ export function createGeminiClient(opts: {
     async embed(input: EmbedInput) {
       const vectors: number[][] = []
       const batches = chunk(input.texts, batchSize)
-      // Lotes em sequência, para não estourar o limite por minuto do plano gratuito.
-      for (const batch of batches) {
+      // Lotes em sequência, com uma pausa entre eles, para não estourar o limite por minuto do
+      // plano gratuito (cada texto do lote conta como uma requisição).
+      for (const [index, batch] of batches.entries()) {
+        if (index > 0 && opts.embedBatchDelayMs > 0) await sleep(opts.embedBatchDelayMs)
         const params = {
           model: input.model,
           contents: batch,

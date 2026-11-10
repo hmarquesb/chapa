@@ -1,6 +1,6 @@
 # Chapa
 
-Restaurantes parceiros de um app de delivery repetem as mesmas dúvidas operacionais, e a resposta está espalhada em páginas públicas. O Chapa responde com RAG híbrido sobre uma base própria, cita as fontes e recusa o que está fora do escopo.
+Restaurantes parceiros da Rango, uma empresa de delivery fictícia, repetem as mesmas dúvidas operacionais, e a resposta está espalhada pela política de parceiros. O Chapa responde com RAG híbrido sobre essa base, cita as fontes e recusa o que está fora do escopo.
 
 **Demo:** https://chapa-mu.vercel.app
 
@@ -28,7 +28,7 @@ Fonte: [`eval/resultados/COMPARACAO.md`](eval/resultados/COMPARACAO.md).
 
 ## Aviso e propósito
 
-> **Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery.** A base de conhecimento é texto público reescrito com palavras próprias, e os números que aparecem nela trazem a fonte e a data de consulta.
+> **Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery.** A Rango é uma empresa fictícia, inspirada no mercado brasileiro de delivery: a base de conhecimento é a política de parceiros dela, escrita para este projeto, e todos os números vêm de [`knowledge-base/regras.yaml`](knowledge-base/regras.yaml) ([ADR 0018](docs/adr/0018-empresa-ficticia-rango.md), [ADR 0019](docs/adr/0019-regras-yaml-fonte-unica.md)). A base anterior, reescrita de páginas públicas e usada nas rodadas `v1` e `v2`, está em [`docs/history/knowledge-base-v1/`](docs/history/knowledge-base-v1/README.md).
 
 O Chapa existe para estudar, num problema concreto e de ponta a ponta:
 
@@ -72,9 +72,9 @@ As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a documentação 
 
 ## Resumo executivo
 
-**Problema.** Restaurantes parceiros de um app de delivery têm dúvidas operacionais repetidas: comissão do plano, dia do repasse, prazo para contestar um cancelamento, formato das fotos do cardápio. A resposta existe em páginas públicas, mas espalhada, e um assistente genérico inventa números.
+**Problema.** Restaurantes parceiros da Rango, uma empresa de delivery fictícia, têm dúvidas operacionais repetidas: comissão do plano, dia do repasse, prazo para contestar um cancelamento, formato das fotos do cardápio. A resposta existe na política de parceiros, mas espalhada, e um assistente genérico inventa números.
 
-**Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 7 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil do restaurante (nome, plano, cozinha, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
+**Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 11 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil do restaurante (nome, plano, cozinha, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
 
 **Resultados** (rodada `v2`, 06/11/2026, [`v2.md`](eval/resultados/v2.md)):
 
@@ -346,13 +346,13 @@ Respostas ruins reais da avaliação, com a causa de cada uma:
 - **Link de continuação como credencial.** Quem tem o link lê a conversa. Por isso a página manda `Referrer-Policy: no-referrer`, o servidor não loga o id, e a sessão expira depois de 7 dias sem uso.
 - **Planos gratuitos.** Vercel Hobby, Supabase Free (só o `prod`), Neon Free (o `dev`, [ADR 0017](docs/adr/0017-neon-como-banco-dev.md)) e Gemini no plano gratuito. O Supabase pausa um projeto depois de 7 dias com pouca atividade; o cron diário mantém o `prod` ativo.
 - **Cota do Gemini.** Os limites valem por projeto do Google Cloud, não por chave: a demo, o eval e a CLI dividem a mesma cota se as chaves forem do mesmo projeto. O limite diário (RPD) zera à meia-noite do horário do Pacífico. No painel da conta, em 06/11/2026: `gemini-3.5-flash-lite` com 15 por minuto e 500 por dia; `gemini-embedding-001` com 100 por minuto e 1000 por dia. Isso dá perto de 160 mensagens por dia na demo ([`DEPLOY.md`](DEPLOY.md)). Ao estourar, a API responde 429 com um aviso em português.
-- **Uso dos dados pelo provedor.** No plano gratuito, o Google pode usar o conteúdo enviado para melhorar os produtos dele. Por isso a base só tem texto público, os testes usam só dados fictícios e a demo não deve receber dados reais.
+- **Uso dos dados pelo provedor.** No plano gratuito, o Google pode usar o conteúdo enviado para melhorar os produtos dele. Por isso a base só tem texto fictício, os testes usam só dados fictícios e a demo não deve receber dados reais.
 
 ## Limitações e próximos passos
 
 **Limitações**
 
-- **Base pequena e com lacunas.** 7 documentos e 37 trechos. As perguntas que as fontes não respondem estão em [`knowledge-base/FONTES.md`](knowledge-base/FONTES.md), como a taxa do repasse semanal e o preço do entregador avulso.
+- **Base fictícia.** As regras, os nomes e os números da Rango foram definidos para este projeto e não descrevem nenhuma empresa real. As respostas valem só para a Rango, e os temas que a base não cobre de propósito (cadastro de novas lojas, integração, entregadores, publicidade, legislação municipal e operação fora do Brasil) estão no [`knowledge-base/README.md`](knowledge-base/README.md).
 - **Avaliação curta.** 14 perguntas no escopo, acerto por termos esperados e nenhuma rodada com juiz. A `v2` rodou antes do PR #18, que mudou `01-planos-e-taxas.md`, e não foi repetida depois.
 - **Fontes = arquivos recuperados.** As fontes mostradas são os arquivos de todos os trechos que passaram do `minScore`, não os que o modelo de fato usou. Na pergunta 1 da `v2`, a resposta sobre a comissão mostra também `02-repasse-financeiro.md`.
 - **Modelo de resposta leve.** O Flash-Lite responde todas as perguntas, por causa da cota ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)). A pergunta 9 mostra o custo disso: a mesma entrada às vezes vira fallback.

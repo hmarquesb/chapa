@@ -22,6 +22,7 @@ export function getLlmClient(): LlmClient {
       retries: config.llm.retries,
       baseDelayMs: config.llm.baseDelayMs,
       embedBatchSize: config.llm.embedBatchSize,
+      embedBatchDelayMs: config.llm.embedBatchDelayMs,
     })
   }
   return client

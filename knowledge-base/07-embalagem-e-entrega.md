@@ -1,40 +1,61 @@
 # Embalagem e entrega
 
-> Fonte: https://blog-parceiros.ifood.com.br/embalagem-delivery/; https://blog-parceiros.ifood.com.br/tempo-de-preparo/; https://blog-parceiros.ifood.com.br/como-tratar-avaliacao-negativa-no-ifood/. Consultadas em 05/11/2026. Texto reescrito para fins de estudo, sem afiliação com a empresa.
+> Política de parceiros da Rango, vigente desde 01/11/2026. Empresa fictícia, criada para fins de estudo.
 
-## Boas práticas de embalagem
+## Embalagem adequada
 
-A embalagem de delivery precisa manter a temperatura, a aparência e a segurança da comida durante todo o trajeto até o cliente. O primeiro passo é testar cada prato do cardápio e escolher o material certo para ele, olhando principalmente a temperatura do alimento.
+A embalagem é responsabilidade da loja em todos os planos. Ela precisa manter o pedido inteiro, na temperatura certa e sem vazamentos até chegar ao cliente. Uma embalagem ruim é uma das causas mais comuns de avaliação negativa.
 
-O tamanho da embalagem também importa. Uma embalagem pequena demais deixa a comida transbordar, e uma grande demais deixa a comida se deslocar no espaço vazio. Quando o pedido tem vários itens, use divisórias para não misturar os alimentos.
+Boas práticas:
 
-A higiene na manipulação das embalagens é obrigatória e segue as regras da vigilância sanitária. Guarde o estoque de embalagens em local limpo, seco e bem iluminado, e escolha fornecedores confiáveis para não ficar sem embalagem no meio do expediente. A embalagem também é o primeiro contato do cliente com a loja, então vale personalizar com a identidade visual do negócio. Sempre que possível, prefira embalagens biodegradáveis ou recicláveis.
+- Separe pratos quentes e frios em embalagens diferentes.
+- Use tampas que fecham bem e embalagens próprias para líquidos, como caldos e molhos.
+- Mande molhos e acompanhamentos úmidos à parte, para o prato não chegar murcho.
+- Prefira embalagens com saída de vapor para frituras.
+- Coloque guardanapos e talheres quando o cliente pedir.
+- Identifique cada embalagem quando o pedido tiver vários itens parecidos.
 
 ## Lacre
 
-O lacre e a vedação da embalagem ajudam a evitar vazamentos no caminho e mostram ao cliente que o pedido não foi aberto depois de sair da loja. Para líquidos, como caldos, molhos e bebidas, a recomendação da plataforma é usar embalagens com vedação, como tampas com lacre de pressão ou selagem por indução, que diminuem o risco de o pedido chegar derramado.
+O lacre fecha a embalagem ou a sacola de forma que dê para ver se ela foi aberta no caminho. Ele protege a loja e o cliente: se o lacre chega rompido, o cliente sabe que o pedido foi mexido.
 
-Pedido que chega aberto, derramado ou revirado costuma virar reclamação e avaliação negativa sobre a embalagem, mesmo quando a comida estava boa. Por isso, feche bem cada embalagem antes de entregar ao entregador e confira se as tampas estão firmes.
+O lacre é obrigatório em todos os pedidos entregues pela Rango, ou seja, no Plano Entrega, nos pedidos fora da área própria do Plano Misto e nas corridas do Rango Chama. Na entrega própria, feita pela equipe da loja, o lacre é recomendado, mas não obrigatório.
 
-A plataforma não detalha um modelo obrigatório de lacre. Algumas cidades e estados têm regras próprias sobre lacre em embalagens de entrega, então vale confirmar a exigência local com a prefeitura ou com a vigilância sanitária.
+Pode ser um adesivo de lacre, uma sacola com fecho que se rompe ao abrir ou um grampo com etiqueta. O importante é que não dê para abrir e fechar de novo sem deixar marca.
 
 ## Tempo de preparo
 
-O tempo de preparo é o tempo que a cozinha leva para deixar o pedido pronto para sair. Ele é definido de jeitos diferentes em cada plano. No Plano Básico, em que a loja faz a própria entrega, o tempo de preparo é ajustado manualmente pela loja. No Plano Entrega, o tempo de preparo é calculado pela inteligência artificial da plataforma, com base nas entregas anteriores, para chamar o entregador na hora certa.
+O tempo de preparo é quanto a cozinha leva, em média, para deixar o pedido pronto depois do aceite. Ele é configurado na tela Pedidos, em Pedidos > Tempo de preparo, e pode ficar entre 5 e 90 minutos.
 
-Também é possível definir o tempo de preparo manualmente no Gestor de Pedidos, em "Ajustes", "Gestão de Lojas" e "Seção de Preparo", aumentando ou diminuindo o tempo.
+O app usa o tempo de preparo para calcular a previsão de entrega mostrada ao cliente e, quando a entrega é da Rango, para chamar o entregador na hora certa. Um tempo de preparo curto demais faz o entregador esperar e o cliente reclamar do atraso; um tempo longo demais afasta clientes.
 
-Se muitos entregadores ficam esperando na loja, o tempo de preparo está curto demais e precisa aumentar; muitos entregadores esperando podem até fechar a loja temporariamente. Se os pedidos ficam parados no balcão esperando o entregador, o tempo está longo demais e pode diminuir. Depois de mudar o tempo de preparo, o sistema leva um tempo para se ajustar. Cumprir o prazo prometido também ajuda a ter avaliações melhores.
+Nos picos, a loja pode aumentar o tempo de preparo por algumas horas e voltar ao normal depois, sem precisar pausar a loja.
 
-## Itens que exigem cuidado
+## Bebida alcoólica
 
-Alguns tipos de comida pedem embalagem específica para chegar bem ao cliente:
+A venda de bebida alcoólica só é permitida para maiores de 18 anos. Os itens com álcool precisam estar marcados como bebida alcoólica na tela Cardápio, para que o app peça a confirmação de idade do cliente.
 
-- Pratos quentes, como carnes, sopas e caldos: embalagens com isolamento térmico ou isopor, que seguram a temperatura.
-- Itens gelados, como sorvete, açaí e sobremesas: isopor ou embalagens térmicas, para não derreter no caminho.
-- Líquidos, como bebidas, molhos e caldos: embalagens com vedação e tampa bem fechada, para não vazar.
-- Pizza, sushi e salgados: papelão, que é firme e aceita divisórias; para comida úmida, existem versões com camada impermeável.
-- Pastéis, sanduíches e bolos: papel, inclusive em versões impermeáveis para alimentos com mais umidade.
-- Pratos que vão ao forno, como lasanha e brownie: alumínio, que é leve, resistente e aguenta o forno.
+Na entrega própria, a equipe da loja deve conferir um documento com foto do cliente antes de entregar a bebida. Se o cliente não tiver idade para comprar ou não mostrar o documento, a bebida não é entregue. A loja não deve vender bebida alcoólica para quem aparenta ser menor de idade, mesmo que a confirmação no app tenha sido feita.
 
-O plástico e o isopor são práticos, mas demoram muito para se decompor na natureza. Quando der, troque por embalagens biodegradáveis feitas de fontes sustentáveis. Antes de adotar uma embalagem nova, faça um teste com o prato real.
+## Itens frágeis
+
+Bolos, tortas, pratos com montagem delicada e garrafas de vidro precisam de atenção extra. Use caixas firmes, calços e embalagens que não deixem o item se mexer. Na tela Cardápio, a loja pode marcar o item como frágil, e a marcação aparece para quem faz a entrega.
+
+## Entrega própria e entrega Rango
+
+O plano define quem faz a entrega:
+
+- **Entrega própria:** no Plano Próprio e na área própria do Plano Misto, a equipe da loja entrega. A loja cuida do entregador, do trajeto e da taxa de entrega, e pode chamar o Rango Chama quando precisar de um entregador avulso.
+- **Entrega Rango:** no Plano Entrega e fora da área própria do Plano Misto, um entregador parceiro da Rango busca o pedido na loja. A loja só precisa deixar o pedido pronto, embalado e lacrado no tempo de preparo.
+
+As regras de comissão, taxa de entrega e Rango Chama estão no documento de planos e taxas.
+
+## Na hora de entregar ao entregador
+
+- Confira o pedido com a comanda antes de fechar a embalagem.
+- Confirme na tela Pedidos ou no Rango Loja que o pedido está pronto.
+- Entregue o pedido só ao entregador indicado no app, conferindo o código do pedido.
+
+## Quando abrir um chamado
+
+Abra um chamado em Ajuda > Abrir chamado quando um entregador da Rango não aparecer, demorar muito para buscar o pedido ou levar o pedido errado. Se o pedido foi cancelado por uma falha da Rango, veja no documento de cancelamentos e contestações como o custo é tratado. Os prazos de resposta estão no documento de suporte e chamados.

@@ -4,11 +4,11 @@
 
 ## Visão
 
-Restaurantes que **já são parceiros** de um app de delivery repetem as mesmas dúvidas operacionais: quanto é a comissão do meu plano, quando cai o repasse, até quando dá para contestar um cancelamento, qual o formato das fotos do cardápio. A resposta existe em páginas públicas, mas fica espalhada, e um assistente genérico inventa números.
+Restaurantes que **já são parceiros** de um app de delivery repetem as mesmas dúvidas operacionais: quanto é a comissão do meu plano, quando cai o repasse, até quando dá para contestar um cancelamento, qual o formato das fotos do cardápio. A resposta existe na política da empresa, mas fica espalhada, e um assistente genérico inventa números.
 
-O Chapa é uma página de chat que responde **só com base na sua própria base de conhecimento**, mostra de quais arquivos tirou a resposta e encaminha ao suporte quando a base não cobre a pergunta.
+O Chapa é o assistente de parceiros da **Rango**, uma empresa de delivery fictícia, inspirada no mercado brasileiro de delivery ([ADR 0018](adr/0018-empresa-ficticia-rango.md)). É uma página de chat que responde **só com base na política de parceiros da Rango**, mostra de quais arquivos tirou a resposta e encaminha ao suporte quando a base não cobre a pergunta.
 
-É um projeto de estudo, **não oficial** e sem afiliação com nenhuma empresa de delivery.
+É um projeto de estudo, **não oficial** e sem afiliação com nenhuma empresa de delivery real.
 
 ## Público e atores
 
@@ -28,7 +28,7 @@ O público de cadastro (quem ainda não é parceiro) fica fora do escopo ([ADR 0
 | **Perfil do restaurante** | Nome, plano, cozinha, cidade e horário, preenchidos num formulário (até 60 caracteres cada). Personaliza a resposta, no lugar dos dados que viriam de uma conta logada. |
 | **Link de continuação** | `/?sessao=<id>`. Abre a mesma conversa em outro navegador e funciona como credencial: quem tem o link lê a conversa ([ADR 0010](adr/0010-link-de-continuacao-em-vez-de-login.md)). |
 | **Canal** | De onde veio a conversa: `web` (a página), `cli` (`npm run chat`) ou `eval` (`npm run eval`). |
-| **Base de conhecimento** | Os documentos `.md` de `knowledge-base/`, reescritos com palavras próprias a partir de páginas públicas. |
+| **Base de conhecimento** | Os 11 documentos `.md` numerados de `knowledge-base/`, com a política de parceiros da Rango. Todos os números vêm do `knowledge-base/regras.yaml`, que não é ingerido ([ADR 0019](adr/0019-regras-yaml-fonte-unica.md)). |
 | **Trecho** | Um pedaço de um documento da base, com o seu embedding. É o que a busca recupera. |
 | **Fonte** | O nome do arquivo de um trecho que passou do `minScore`, mostrado embaixo da resposta. |
 | **Status da resposta** | `answered` (respondeu com a base), `fallback` (a base não cobre), `blocked_input` (a pergunta tinha um dado sensível) ou `blocked_output` (a resposta foi barrada antes de sair). |
@@ -39,15 +39,19 @@ O público de cadastro (quem ainda não é parceiro) fica fora do escopo ([ADR 0
 
 | Tema | Documento |
 |---|---|
-| Planos, comissão, mensalidade, taxa de entrega e de pagamento online, troca de plano | `01-planos-e-taxas.md` |
-| Ciclo e prazos do repasse, antecipação, extrato, descontos, repasse atrasado | `02-repasse-financeiro.md` |
-| Quem cancela, quem arca com o custo, como e até quando contestar | `03-cancelamentos-e-contestacoes.md` |
-| Estrutura do cardápio, fotos, complementos, itens esgotados, preços | `04-cardapio-e-fotos.md` |
-| Abrir e fechar a loja, pausas, fechamento automático, visibilidade | `05-horarios-pausas-e-disponibilidade.md` |
-| Cálculo da nota, resposta a avaliações, o que derruba e como melhorar | `06-avaliacoes-e-reputacao.md` |
-| Embalagem, lacre, tempo de preparo, itens delicados | `07-embalagem-e-entrega.md` |
+| Planos, comissão, mensalidade, taxas de pagamento e de entrega, Rango Chama, troca de plano | `01-planos-e-taxas.md` |
+| Ciclo semanal do repasse, valor mínimo, antecipação, descontos, extrato, repasse retido | `02-repasse-financeiro.md` |
+| Aceite, quem cancela e quem arca com o custo, contestação, taxa de cancelamento | `03-cancelamentos-e-contestacoes.md` |
+| Estrutura e limites do cardápio, fotos, moderação, preços, itens esgotados | `04-cardapio-e-fotos.md` |
+| Horário de funcionamento, pausas, fechamento preventivo, disponibilidade | `05-horarios-pausas-e-disponibilidade.md` |
+| Cálculo da nota, resposta a avaliações, moderação, selo Rango Recomenda | `06-avaliacoes-e-reputacao.md` |
+| Embalagem, lacre, tempo de preparo, bebida alcoólica, entrega própria ou da Rango | `07-embalagem-e-entrega.md` |
+| Tipos de cupom e quem paga, base da comissão, limites, entrega grátis | `08-promocoes-e-cupons.md` |
+| Canais de atendimento, tipos de chamado e prazos, protocolo, ouvidoria | `09-suporte-e-chamados.md` |
+| Perfis e usuários, senha, verificação em 2 etapas, conta bancária, golpes | `10-conta-acessos-e-seguranca.md` |
+| Formas de pagamento, nota fiscal, NFS-e da Rango, tributos, informe anual | `11-pagamentos-e-fiscal.md` |
 
-O que as fontes **não** respondem fica registrado em [`knowledge-base/FONTES.md`](../knowledge-base/FONTES.md), na coluna "Lacunas".
+Os temas que a base **não** cobre de propósito estão no [`knowledge-base/README.md`](../knowledge-base/README.md#temas-que-a-base-não-cobre-de-propósito).
 
 ## Como o restaurante usa
 
@@ -67,10 +71,13 @@ O que as fontes **não** respondem fica registrado em [`knowledge-base/FONTES.md
 
 ## Regras de conteúdo
 
-- Números (comissão, prazos, valores) só entram na base se estiverem na fonte, no formato "conforme <página>, consultada em DD/MM/AAAA". Sem fonte, o texto fica genérico.
-- Sem logo, nome ou cores de empresas reais na interface e no texto da base. O nome de uma empresa real só aparece nas URLs de fonte e no aviso de não afiliação.
+- Cada documento da base abre, logo depois do título, com o cabeçalho "Política de parceiros da Rango, vigente desde 01/11/2026. Empresa fictícia, criada para fins de estudo."
+- Todo número (comissão, prazos, valores, limites) vem do `knowledge-base/regras.yaml` e é escrito em algarismos, com a unidade por extenso. Um número novo entra primeiro no YAML; o `npm test` falha se um documento citar um número com unidade que não está lá. Parágrafos que começam com `Exemplo:` podem ter contas ilustrativas.
+- Formato: título `#`, cabeçalho, seções `##` curtas (uma ideia por seção) e uma seção final "Quando abrir um chamado". Cada documento tem de 600 a 1.300 palavras.
+- Os nomes são os da Rango: Painel Rango, Rango Loja, Plano Próprio, Plano Entrega, Plano Misto, Rango Chama, Rango Recomenda e Rango Ads, e os menus do Painel Rango têm sempre o mesmo nome.
+- Sem logo, nome ou cores de empresas reais na interface e no texto da base. O nome de uma empresa real só aparece no aviso de não afiliação do README e no histórico em `docs/history/`.
 - Todo texto que o restaurante lê fica em PT-BR.
-- O plano gratuito do Gemini pode usar o conteúdo enviado. Por isso a base só tem texto público, e a demo não deve receber dados reais.
+- O plano gratuito do Gemini pode usar o conteúdo enviado. Por isso a base só tem texto fictício, e a demo não deve receber dados reais.
 
 ## Metas de qualidade
 

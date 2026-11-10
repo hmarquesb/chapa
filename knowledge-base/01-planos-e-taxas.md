@@ -1,53 +1,90 @@
 # Planos e taxas
 
-> Fonte: https://blog-parceiros.ifood.com.br/planos-ifood/; https://blog-parceiros.ifood.com.br/taxas-ifood/ (consultadas em 05/11/2026 e 06/11/2026); https://blog-parceiros.ifood.com.br/area-de-entrega/; https://blog-parceiros.ifood.com.br/taxa-de-entrega-flexivel/ (consultadas em 06/11/2026). Texto reescrito para fins de estudo, sem afiliação com a empresa.
+> Política de parceiros da Rango, vigente desde 01/11/2026. Empresa fictícia, criada para fins de estudo.
 
-## O que diferencia os planos (restaurante entrega × app entrega)
+## Os três planos
 
-A grande diferença entre os planos da plataforma está em quem leva o pedido até o cliente. No Plano Básico, o próprio restaurante faz a entrega: a loja cuida da equipe de entregadores, da rota e do raio de atendimento, e o app cuida da vitrine, do pedido e do pagamento. No Plano Entrega, o app assume o transporte com a sua rede de entregadores parceiros, e o restaurante só prepara e despacha o pedido. Existe ainda o Plano Entrega Flex, que mistura os dois modelos: a loja entrega numa área próxima definida por ela, e a rede parceira atende o resto do mapa.
+A Rango oferece três planos para lojas parceiras. A diferença entre eles é quem faz a entrega e, por isso, quanto a loja paga de comissão e de mensalidade.
 
-Na prática, o custo da entrega no Plano Básico é fixo, porque depende da equipe própria, mesmo nas horas de pouco movimento. No Plano Entrega, esse custo acompanha o volume de pedidos. O Plano Entrega também inclui rastreio do pedido em tempo real, gestão do tempo de preparo, atendimento ao cliente até a entrega e seguro contra fraudes na entrega.
+- **Plano Próprio:** a própria loja entrega os pedidos, com entregadores dela.
+- **Plano Entrega:** os entregadores parceiros da Rango buscam o pedido na loja e levam até o cliente.
+- **Plano Misto:** a loja entrega perto de casa, numa área própria, e a Rango entrega no restante da área de atendimento.
 
-## Taxa de entrega: quem paga e quem define
+Todos os planos dão acesso ao Painel Rango e ao Rango Loja, aparecem para os clientes no app e recebem o repasse semanal das vendas.
 
-A taxa de entrega é paga pelo cliente. Ela é calculada pela distância entre a loja e o endereço do cliente e entra no valor total que o cliente vê ao finalizar o pedido, conforme a página de planos do blog para parceiros, consultada em 06/11/2026. No Plano Entrega, o custo da entrega feita pela rede parceira faz parte do que o cliente paga à plataforma, conforme a página de taxas do blog para parceiros, consultada em 06/11/2026.
+## Comissão por plano
 
-Quem define o valor da taxa depende do plano. No Plano Básico, a loja faz a própria entrega e define a área, a taxa e o tempo de entrega no Portal do Parceiro, nas configurações de entrega, preenchendo a taxa e o tempo de cada área. A mesma tela de áreas, taxas e tempos atende o Plano Entrega Flex. A loja pode salvar até 5 combinações de taxa e tempo, e a taxa não pode passar de R$ 50,00, conforme a página de área de entrega do blog para parceiros, consultada em 06/11/2026. No Plano Entrega, a área de entrega é definida automaticamente pela plataforma.
+A comissão é a parte de cada pedido que fica com a Rango. O percentual depende do plano:
 
-## Entrega grátis
+- Plano Próprio: comissão de 11%.
+- Plano Entrega: comissão de 22%.
+- Plano Misto: comissão de 11% nos pedidos da área própria e de 22% nos pedidos entregues pela Rango.
 
-A loja pode oferecer entrega grátis com campanhas próprias. No Portal do Parceiro, em "Promoções" e depois "Taxa de entrega Flexível", a loja cria a campanha, escolhe o público (clientes novos, clientes que não pedem há mais de 30 dias ou todos os clientes) e define o valor máximo que a promoção cobre, conforme a página de taxa de entrega flexível do blog para parceiros, consultada em 06/11/2026. A campanha pode ser ativada e desativada a qualquer momento.
+A comissão é descontada automaticamente do repasse. A loja não paga boleto nem fatura separada pela comissão.
 
-Um raio maior com entrega grátis dá mais visibilidade à loja no app. A plataforma não detalha quem arca com o custo da entrega grátis, então confirme as condições da campanha no Portal do Parceiro antes de ativá-la.
+## Área própria e raio do Plano Misto
 
-## Comissão
+No Plano Misto, a área própria é a região em que a loja faz as entregas com a equipe dela. O raio máximo da área própria é de 7 km a partir do endereço da loja. A loja pode escolher um raio menor. Os pedidos de clientes fora da área própria, mas dentro da área de atendimento, são entregues pela Rango e pagam a comissão do Plano Entrega.
 
-A comissão é a porcentagem que o app desconta de cada pedido feito pela plataforma, também chamada informalmente de "a parte do app" ou "a taxa do aplicativo". No Plano Básico, a comissão é de 12% sobre o valor do pedido, e no Plano Entrega é de 23%, conforme a página de taxas do blog para parceiros, consultada em 05/11/2026. No Plano Entrega Flex, a comissão é de 12% nos pedidos da área de entrega própria e de 23% nos pedidos da área atendida pela rede parceira, conforme a página de planos do blog para parceiros, consultada em 05/11/2026.
+## Retirada no balcão
 
-A comissão só é cobrada quando há pedido: sem venda, não há comissão. Ela incide sobre o valor do pedido, incluindo pratos, bebidas e adicionais. Hoje não é possível renegociar o percentual de comissão. O percentual exato da sua loja fica no contrato, que pode ser consultado no Portal do Parceiro, na opção "Alterar conta", no fim da tela inicial. As taxas podem variar conforme a região e a categoria do negócio.
+Em qualquer plano, o cliente pode escolher retirar o pedido na loja. Nos pedidos de retirada, a comissão é de 6% e não existe taxa de entrega, porque ninguém faz o trajeto até o cliente.
 
-## Mensalidade
+## Base da comissão
 
-A mensalidade é uma cobrança fixa por mês pelo uso das ferramentas da plataforma, como o Portal do Parceiro e o Gestor de Pedidos. A mensalidade do Plano Básico é de R$ 110,00, e a mensalidade do Plano Entrega e do Plano Entrega Flex é de R$ 150,00, conforme a página de planos do blog para parceiros, consultada em 05/11/2026.
+A comissão é calculada sobre o valor dos itens do pedido, sem a taxa de entrega. Complementos e adicionais escolhidos pelo cliente fazem parte do valor dos itens. A taxa de serviço cobrada do cliente também fica fora da base.
 
-A mensalidade só é cobrada da loja que fatura acima de R$ 1.800,00 no mês; abaixo desse valor, a loja fica isenta, conforme a página de taxas do blog para parceiros, consultada em 05/11/2026. A mensalidade não entra na conta de cada pedido: ela aparece uma vez por mês no detalhamento financeiro do Portal do Parceiro e é descontada do repasse. O valor da mensalidade não é negociável, e as condições devem ser confirmadas no Portal do Parceiro.
+Quando a loja oferece um cupom, a comissão continua sendo calculada sobre o valor dos itens antes do desconto. As regras de cupom estão no documento de promoções e cupons.
 
-## Taxa de pagamento online
+## Mensalidade e isenção
 
-A taxa de pagamento online é cobrada da loja para processar os pedidos pagos dentro do app, por exemplo com cartão de crédito, cartão de débito ou carteira digital. Essa taxa é de 3,2% nos planos Básico e Entrega, conforme a página de taxas do blog para parceiros, consultada em 05/11/2026. Pedidos pagos em dinheiro na entrega não geram taxa de pagamento online.
+Além da comissão, cada plano tem uma mensalidade:
 
-Um exemplo de conta no Plano Básico, conforme a página de taxas do blog para parceiros, consultada em 05/11/2026: num pedido de R$ 50,00 pago pelo app, a comissão é de R$ 6,00, a taxa de pagamento online é de R$ 1,60, o total descontado é de R$ 7,60 e o repasse do pedido fica em R$ 42,40.
+- Plano Próprio: R$ 99,00 por mês.
+- Plano Entrega: R$ 139,00 por mês.
+- Plano Misto: R$ 139,00 por mês.
 
-A taxa de serviço é diferente: ela é paga pelo cliente final, fica com a plataforma e varia entre R$ 0,99 e R$ 2,49 por pedido, conforme a página de taxas do blog para parceiros, consultada em 05/11/2026. A taxa de serviço não muda a comissão da loja.
+A mensalidade é descontada no primeiro repasse do mês. A loja fica isenta da mensalidade quando o faturamento dela na Rango no mês anterior ficou abaixo de R$ 2.000,00. O faturamento considerado é a soma do valor dos itens dos pedidos concluídos pelo app.
 
-## Como mudar de plano
+## Taxas de pagamento online
 
-Para trocar de plano, a loja usa o Portal do Parceiro e conta com o suporte comercial do app. O caminho descrito pela plataforma é este:
+Quando o cliente paga pelo app, a Rango cobra da loja uma taxa de pagamento online, que varia conforme a forma de pagamento:
 
-- Entre no Portal do Parceiro com a conta da loja que vai mudar de plano.
-- Abra a área "Central de Crescimento", onde ficam as condições comerciais da operação.
-- Veja quais planos estão disponíveis para a sua loja e compare comissão, entrega e demais condições.
-- Peça a migração ao suporte comercial. O acesso às configurações comerciais pode exigir o perfil de Gestor Geral da Loja.
-- Antes de concluir, revise as pré-configurações de taxas e tempos da loja.
+- Cartão de crédito, cartão de débito e carteira digital: 3,5%.
+- Pix: 1,5%.
+- Vale-refeição online: 4,5%.
 
-A disponibilidade de cada plano e as condições para trocar de plano podem variar de loja para loja. Vale rever o plano quando o volume de pedidos muda bastante ou quando a área de entrega cresce.
+A taxa de pagamento online incide sobre o valor dos itens antes de qualquer cupom, que é a mesma base da comissão. Ela também é descontada do repasse.
+
+## Dinheiro na entrega
+
+O pagamento em dinheiro na entrega não tem taxa de pagamento. Ele só existe no Plano Próprio e na área própria do Plano Misto, porque é a equipe da loja que recebe o dinheiro do cliente. Nos pedidos pagos em dinheiro, o valor fica com a loja na hora, e a comissão desses pedidos é descontada do repasse da semana.
+
+## Taxa de serviço ao cliente
+
+A Rango cobra do cliente uma taxa de serviço por pedido, que vai de R$ 0,99 a R$ 1,99. Essa taxa é paga pelo cliente, fica com a Rango e não entra no repasse da loja. A loja não paga a taxa de serviço e não tem desconto por causa dela.
+
+## Taxa de entrega por plano
+
+- **Plano Próprio:** a loja define a taxa de entrega, em até 5 faixas de distância, na tela Configurações > Plano. A taxa de cada faixa pode ir até R$ 30,00. O valor da taxa de entrega é da loja e entra no repasse quando o cliente paga pelo app.
+- **Plano Entrega:** a taxa de entrega é definida pela Rango, pela distância entre a loja e o cliente, e fica com a Rango.
+- **Plano Misto:** na área própria vale a regra do Plano Próprio; fora dela, a regra do Plano Entrega.
+- **Retirada no balcão:** não tem taxa de entrega.
+
+## Rango Chama
+
+O Rango Chama é o entregador avulso da Rango, para lojas que fazem entrega própria (Plano Próprio e área própria do Plano Misto). A loja chama um entregador parceiro só para os pedidos em que precisar, por exemplo num pico de movimento.
+
+Cada corrida custa R$ 8,90 e inclui até 4 km. Acima disso, a loja paga R$ 1,50 por km extra. O custo do Rango Chama é descontado do repasse, e a taxa de entrega cobrada do cliente continua sendo da loja.
+
+## Troca de plano
+
+A troca de plano é pedida pelo perfil Dono em Configurações > Plano. O pedido de troca feito até o dia 25 passa a valer no dia 1º do mês seguinte. Um pedido de troca feito depois do dia 25 só passa a valer no dia 1º do segundo mês seguinte. Depois de uma troca, a loja precisa esperar 90 dias para trocar de plano de novo.
+
+## Exemplo de conta de um pedido
+
+Exemplo: no Plano Próprio, um cliente faz um pedido com R$ 80,00 em itens, escolhe uma taxa de entrega de R$ 7,00 definida pela loja e paga por Pix. A comissão é 11% de R$ 80,00, ou seja, R$ 8,80. A taxa de pagamento online é 1,5% de R$ 80,00, ou seja, R$ 1,20. A taxa de entrega não entra na base de nenhuma das duas. O cliente também paga uma taxa de serviço de R$ 0,99, que fica com a Rango. No total, o cliente paga R$ 87,99, e o pedido rende para a loja R$ 80,00 + R$ 7,00 − R$ 8,80 − R$ 1,20 = R$ 77,00 no repasse.
+
+## Quando abrir um chamado
+
+Abra um chamado do tipo Financeiro em Ajuda > Abrir chamado se a comissão, a taxa de pagamento ou a mensalidade descontada no repasse não bater com o plano da loja. Para trocar de plano, não é preciso chamado: use Configurações > Plano. Os prazos de resposta estão no documento de suporte e chamados.

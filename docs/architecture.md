@@ -2,7 +2,7 @@
 
 > Como o Chapa está montado. O domínio e o escopo estão em [`business.md`](business.md), os padrões de código em [`development.md`](development.md) e a verificação em [`qa.md`](qa.md). O comportamento esperado de cada capacidade fica nas specs vivas em [`openspec/specs/`](../openspec/config.yaml), e o porquê das decisões em [`adr/`](adr/README.md).
 
-Assistente web para restaurantes que **já são parceiros** de um app de delivery. Ele responde dúvidas operacionais com RAG sobre a base em `knowledge-base/`, cita as fontes e encaminha ao suporte quando não sabe a resposta. Cadastro de novos parceiros fica fora do escopo. É um projeto de estudo, não oficial.
+Assistente web para restaurantes que **já são parceiros** da Rango, uma empresa de delivery fictícia. Ele responde dúvidas operacionais com RAG sobre a base em `knowledge-base/`, cita as fontes e encaminha ao suporte quando não sabe a resposta. Cadastro de novos parceiros fica fora do escopo. É um projeto de estudo, não oficial.
 
 Não tem login. Cada navegador tem a própria sessão anônima, e o perfil do restaurante (nome, plano, cozinha, cidade, horário) vem de um formulário, no lugar dos dados que viriam de uma conta logada.
 

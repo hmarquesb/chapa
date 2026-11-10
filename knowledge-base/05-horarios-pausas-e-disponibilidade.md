@@ -1,49 +1,58 @@
 # Horários, pausas e disponibilidade
 
-> Fonte: https://blog-parceiros.ifood.com.br/horario-de-funcionamento/; https://blog-parceiros.ifood.com.br/pausa-programada/; https://blog-parceiros.ifood.com.br/loja-fechada-ifood/. Consultadas em 05/11/2026. Texto reescrito para fins de estudo, sem afiliação com a empresa.
+> Política de parceiros da Rango, vigente desde 01/11/2026. Empresa fictícia, criada para fins de estudo.
 
-## Abrir e fechar a loja
+## Horário de funcionamento
 
-O horário de funcionamento da loja no app é configurado no Portal do Parceiro, dia por dia da semana. Na tela de horário, a loja marca as janelas em que fica aberta. A plataforma sugere janelas padrão de almoço, das 11 às 15 horas, e de jantar, das 18 às 23 horas, conforme a página de horário de funcionamento do blog para parceiros, consultada em 05/11/2026. Também dá para criar horários personalizados ou apagar uma janela pelo ícone da lixeira. Se a loja não abre em certo dia, apague a janela daquele dia.
+O horário de funcionamento é o período em que a loja recebe pedidos pelo app. Ele é configurado no Painel Rango, na tela Horários, para cada dia da semana. A loja pode ter mais de um turno no mesmo dia, como almoço e jantar, e pode marcar dias em que não abre.
 
-Para funcionar depois da meia-noite, crie uma janela que começa à zero hora; por exemplo, para ficar aberta até 1 hora da manhã, informe uma janela de 0 a 1 hora, conforme a página de horário de funcionamento, consultada em 05/11/2026.
+Dentro do horário configurado, a loja abre sozinha. Para que a abertura funcione, o Rango Loja ou a tela Pedidos do Painel Rango precisa estar aberto em algum aparelho da loja.
 
-Atenção: se a loja aparece aberta no app, mas a cozinha não está funcionando, os pedidos podem ser cancelados automaticamente. Em caso de sobrecarga ou falta de insumo, pause a loja manualmente antes de aceitar mais pedidos.
+Antes de feriados e datas especiais, revise o horário na tela Horários. Um horário desatualizado faz a loja aparecer aberta quando não pode atender, o que gera pedidos ignorados e cancelamentos.
 
-## Pausas programadas
+## Pausa programada
 
-A pausa programada deixa a loja fechada no app durante um período escolhido com antecedência, para que ela não receba pedidos que não vai conseguir atender. É útil em feriados como Natal, Ano Novo e Páscoa, em dias de ajustes internos, falta de insumos ou qualquer pausa planejada.
+A pausa programada fecha a loja por um tempo, dentro do horário de funcionamento, e reabre sozinha no fim. Ela serve para momentos de cozinha cheia, falta de entregador próprio ou um problema rápido na loja.
 
-Para criar uma pausa programada no Portal do Parceiro:
+A pausa é criada na tela Horários ou no Rango Loja. A loja escolhe a duração, e a pausa programada pode durar até 8 horas. Para fechar por mais tempo, use a opção de fechar o dia.
 
-- No menu lateral, clique em "Horário".
-- Escolha "Nova pausa programada".
-- Informe a data e o horário de início e de fim da pausa e ative.
+Durante a pausa, a loja aparece como fechada no app, e os clientes não conseguem fazer pedidos novos. Os pedidos já aceitos continuam normalmente.
 
-Durante a pausa programada, a loja aparece fechada para os clientes. Quando o período termina, a loja reabre sozinha. Para conferir se a pausa está valendo, veja o status da loja logo abaixo do nome dela, no menu lateral do Portal do Parceiro: deve aparecer a mensagem "Em pausa programada".
+## Fechar o dia
 
-Usar a pausa programada evita pedidos cancelados por falta de confirmação, que prejudicam os indicadores de desempenho da loja.
+A opção Fechar o dia, na tela Horários ou no Rango Loja, fecha a loja até o próximo turno configurado. Use quando a loja não vai mais abrir naquele dia, por exemplo por falta de gás ou de energia. No dia seguinte, a loja volta a abrir no horário normal, sem precisar de nenhuma ação.
 
-## Por que a loja fecha sozinha
+## Fechamento preventivo
 
-A plataforma pode fechar a loja temporariamente, no que chama de fechamento preventivo, quando percebe sinais de que a operação não está dando conta. Os motivos citados pela plataforma incluem muitos pedidos ignorados, cancelamentos seguidos por relato de loja fechada, muitas rejeições por falta de entregador, muitos entregadores esperando na loja e instabilidade da própria plataforma.
+O fechamento preventivo protege o cliente de pedir numa loja que não está respondendo. Quando a loja deixa 3 pedidos seguidos sem aceite, a Rango fecha a loja automaticamente por 30 minutos. Depois desse tempo, a loja reabre sozinha.
 
-Com muitos pedidos sem confirmação, a loja é fechada por 5 minutos, conforme a página de loja fechada do blog para parceiros, consultada em 05/11/2026. Com cancelamentos seguidos por problema na entrega, a loja fica fechada por 1 hora, conforme a mesma página de loja fechada, consultada em 05/11/2026.
+O Painel Rango e o Rango Loja mostram um aviso de fechamento preventivo, com o horário previsto de reabertura. Se a equipe já estiver pronta, a loja pode reabrir antes, pela tela Horários ou pelo Rango Loja.
 
-Se a loja recebe um volume fora do comum de pedidos num intervalo de 5 minutos, ela é pausada até despachar pelo menos 10% desses pedidos, conforme a página de loja fechada, consultada em 05/11/2026. Essa pausa pode ser removida em "Horários" e "Fechamentos Preventivos", no Portal do Parceiro.
+## Reabertura depois de vários fechamentos
 
-## Como reabrir depois de um fechamento preventivo
+Depois do 3º fechamento preventivo no mesmo dia, a loja não reabre mais sozinha: ela só reabre à mão, pela tela Horários ou pelo Rango Loja. A regra evita que uma loja sem ninguém atendendo continue abrindo e acumulando pedidos ignorados.
 
-O histórico dos fechamentos preventivos fica disponível por 7 dias, conforme a página de loja fechada do blog para parceiros, consultada em 05/11/2026. Para ver o motivo, a data e o horário de cada fechamento, abra "Horários" no Portal do Parceiro e depois a aba "Fechamentos Preventivos". O Gestor de Pedidos também mostra um aviso com o motivo.
+Os pedidos ignorados que causam o fechamento preventivo também contam na taxa de cancelamento da loja, como explica o documento de cancelamentos e contestações.
 
-Em geral, a loja não reabre sozinha depois de um fechamento preventivo. Primeiro corrija a causa: revise o estoque e o cardápio se houve muitos cancelamentos, ajuste o tempo de preparo se houve atrasos, ligue os alertas sonoros se faltou confirmação. Depois, reabra a loja manualmente no Gestor de Pedidos ou na área de status da loja no Portal do Parceiro. Nas primeiras horas, confirme os pedidos rápido e, se preciso, trabalhe com um cardápio reduzido.
+## Disponibilidade
 
-Se o bloqueio for por violação de política ou por inadimplência, a loja não consegue reabrir sozinha e precisa falar com o suporte.
+A disponibilidade mede quanto do horário de funcionamento a loja ficou de fato aberta para pedidos. É a porcentagem do tempo configurado na tela Horários em que a loja esteve aberta, contada sobre os últimos 30 dias. Pausas, dias fechados à mão e fechamentos preventivos dentro do horário configurado reduzem a disponibilidade.
 
-## Impacto da indisponibilidade na visibilidade
+A disponibilidade aparece na tela Horários e é atualizada todo dia.
 
-Ficar indisponível com frequência tem custo para a loja. Pausas frequentes diminuem o tempo em que a loja pode receber pedidos, o que reduz o volume de vendas e a visibilidade no app. Além disso, as causas dos fechamentos, como cancelamentos e atrasos, pioram as métricas de desempenho que influenciam a posição da loja na plataforma.
+## Disponibilidade e visibilidade
 
-Por isso, é melhor usar a pausa programada ou a pausa manual do que deixar a loja aberta e cancelar pedidos. Uma loja com muitos pedidos cancelados sofre interferência direta nos seus indicadores de desempenho.
+A Rango espera que cada loja mantenha a disponibilidade em pelo menos 90%. Abaixo disso, a loja perde posições na busca e nas listas do app, porque os clientes tendem a encontrá-la fechada.
 
-Acompanhe com frequência a taxa de cancelamento, o tempo médio de confirmação dos pedidos e as avaliações dos clientes. Manter o cardápio atualizado no início de cada turno e ajustar o tempo de preparo à realidade da cozinha ajuda a evitar fechamentos e a manter a loja visível.
+Para o selo Rango Recomenda, a exigência é maior: a disponibilidade mínima é de 95%, como explica o documento de avaliações e reputação.
+
+## Como manter a disponibilidade alta
+
+- Configure na tela Horários só os períodos em que a cozinha consegue atender de verdade.
+- Ajuste o horário antes de feriados, folgas e reformas, em vez de fechar o dia em cima da hora.
+- Use pausas curtas nos picos em vez de deixar pedidos vencerem.
+- Mantenha o Rango Loja aberto e com o som ligado.
+
+## Quando abrir um chamado
+
+Abra um chamado em Ajuda > Abrir chamado quando a loja estiver fechada no app sem motivo, mesmo dentro do horário e sem pausa. Esse é o caso do chamado urgente, que tem o prazo de resposta mais curto. Se a disponibilidade mostrada na tela Horários não bater com o que aconteceu na loja, abra um chamado comum. Os prazos de resposta estão no documento de suporte e chamados.

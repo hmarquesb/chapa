@@ -1,55 +1,64 @@
 # Cancelamentos e contestações
 
-> Fonte: https://blog-parceiros.ifood.com.br/politica-cancelamento-pedidos/; https://blog-parceiros.ifood.com.br/contestacao-cancelamento/. Consultadas em 05/11/2026. Texto reescrito para fins de estudo, sem afiliação com a empresa.
+> Política de parceiros da Rango, vigente desde 01/11/2026. Empresa fictícia, criada para fins de estudo.
 
-## Quem cancela e por quê
+## Aceite do pedido
 
-Um pedido pode ser cancelado pelo cliente, pela loja ou a partir da logística parceira do app. O cliente pede o cancelamento no aplicativo e informa o motivo; a loja aceita ou recusa o pedido de cancelamento pelo Gestor de Pedidos ou pelo App do Parceiro. A loja pode pedir o cancelamento quando um item acabou e o preparo não pode seguir, explicando o motivo ao cliente pelo chat. A logística parceira pode gerar um cancelamento quando, por exemplo, o entregador chega para retirar e encontra a loja fechada.
+Todo pedido novo chega ao Rango Loja e à tela Pedidos do Painel Rango e precisa ser aceito pela loja. A loja tem 8 minutos para aceitar o pedido. Se ninguém aceitar nesse prazo, o pedido é cancelado automaticamente, o cliente é avisado e o pedido conta como cancelado pela loja.
 
-Cada momento do pedido tem uma ferramenta de negociação, chamada de acordo: acordo de preparo, acordo de atraso e acordo após entrega. Cancelamento por motivo subjetivo, como tamanho, cheiro ou sabor do prato, deixou de ser aceito. Depois da entrega, o cancelamento com reembolso fica para casos graves, como comida estragada. Também há cancelamento quando a loja não confirma o pedido a tempo ou quando fica aberta no app sem estar operando.
+Pedidos que vencem sem aceite também contam como pedidos ignorados. Uma sequência de pedidos ignorados pode fechar a loja por um tempo, como explica o documento de horários, pausas e disponibilidade.
 
-## Quem arca com o custo
+Para não perder pedidos, deixe o Rango Loja aberto, com o som ligado, durante todo o horário de funcionamento, e feche a loja ou programe uma pausa quando a cozinha não puder atender.
 
-Quem paga pelo pedido cancelado depende do caso e do acordo. No acordo de atraso, se a loja aceita o cancelamento, não há contestação nem crédito para a loja. Se a loja não responde em 5 minutos, o cliente pode cancelar, conforme a página da política de cancelamento do blog para parceiros, consultada em 05/11/2026. Quando é a loja que pede o cancelamento e o cliente não responde, o pedido continua e a loja responde por reclamações depois da entrega.
+## Quem cancela e quem arca com o custo
 
-No acordo após entrega, a loja pode propor um reembolso parcial (o cliente tem 15 minutos para aceitar ou não, conforme a página da política de cancelamento do blog para parceiros, consultada em 05/11/2026), oferecer o reembolso total, reenviar o item (só para quem tem entrega própria) ou dar um cupom. Sem acordo, o caso vai para a arbitragem da plataforma. No Plano Entrega, os atrasos são analisados pela própria plataforma, que decide quem foi responsável.
+A regra de quem arca com o pedido cancelado depende de quem cancelou e de quando.
 
-O cancelamento parcial cancela só o item com problema, e não o pedido inteiro. A plataforma também prevê o reembolso automático à loja, sem pedido, em alguns cancelamentos.
+- **Cliente, antes do aceite:** o pedido é cancelado sem custo. O cliente recebe o dinheiro de volta, a loja não é cobrada e o pedido não entra no repasse.
+- **Cliente, depois do aceite:** a loja já começou a preparar o pedido, então ele entra no repasse normalmente, com a comissão e as taxas do plano. O cancelamento não conta contra a loja.
+- **Loja:** quando a loja recusa ou cancela um pedido, inclusive por falta de item, ela não recebe nada pelo pedido, e o cancelamento entra na taxa de cancelamento da loja.
+- **Falha da Rango:** quando o pedido não chega por um problema da Rango, como falta de entregador no Plano Entrega ou erro do app, a Rango arca com o custo. A loja recebe o pedido no repasse normalmente, e o cancelamento não conta contra ela.
 
-## Quando dá para contestar
+Na tela Pedidos, cada pedido cancelado mostra o motivo e quem cancelou.
 
-A contestação de cancelamento é o pedido de revisão de um cancelamento que não gerou crédito para a loja. Se a contestação for aprovada, a loja é ressarcida.
+## Como cancelar um pedido
 
-A contestação pode ser aberta quando:
+A loja cancela um pedido pela tela Pedidos ou pelo Rango Loja, escolhendo um motivo. Avise o cliente pelo chat do pedido antes de cancelar sempre que possível. Se o problema for um item que acabou, pause o item no Cardápio para que novos pedidos não peçam o mesmo item.
 
-- a loja negou o acordo de cancelamento;
-- houve problema com a localização do cliente;
-- a logística parceira cancelou alegando um problema da loja, como loja fechada na retirada;
-- a loja precisou cancelar por algo fora do seu controle, como um pedido duplicado.
+## Contestação
 
-A contestação não fica disponível quando o tempo acabou, quando a loja não confirmou o pedido, quando a loja aceitou o acordo de cancelamento, quando o cancelamento já gerou reembolso automático ou quando o motivo não se encaixa na política de cancelamento.
+Se a loja discordar de um cancelamento que foi registrado contra ela, ou de um valor estornado, pode contestar. A contestação tem que ser aberta em até 7 dias depois do pedido.
 
-## Como contestar
+Para contestar, abra o pedido em Pedidos > Histórico e use o botão Contestar. Isso abre um chamado do tipo Cancelamento e contestação, que aparece em Ajuda > Meus chamados. Explique o que aconteceu e, se tiver, anexe fotos ou prints.
 
-A contestação de cancelamento é feita na área "Pedidos" do Portal do Parceiro. O passo a passo é este:
+A Rango responde a contestação em até 5 dias úteis. Quando a contestação é aceita, o cancelamento deixa de contar contra a loja e, se for o caso, o valor do pedido entra no próximo repasse.
 
-- Abra "Pedidos" e use o filtro para achar o pedido cancelado.
-- Clique nos três pontinhos e em "Ver detalhes".
-- Confira se já existe reembolso aprovado ou se a contestação está liberada.
-- Clique em "Contestar cancelamento", escreva a justificativa e clique em "Abrir contestação".
+## Taxa de cancelamento
 
-Se o botão "Contestar cancelamento" estiver cinza-claro, aquele cancelamento não pode ser contestado. No App do Parceiro o caminho é parecido: "Pedidos", toque no pedido e "Contestar cancelamento".
+A taxa de cancelamento é a porcentagem dos pedidos da loja que foram cancelados por responsabilidade dela, contada sobre os últimos 30 dias. Entram nessa conta os pedidos recusados ou cancelados pela loja e os pedidos que venceram sem aceite. Cancelamentos do cliente e falhas da Rango ficam de fora.
 
-Na análise da contestação vale a conversa pelo chat do app; contatos por canais externos não contam. Se a loja faz entrega própria e não encontra o cliente, o caminho é tentar contato pelo chat, pedir o cancelamento com o motivo "O endereço está incompleto e o cliente não atende" e, se for o caso, abrir a contestação.
+A taxa aparece no Painel Rango, na tela Pedidos, e é atualizada todo dia.
 
-## Prazos para contestar
+## Taxa de cancelamento e visibilidade
 
-A contestação de cancelamento pode ser aberta em até 7 dias depois da data do cancelamento, conforme a página de contestação de cancelamento do blog para parceiros, consultada em 05/11/2026. Passado esse prazo, o botão some do Portal do Parceiro.
+A taxa de cancelamento afeta como a loja aparece no app:
 
-Depois de receber a contestação, a plataforma tem até 72 horas para analisar o caso e aprovar ou negar o reembolso, conforme a página de contestação de cancelamento do blog para parceiros, consultada em 05/11/2026. Se a contestação for aceita, o reembolso sai em até 48 horas, conforme a mesma página de contestação de cancelamento, consultada em 05/11/2026.
+- Acima de 3%: a loja perde o destaque na busca e nas listas do app até a taxa voltar para baixo desse limite.
+- Acima de 6%: a conta da loja entra em revisão.
 
-O reembolso aprovado aparece na aba "Reembolsos" do Portal do Parceiro. O dinheiro desse reembolso é pago junto com o repasse, seguindo a modalidade de repasse contratada pela loja.
+Uma taxa de cancelamento baixa também é um dos critérios do selo Rango Recomenda, descrito no documento de avaliações e reputação.
 
-## Como evitar cancelamentos
+## Revisão da conta
 
-Muitos cancelamentos podem ser evitados com ajustes na operação. Ative o aceite automático para confirmar os pedidos assim que chegam, mantenha o horário de funcionamento atualizado e use a pausa programada em feriados ou dias de problema. Quando um item acabar, negocie uma troca pelo chat antes de cancelar o pedido inteiro. Na entrega própria, use tempos realistas e a confirmação de entrega. Evitar cancelamentos protege a visibilidade: lojas com muitos cancelamentos podem perder posições nas buscas do app.
+Na revisão, a equipe da Rango analisa os cancelamentos da loja e entra em contato pelo chat do Painel Rango para entender o que aconteceu e combinar um plano de melhoria. Durante a revisão, a loja continua recebendo pedidos. Se os cancelamentos continuarem altos depois da revisão, a Rango pode suspender a loja até que o problema seja resolvido.
+
+## Como reduzir cancelamentos
+
+- Mantenha o Cardápio atualizado e pause itens esgotados.
+- Configure o tempo de preparo real da cozinha.
+- Programe pausas em vez de deixar pedidos vencerem.
+- Confira os horários de funcionamento antes de feriados.
+
+## Quando abrir um chamado
+
+Use o botão Contestar em Pedidos > Histórico para contestar um cancelamento ou um estorno. Abra um chamado em Ajuda > Abrir chamado quando a taxa de cancelamento mostrada no Painel Rango não bater com os pedidos da loja ou quando a loja receber o aviso de revisão da conta e quiser falar com a Rango. Os prazos de resposta estão no documento de suporte e chamados.

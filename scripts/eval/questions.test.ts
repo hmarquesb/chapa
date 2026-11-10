@@ -64,7 +64,7 @@ function errorsOf(data: unknown, files = FILES): string[] {
 
 describe("validateQuestions with the real eval/perguntas.json", () => {
   it("passes against the files of knowledge-base/", () => {
-    expect(KNOWLEDGE_FILES.length).toBe(7)
+    expect(KNOWLEDGE_FILES.length).toBe(11)
     const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     expect(result.ok ? [] : result.errors).toEqual([])
     expect(result.ok && result.questions).toHaveLength(20)
@@ -79,13 +79,17 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect(withProfile.length).toBeGreaterThanOrEqual(2)
   })
 
-  it("has one factual question per knowledge document", () => {
+  // Documents 08 to 11 get their factual questions in the expand-eval-to-50-questions change,
+  // which restores the one-per-document check over all 11 files.
+  it("has one factual question per knowledge document from 01 to 07", () => {
     const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     const factualSources = result.questions
       .filter((item) => item.tipo === "factual")
       .flatMap((item) => item.fonte_esperada ?? [])
-    expect([...factualSources].sort()).toEqual([...KNOWLEDGE_FILES].sort())
+    const covered = KNOWLEDGE_FILES.filter((name) => /^0[1-7]-/.test(name))
+    expect(covered).toHaveLength(7)
+    expect([...factualSources].sort()).toEqual([...covered].sort())
   })
 
   it("matches the input guardrail: blocks only the bloqueio questions", () => {

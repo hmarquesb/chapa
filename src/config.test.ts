@@ -35,6 +35,7 @@ describe("loadConfig defaults (RF1)", () => {
       baseDelayMs: 1000,
       timeoutMs: 25000,
       embedBatchSize: 50,
+      embedBatchDelayMs: 60000,
     })
     expect(cfg.rag).toEqual(RAG_PRESETS.padrao)
   })

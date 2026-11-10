@@ -1,57 +1,77 @@
 # Repasse financeiro
 
-> Fonte: https://blog-parceiros.ifood.com.br/repasse-ifood/; https://blog-parceiros.ifood.com.br/ciclo-de-repasses-ifood/; https://blog-parceiros.ifood.com.br/painel-financeiro/. Consultadas em 05/11/2026. Texto reescrito para fins de estudo, sem afiliação com a empresa.
+> Política de parceiros da Rango, vigente desde 01/11/2026. Empresa fictícia, criada para fins de estudo.
 
-## Ciclo de repasse
+## O que é o repasse
 
-O repasse é o dinheiro das vendas feitas pelo app que a plataforma transfere para a conta bancária da loja. O ciclo de repasse começa quando o pedido é confirmado: a venda fica em andamento e só entra no faturamento do período quando a entrega termina.
+O repasse é a transferência que a Rango faz para a conta bancária da loja com o dinheiro das vendas pagas pelo app. A Rango recebe o pagamento do cliente, desconta a comissão e as taxas do plano e transfere o restante para a loja. Pedidos pagos em dinheiro na entrega não passam pelo repasse, porque o dinheiro já fica com a loja na hora.
 
-As vendas de segunda-feira a domingo formam um período de apuração de 7 dias, conforme a página do calendário de repasse do blog para parceiros, consultada em 05/11/2026. Depois que o período fecha, a plataforma aplica os descontos do contrato e agenda o pagamento conforme o plano de repasse da loja.
+## Ciclo semanal
 
-Nem toda venda passa pelo ciclo de repasse. Pagamentos feitos direto à loja na entrega, inclusive em vale-refeição ou vale-alimentação, ficam fora do repasse do app, porque o dinheiro já chega à loja na hora.
+O repasse é semanal. As vendas de segunda-feira a domingo formam um período. O pagamento desse período cai na quarta-feira seguinte, na conta bancária cadastrada em Configurações > Conta bancária.
 
-## Prazos
+Entram no período os pedidos concluídos entre segunda-feira e domingo. Um pedido conta no período em que foi concluído, e não no período em que foi feito.
 
-O repasse é pago sempre às quartas-feiras, conforme a página do calendário de repasse do blog para parceiros, consultada em 05/11/2026. No plano de repasse padrão, o pagamento de cada período apurado acontece depois de 4 semanas, sem taxa adicional, conforme a página do ciclo de repasse do blog para parceiros, consultada em 05/11/2026. No repasse semanal, o pagamento sai toda semana, com taxa definida na contratação.
+O repasse semanal não tem custo. A loja não paga nada para receber as vendas toda semana.
 
-Sobre a hora em que o dinheiro cai na conta: o crédito costuma entrar ao longo da quarta-feira, geralmente entre 18h e 18h30, e pode demorar algumas horas a mais para aparecer no extrato do banco, conforme a página do calendário de repasse do blog para parceiros, consultada em 05/11/2026.
+## Feriado na quarta-feira
 
-Os bancos não processam transferências no sábado e no domingo. Para quarta-feira que cai em feriado bancário, a plataforma não divulga uma regra fixa; o caminho é acompanhar o status do repasse no Portal do Parceiro.
+Quando a quarta-feira do pagamento é feriado bancário nacional, o repasse é pago no próximo dia útil. O período de vendas não muda: o atraso é só na data do depósito.
+
+## Valor mínimo do repasse
+
+O repasse só é transferido quando o valor líquido do período chega a R$ 20,00. Se o valor da semana ficar abaixo disso, ele não se perde: o saldo fica acumulado e é somado ao repasse da semana seguinte.
+
+Se os descontos de uma semana forem maiores do que as vendas, o período fecha com saldo negativo, e a diferença é descontada do repasse seguinte.
 
 ## Antecipação
 
-A antecipação de recebíveis permite que a loja receba as vendas antes do prazo padrão do repasse, pagando uma taxa sobre o valor antecipado. Existem as modalidades de antecipação semanal e diária. O valor das taxas muda conforme o produto contratado e pode ser consultado no Portal do Parceiro.
+A loja pode antecipar o recebimento de vendas que ainda não foram repassadas. A antecipação é pedida no Financeiro, em Financeiro > Antecipação, e é feita por valor: a loja informa quanto quer antecipar, dentro do saldo disponível.
 
-Pela conta digital da própria plataforma, existem duas modalidades. O plano recorrente faz a loja receber as vendas em até 7 dias úteis, conforme a página do ciclo de repasse do blog para parceiros, consultada em 05/11/2026. A antecipação pontual é sob demanda: a loja escolhe quando antecipar e quanto das vendas acumuladas quer adiantar.
+- Valor mínimo de cada antecipação: R$ 100,00.
+- Taxa da antecipação: 2,49% sobre o valor antecipado.
+- Prazo: o dinheiro cai na conta em até 2 dias úteis depois do pedido.
 
-Antecipar ajuda quando o caixa aperta, mas tem custo: manter o repasse padrão preserva o valor integral das vendas.
+O valor antecipado sai do repasse da quarta-feira em que ele seria pago. Só o perfil Dono pode pedir antecipação, porque ela mexe no financeiro da loja.
 
-## Como ler o extrato
+Exemplo: se a loja antecipa R$ 1.000,00, a taxa é 2,49% de R$ 1.000,00, ou seja, R$ 24,90, e a loja recebe R$ 975,10.
 
-O extrato do repasse fica no Painel Financeiro do Portal do Parceiro, na aba "Financeiro". A tela inicial mostra o faturamento do mês dividido em valor das vendas, taxas e comissões, serviços e promoções, ajustes e valor líquido. A área "Repasses do mês" lista cada repasse com o seu status:
+## Descontos do repasse
 
-- Em aberto: as vendas do período ainda estão sendo apuradas.
-- Agendado: o valor foi calculado e o depósito está programado.
-- Pago parcialmente: parte já caiu e o resto está pendente.
-- Pago: o repasse foi concluído.
-- Saldo devedor: o período fechou negativo e a diferença sai do próximo repasse.
-- Falha no depósito: o banco devolveu o pagamento, em geral por erro nos dados bancários.
-- Retido: o banco segurou o valor por um contrato de crédito da loja.
+O repasse chega líquido. Do valor das vendas pagas pelo app, a Rango desconta:
 
-Ao abrir um repasse com status "Pago", dá para ver cada depósito que formou o valor. O botão de exportar gera o Relatório de Conciliação, atualizado todo dia, com cada lançamento do período.
+- A comissão do plano, calculada sobre o valor dos itens de cada pedido, inclusive a comissão dos pedidos pagos em dinheiro.
+- A taxa de pagamento online de cada pedido pago pelo app.
+- A mensalidade do plano, no primeiro repasse do mês, quando a loja não está isenta.
+- As corridas do Rango Chama feitas no período.
+- A parte da loja nos cupons: o cupom da loja inteiro e a metade da loja no cupom coparticipado.
+- O saldo negativo do período anterior, quando houver.
+- A taxa das antecipações pedidas no período.
 
-## Descontos no repasse
+A taxa de serviço paga pelo cliente fica com a Rango e não aparece como desconto da loja. As regras de cada taxa estão no documento de planos e taxas.
 
-O repasse chega líquido, ou seja, já com os descontos aplicados. Do valor das vendas feitas pelo app saem a comissão do plano, a taxa de pagamento online e, quando se aplica, a mensalidade. Também podem sair tributos retidos na fonte, cancelamentos e estornos de pedidos, e o saldo devedor deixado pelo período anterior.
+## Extrato no Financeiro
 
-Serviços contratados na plataforma, como anúncios, e promoções também aparecem no extrato. Promoções criadas pela loja reduzem o valor do pedido. Campanhas incentivadas pelo app, como cupom de entrega grátis, têm regras próprias e podem ter o custo dividido entre a plataforma e a loja.
+O extrato fica no Painel Rango, em Financeiro > Extrato. Cada período mostra o valor das vendas, cada desconto separado e o valor líquido. Os status de um repasse são:
 
-Se o repasse veio menor do que o esperado, abra o detalhamento do período no Painel Financeiro: cada desconto aparece separado.
+- **Em apuração:** o período ainda está aberto ou sendo calculado.
+- **Agendado:** o valor foi calculado e o pagamento está marcado para quarta-feira.
+- **Pago:** o dinheiro foi transferido.
+- **Acumulado:** o valor ficou abaixo do mínimo e passou para a semana seguinte.
+- **Retido:** o pagamento não pôde ser feito por um problema nos dados bancários.
 
-## Repasse atrasado ou retido
+Dá para abrir cada período e ver os pedidos que o formaram, com a comissão e as taxas de cada um. O botão de exportar baixa o extrato em planilha.
 
-Quando o repasse não cai no dia esperado, a causa mais comum é o cadastro bancário. O repasse só é liberado para conta em banco homologado pela Câmara Interbancária de Pagamentos (CIP) e com o mesmo CNPJ da loja. Confira também agência, conta e se a conta não está bloqueada. Conta de pessoa física só é aceita para MEI, com o CPF ligado ao CNPJ da loja.
+## Repasse retido e dados bancários
 
-A troca de conta é feita com o perfil de dono no Portal do Parceiro, em "Financeiro", "Dados bancários e contratuais" e "Alterar Conta". Se tudo estiver certo e o problema continuar, abra um chamado em "Chamados e ajuda", "Atendimento" e "Divergência no valor recebido".
+O repasse fica retido quando o banco devolve a transferência, em geral porque a conta foi encerrada, está bloqueada ou não pertence ao CNPJ da loja. A loja vê o status Retido em Financeiro > Extrato e recebe um aviso no Painel Rango.
 
-O repasse retido acontece quando há contrato de crédito ou de recebíveis ligado ao CNPJ. Essas retenções costumam começar 30 dias antes do vencimento da parcela, conforme a página do calendário de repasse do blog para parceiros, consultada em 05/11/2026.
+Para liberar, o perfil Dono corrige os dados em Configurações > Conta bancária. Uma conta bancária nova passa por uma carência de 48 horas antes de valer, por segurança. Depois que os dados corretos passam a valer, o valor retido é liberado em até 5 dias úteis.
+
+## Exemplo de repasse da semana
+
+Exemplo: uma loja do Plano Próprio vendeu, de segunda-feira a domingo, 50 pedidos iguais ao do exemplo do documento de planos e taxas, cada um rendendo R$ 77,00, ou seja, R$ 3.850,00. Na mesma semana, ela chamou o Rango Chama uma vez para uma entrega de 6 km, que custou R$ 8,90 + 2 × R$ 1,50 = R$ 11,90, e ofereceu um cupom da loja de R$ 10,00 num dos pedidos. Como é o primeiro repasse do mês, sai também a mensalidade de R$ 99,00. O repasse da quarta-feira seguinte é R$ 3.850,00 − R$ 11,90 − R$ 10,00 − R$ 99,00 = R$ 3.729,10.
+
+## Quando abrir um chamado
+
+Abra um chamado do tipo Financeiro em Ajuda > Abrir chamado quando o repasse não cair na data esperada, quando um desconto do extrato não fizer sentido ou quando o valor retido não for liberado no prazo. Tenha em mãos o período do repasse e, se for o caso, o número do pedido. Os prazos de resposta estão no documento de suporte e chamados.
