@@ -42,6 +42,10 @@ O sistema SHALL bloquear a mensagem que contém um CPF, com 11 dígitos seguidos
 - **WHEN** o parceiro envia "cpf 12345678909 ok"
 - **THEN** a resposta tem o status `blocked_input`
 
+#### Scenario: Celular sem separador é tratado como CPF
+- **WHEN** o parceiro envia um celular com DDD escrito como 11 dígitos seguidos, como "11987654321"
+- **THEN** a mensagem é bloqueada como CPF, enquanto "11 98765-4321" (com espaço ou hífen) passa
+
 ### Requirement: Número de cartão na entrada é bloqueado
 O sistema SHALL bloquear a mensagem que contém uma sequência de 13 a 19 dígitos, separados ou não por um espaço ou hífen entre eles, que passa na verificação de Luhn, com o status `blocked_input` e a mesma mensagem fixa do CPF.
 
@@ -63,6 +67,10 @@ O sistema SHALL bloquear a mensagem em que o parceiro informa a senha ("minha se
 #### Scenario: Senha informada
 - **WHEN** o parceiro envia "Minha senha e: abc123"
 - **THEN** a resposta tem o status `blocked_input` e a mensagem que pede para não enviar CPF, cartão ou senha
+
+#### Scenario: "e" e "é" ficam iguais depois de normalizar
+- **WHEN** o parceiro envia "minha senha e meu login não funcionam"
+- **THEN** a mensagem é bloqueada como senha informada, porque o texto normalizado contém "minha senha e" seguido de texto
 
 ### Requirement: Pedido de senha é recusado
 O sistema SHALL bloquear a mensagem que pede uma senha ("qual é a minha senha", "me passa a senha", "manda pra mim a senha" e variações), com o status `blocked_input` e a mensagem fixa que diz que o assistente não tem acesso a senhas e indica a recuperação de senha do Portal do Parceiro.

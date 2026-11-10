@@ -7,11 +7,11 @@ Dá ao restaurante parceiro uma página única de chat em PT-BR, sem login, com 
 ## ADDED Requirements
 
 ### Requirement: Página única em PT-BR
-A interface SHALL ser uma página só, em PT-BR (`lang="pt-BR"`), com o título "Chapa", uma linha sobre os temas cobertos, o perfil, a conversa, a caixa de mensagem, os botões "Continuar depois" e "Nova conversa" e um rodapé que diz que o projeto é de estudo, não oficial e sem afiliação, que as conversas somem depois de 7 dias sem uso e que não se deve enviar dados pessoais.
+A interface SHALL ser uma página só, em PT-BR (`lang="pt-BR"`), com o título "Chapa", a linha "Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações.", o perfil, a conversa, a caixa de mensagem, os botões "Continuar depois" e "Nova conversa" e o rodapé "Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery. As conversas são apagadas depois de 7 dias sem uso. Não envie dados pessoais."
 
 #### Scenario: Primeira visita
 - **WHEN** alguém abre a página pela primeira vez
-- **THEN** vê o título, o perfil recolhido, a dica de conversa vazia, as perguntas de exemplo, a caixa de mensagem e o rodapé com o aviso de não afiliação
+- **THEN** vê o título, o perfil recolhido, a dica "Faça uma pergunta sobre a operação do seu restaurante ou escolha um exemplo abaixo.", as perguntas de exemplo, a caixa de mensagem e o rodapé com o aviso de não afiliação
 
 ### Requirement: Sem marca de empresa real
 A interface MUST NOT mostrar logo, nome ou cores de empresas reais de delivery.
@@ -74,7 +74,7 @@ A interface SHALL oferecer, recolhido, o formulário "Perfil do restaurante (opc
 - **THEN** o pedido traz o perfil com o plano, e o perfil continua preenchido depois de recarregar a página
 
 ### Requirement: Sessão salva no navegador
-A interface SHALL guardar o identificador da sessão no `localStorage` só depois que o servidor conhece a sessão (o histórico carregou ou a primeira resposta chegou). Ao abrir a página, MUST usar, nesta ordem, o id válido do link, o id válido salvo ou um id novo, e carregar o histórico do servidor quando o id não é novo.
+A interface SHALL guardar o identificador da sessão no `localStorage`. Ao abrir a página, MUST usar, nesta ordem, o id válido do link, o id válido salvo ou um id novo, e carregar o histórico do servidor quando o id não é novo. O id do link ou o salvo fica guardado desde a abertura; um id novo só é guardado depois que o servidor conhece a sessão (a primeira resposta chegou), e enquanto isso o id guardado anteriormente é removido.
 
 #### Scenario: Recarregar a página
 - **WHEN** o parceiro recarrega a página depois de uma conversa
@@ -92,11 +92,18 @@ Quando o servidor responde 404 ao histórico, a interface SHALL começar uma con
 - **THEN** a tela fica vazia com o aviso de conversa inexistente e um id novo
 
 ### Requirement: Link de continuação
-O botão "Continuar depois" SHALL abrir um diálogo com o link `/?sessao=<id>`, o aviso de que quem tiver o link consegue ler a conversa e de que ela some depois de 7 dias sem uso, e o botão "Copiar link". Copiado, MUST mostrar "Link copiado". Sem acesso à área de transferência, MUST selecionar o link e pedir para copiar com Ctrl+C ou Cmd+C.
+O botão "Continuar depois" SHALL abrir um diálogo com o texto "Guarde este link para continuar a conversa em outro dispositivo. Quem tiver o link consegue ler a conversa. Ela é apagada depois de 7 dias sem uso.", o link `/?sessao=<id>` e o botão "Copiar link". Copiado, MUST mostrar "Link copiado".
 
 #### Scenario: Copiar o link
 - **WHEN** o parceiro abre o diálogo e clica em "Copiar link"
 - **THEN** o link vai para a área de transferência e aparece "Link copiado"
+
+### Requirement: Cópia manual do link
+Sem acesso à área de transferência, o diálogo SHALL selecionar o link e mostrar "Não consegui copiar automaticamente. O link está selecionado: copie com Ctrl+C (ou Cmd+C)."
+
+#### Scenario: Navegador sem área de transferência
+- **WHEN** o navegador recusa a cópia, por exemplo fora de HTTPS
+- **THEN** o link fica selecionado e aparece o pedido para copiar com Ctrl+C ou Cmd+C
 
 ### Requirement: Abrir pelo link de continuação
 Ao abrir a página com `?sessao=<id>`, a interface SHALL adotar esse id, carregar a conversa e tirar o parâmetro da barra de endereço na hora. Um `?sessao=` malformado MUST ser ignorado com um aviso: "Este link de conversa não é válido. Mostramos a conversa salva neste navegador." ou, sem conversa salva, "Este link de conversa não é válido. Começamos uma nova conversa."
@@ -124,15 +131,22 @@ O botão "Nova conversa" SHALL gerar um id novo, limpar a conversa, os avisos e 
 - **THEN** a tela volta ao estado vazio com os exemplos, e a próxima mensagem cria uma sessão nova
 
 ### Requirement: Falha no envio
-Quando o envio falha, a interface SHALL tirar a mensagem pendente da conversa, devolver o texto à caixa de mensagem e mostrar o erro: o texto que a API mandou, "Não consegui falar com o servidor. Confira sua conexão." sem rede, ou um texto genérico quando a resposta vem num formato inesperado. Avisos e erros MUST poder ser fechados.
+Quando o envio falha, a interface SHALL tirar a mensagem pendente da conversa, devolver o texto à caixa de mensagem e mostrar o erro, que MUST poder ser fechado, assim como os avisos.
 
 #### Scenario: Rate limit
 - **WHEN** a API responde 429 com "Muitas mensagens em pouco tempo. Aguarde um pouco e tente de novo."
 - **THEN** a mensagem pendente some, o texto volta à caixa e o erro aparece com o botão "Fechar aviso"
 
+### Requirement: Texto do erro mostrado
+A interface SHALL mostrar, num erro da API, o texto do campo `error`; sem rede, "Não consegui falar com o servidor. Confira sua conexão."; numa resposta de erro sem texto, "Algo deu errado do nosso lado. Tente de novo em instantes."; e numa resposta de sucesso em formato inesperado, "O servidor mandou uma resposta inesperada. Tente de novo."
+
 #### Scenario: Sem rede
 - **WHEN** o pedido não chega ao servidor
 - **THEN** o erro "Não consegui falar com o servidor. Confira sua conexão." aparece
+
+#### Scenario: Resposta em formato inesperado
+- **WHEN** a API responde 200 com um corpo sem `status`, `answer` ou `sources` válidos
+- **THEN** o erro "O servidor mandou uma resposta inesperada. Tente de novo." aparece
 
 ### Requirement: Resposta de conversa antiga é descartada
 Se a conversa mudou enquanto um pedido estava em curso, a interface SHALL descartar a resposta que chegar para a conversa anterior.

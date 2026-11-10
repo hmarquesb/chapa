@@ -7,7 +7,7 @@ Transforma a base de conhecimento em trechos com embedding e recupera, para cada
 ## ADDED Requirements
 
 ### Requirement: Conjunto de trechos identificado por modelo e fatiamento
-O sistema SHALL identificar cada conjunto de trechos pelo par (modelo de embedding, configuração de fatiamento), em que a configuração de fatiamento é `<estratégia>:<tamanho>:<sobreposição>` do preset, por exemplo `markdown:1200:150`. Conjuntos diferentes MUST conviver no banco sem interferir um no outro.
+O sistema SHALL identificar cada conjunto de trechos pelo par (modelo de embedding, configuração de fatiamento), em que a configuração de fatiamento é a chave `<chunkStrategy>:<chunkSize>:<chunkOverlap>` do preset (por exemplo `markdown:<chunkSize>:<chunkOverlap>`). Conjuntos diferentes MUST conviver no banco sem interferir um no outro.
 
 #### Scenario: Dois presets no mesmo banco
 - **WHEN** a ingestão roda com o preset `padrao` e depois com o preset `baseline`
@@ -36,22 +36,26 @@ Na estratégia `markdown`, o sistema SHALL dividir cada documento pelas seções
 - **THEN** os subtítulos ficam no texto do trecho da seção, sem abrir uma seção nova
 
 ### Requirement: Seção longa é dividida em janelas com sobreposição
-Quando uma seção passa do tamanho do trecho, o sistema SHALL dividi-la em janelas do tamanho configurado, com a sobreposição configurada, recuando o corte até a última linha em branco (ou, sem ela, o último fim de frase) que estiver nos 20% finais da janela. O conjunto das janelas MUST cobrir o texto inteiro.
+Quando uma seção passa do tamanho do trecho, o sistema SHALL dividi-la em janelas do tamanho configurado, com a sobreposição configurada, recuando o corte até a última linha em branco (ou, sem ela, o último fim de frase, `. `) que estiver nos 20% finais da janela; sem nenhuma dessas fronteiras nessa faixa, o corte fica no tamanho exato. Cada janela seguinte começa a sobreposição antes do corte anterior, e o conjunto das janelas MUST cobrir o texto inteiro.
 
 #### Scenario: Corte numa linha em branco
 - **WHEN** a janela tem uma linha em branco dentro dos seus 20% finais
 - **THEN** o trecho termina logo depois dessa linha em branco
 
+#### Scenario: Sem fronteira nos 20% finais
+- **WHEN** a única linha em branco da janela fica antes dos 20% finais e não há fim de frase nessa faixa
+- **THEN** o trecho é cortado exatamente no tamanho configurado
+
 #### Scenario: Sobreposição inválida
-- **WHEN** a sobreposição é negativa ou maior ou igual ao tamanho
+- **WHEN** uma seção longa (ou um arquivo, na estratégia `fixed`) é dividida com sobreposição negativa ou maior ou igual ao tamanho
 - **THEN** o fatiamento falha com um erro que explica a regra
 
 ### Requirement: Fatiamento fixo do preset de comparação
 Na estratégia `fixed`, o sistema SHALL cortar o arquivo inteiro em janelas fixas do tamanho e da sobreposição configurados, sem procurar fronteiras, sem cabeçalho e com a seção vazia.
 
-#### Scenario: Arquivo de 1.200 caracteres
-- **WHEN** um arquivo de 1.200 caracteres é fatiado com tamanho 500 e sobreposição 100
-- **THEN** saem 3 trechos, todos com a seção vazia e sem cabeçalho
+#### Scenario: Arquivo maior que o trecho
+- **WHEN** um arquivo com mais caracteres que o tamanho do trecho é fatiado na estratégia `fixed`
+- **THEN** cada janela começa `tamanho − sobreposição` caracteres depois da anterior, a última vai até o fim do arquivo (incluindo a linha `# ` do título), e todos os trechos têm a seção vazia e nenhum cabeçalho
 
 ### Requirement: Substituição atômica do conjunto
 A ingestão SHALL gerar os embeddings de todos os trechos com a tarefa de documento e então substituir, numa única transação, todos os trechos do conjunto (modelo, fatiamento) pelos novos. Se o número de vetores não bater com o de trechos, MUST falhar sem alterar o banco.

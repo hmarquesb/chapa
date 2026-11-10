@@ -28,7 +28,7 @@ Antes de rodar, a avaliação SHALL validar cada pergunta e listar todos os prob
 Cada pergunta SHALL rodar numa sessão nova do canal `eval`, pelo mesmo fluxo do assistente que a API usa, com o perfil da pergunta quando houver. Nas perguntas `multi_turno`, os turnos são enviados em sequência e só a resposta do último é avaliada.
 
 #### Scenario: Pergunta de vários turnos
-- **WHEN** a pergunta tem os turnos "Qual a comissão do Plano Básico?" e "E no outro plano?"
+- **WHEN** a pergunta tem os turnos "Meu restaurante faz a própria entrega." e "Como funciona a comissão nesse caso?"
 - **THEN** os dois turnos rodam na mesma sessão e só a resposta do segundo conta
 
 ### Requirement: Mesmo conjunto de trechos na ingestão e na rodada
@@ -61,7 +61,7 @@ O relatório SHALL comparar cada métrica com a meta: Hit@K ≥ 85%, acerto ≥ 
 - **THEN** o relatório mostra o acerto abaixo da meta de 80%
 
 ### Requirement: Arquivos de resultado
-Cada rodada SHALL gravar `eval/resultados/<label>.json`, com o preset, a data, o commit, a configuração, os resultados, as notas por pergunta e as métricas (cada trecho reduzido aos primeiros 150 caracteres e sem id), e `eval/resultados/<label>.md`, com a configuração, as métricas contra as metas, a tabela por pergunta e o detalhe de cada falha.
+Cada rodada SHALL gravar `eval/resultados/<label>.json`, com o rótulo, o preset, a data, o commit, a configuração, os resultados, a pontuação de cada pergunta e as métricas (cada trecho reduzido aos primeiros 150 caracteres e sem id), e `eval/resultados/<label>.md`, com a configuração, as métricas contra as metas, a tabela por pergunta e o detalhe de cada falha.
 
 #### Scenario: Rodada completa
 - **WHEN** a rodada `--label v2` termina
@@ -104,11 +104,11 @@ Com `--judge`, a avaliação SHALL pedir ao modelo rápido notas inteiras de 1 a
 - **THEN** o resultado não tem o campo de médias do juiz
 
 ### Requirement: Comparação entre rodadas
-`npm run eval -- --compare <a.json> <b.json> [...]` SHALL imprimir, sem chamar API nem banco, uma tabela com as métricas lado a lado, as médias do juiz quando alguma rodada as tiver e só os parâmetros do RAG que mudaram entre as rodadas.
+`npm run eval -- --compare <a.json> <b.json> [...]` SHALL imprimir, sem chamar API nem banco, uma tabela com as métricas lado a lado, as médias do juiz quando alguma rodada as tiver e, entre `chunkStrategy`, `chunkSize`, `minScore`, `topK`, `alpha` e `rewriteQuery`, só os que mudaram entre as rodadas (`chunkOverlap` e `candidateLimit` não aparecem).
 
 #### Scenario: v1 contra v2
 - **WHEN** alguém compara `eval/resultados/v1.json` e `eval/resultados/v2.json`
-- **THEN** a tabela mostra as métricas das duas e as linhas `chunkStrategy`, `chunkSize`, `minScore` e `rewriteQuery`, que mudaram
+- **THEN** a tabela mostra as métricas das duas e as linhas `chunkStrategy`, `chunkSize`, `minScore` e `rewriteQuery`, que mudaram, e não mostra `topK` nem `alpha`, que são iguais
 
 ### Requirement: Sem segredos na saída
 A avaliação SHALL mostrar só o host do banco, nunca a URL de conexão, e, em erro, só o nome e a mensagem do erro, nunca variáveis de ambiente.

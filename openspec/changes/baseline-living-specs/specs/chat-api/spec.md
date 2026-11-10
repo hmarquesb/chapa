@@ -14,8 +14,8 @@ Expõe o assistente ao navegador por rotas HTTP próprias, com validação do pe
 - **THEN** a resposta é 200 com `status: "answered"`, o texto da resposta e a lista de fontes, e nenhum outro campo
 
 #### Scenario: Bloqueio não é erro HTTP
-- **WHEN** a mensagem tem um CPF ou passa de 1.000 caracteres
-- **THEN** a resposta é 200 com `status: "blocked_input"` e a mensagem do guardrail
+- **WHEN** a mensagem tem um CPF ou passa de 1.000 caracteres, num corpo de até 4.096 bytes
+- **THEN** a resposta é 200 com `status: "blocked_input"` e a mensagem do guardrail, porque a validação do formato não olha o tamanho nem o conteúdo da mensagem
 
 ### Requirement: Só JSON
 `POST /api/chat` SHALL recusar com 415 o pedido cujo `Content-Type` não começa com `application/json`, com a mensagem "Envie o pedido em JSON (Content-Type: application/json)."
@@ -47,11 +47,15 @@ Expõe o assistente ao navegador por rotas HTTP próprias, com validação do pe
 - **THEN** a resposta é 400 com "O perfil do restaurante é inválido."
 
 ### Requirement: Rate limit por IP com hash
-`POST /api/chat` SHALL limitar cada IP a 10 pedidos por minuto e 100 por dia, em janelas fixas guardadas no banco. O IP vem do primeiro valor de `x-forwarded-for`, depois de `x-real-ip`, ou vira `unknown`, e MUST ser guardado só como HMAC-SHA256 com um segredo do servidor, nunca em claro.
+`POST /api/chat` SHALL limitar cada IP a 10 pedidos por minuto e 100 por dia, em janelas fixas de minuto e de dia em UTC guardadas no banco (a janela diária vira à meia-noite UTC, 21h em Brasília). O IP vem do primeiro valor de `x-forwarded-for`, depois de `x-real-ip`, ou vira `unknown`, e MUST ser guardado só como HMAC-SHA256 com um segredo do servidor, nunca em claro.
 
 #### Scenario: 11º pedido no mesmo minuto
 - **WHEN** o mesmo IP faz o 11º pedido válido dentro do mesmo minuto
 - **THEN** a resposta é 429 com "Muitas mensagens em pouco tempo. Aguarde um pouco e tente de novo." e o cabeçalho `Retry-After` com os segundos até o fim da janela, no mínimo 1
+
+#### Scenario: 101º pedido do dia
+- **WHEN** o mesmo IP faz o 101º pedido válido no mesmo dia UTC
+- **THEN** a resposta é 429 com `Retry-After` até a meia-noite UTC seguinte
 
 #### Scenario: Pedido inválido não conta
 - **WHEN** um pedido é recusado por formato, tamanho ou tipo de conteúdo

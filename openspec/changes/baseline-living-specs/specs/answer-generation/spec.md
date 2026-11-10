@@ -10,7 +10,7 @@ Monta a resposta de cada turno só com base nos trechos recuperados: decide entr
 O sistema SHALL processar cada mensagem nesta ordem: guardrail de entrada, sessão e perfil, histórico e resumo, reescrita da pergunta, uma única busca, geração, guardrail de saída e gravação do turno. A API, a CLI e a avaliação MUST usar o mesmo fluxo.
 
 #### Scenario: Mesmo fluxo nos três canais
-- **WHEN** a mesma pergunta chega pelos canais `web`, `cli` e `eval`
+- **WHEN** a mesma pergunta chega pelos canais `web`, `cli` e `eval`, com a mesma configuração
 - **THEN** as três passam pelos mesmos passos e só o canal gravado na sessão muda
 
 ### Requirement: Fallback sem chamar o LLM de resposta
@@ -60,7 +60,7 @@ O sistema SHALL enviar ao modelo de resposta as mensagens recentes da sessão co
 - **THEN** ela é descartada para que a conversa enviada comece pelo parceiro
 
 ### Requirement: Resposta que equivale ao fallback
-O sistema SHALL tratar como `fallback`, com a mensagem de fallback e sem fontes, a resposta gerada vazia ou que contém o texto do fallback, comparando sem diferenciar maiúsculas, acentos e espaços.
+O sistema SHALL tratar como `fallback`, com a mensagem de fallback e sem fontes, a resposta gerada vazia ou que contém o texto do fallback, comparando sem diferenciar maiúsculas, acentos e espaços repetidos.
 
 #### Scenario: Modelo devolve o fallback com texto extra
 - **WHEN** o modelo responde com o texto do fallback precedido de outra frase

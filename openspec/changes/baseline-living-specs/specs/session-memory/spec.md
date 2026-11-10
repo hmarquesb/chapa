@@ -31,6 +31,10 @@ Quando a mensagem traz um perfil, o sistema SHALL substituir o perfil da sessão
 - **WHEN** a mensagem traz o perfil `{ "name": "  Pizzaria Bella ", "city": "" }`
 - **THEN** a sessão passa a ter o perfil `{ "name": "Pizzaria Bella" }`, que também vai para a instrução de sistema
 
+#### Scenario: Perfil vazio apaga o salvo
+- **WHEN** a mensagem traz `profile: {}` (ou só campos vazios) e a sessão tem um perfil salvo
+- **THEN** o perfil da sessão passa a ser vazio. A interface nunca manda o perfil vazio (omite o campo), então isso só acontece em chamadas diretas à API
+
 #### Scenario: Perfil omitido
 - **WHEN** a mensagem não traz perfil e a sessão tem um perfil salvo
 - **THEN** a resposta usa o perfil salvo e o perfil da sessão não muda
@@ -57,11 +61,11 @@ O sistema SHALL ler o perfil, o resumo e o histórico pendente da sessão no ban
 - **THEN** a segunda usa o histórico gravado pela primeira
 
 ### Requirement: Histórico recente e resumo das mensagens antigas
-O sistema SHALL considerar pendentes as mensagens gravadas depois do último resumo. Com até 16 pendentes, todas vão inteiras ao modelo. Acima disso, as 10 mais recentes vão inteiras e as anteriores são resumidas junto com o resumo anterior, e o novo resumo é gravado com a marca da última mensagem incorporada.
+O sistema SHALL considerar pendentes as mensagens gravadas depois do último resumo. Com até 16 pendentes, todas vão inteiras ao modelo. Acima disso, as 10 mais recentes vão inteiras e as anteriores são resumidas junto com o resumo anterior, e o novo resumo é gravado com a marca da última mensagem incorporada. Na geração, a conversa enviada ao modelo começa sempre por uma mensagem do parceiro (ver `answer-generation`), então uma primeira mensagem recente do assistente fica de fora.
 
 #### Scenario: 17 mensagens pendentes
 - **WHEN** a sessão tem 17 mensagens pendentes
-- **THEN** as 7 mais antigas são resumidas, o resumo é gravado até a 7ª, e as 10 mais recentes vão inteiras ao modelo
+- **THEN** as 7 mais antigas são resumidas, o resumo é gravado até a 7ª, e as 10 mais recentes (da 8ª à 17ª) ficam como histórico recente, das quais a geração recebe a partir da primeira mensagem do parceiro
 
 #### Scenario: Até 16 mensagens
 - **WHEN** a sessão tem 16 mensagens pendentes
@@ -79,7 +83,7 @@ O resumo SHALL ser um único parágrafo em PT-BR, de até 120 palavras, que junt
 - **THEN** ele entra na instrução de sistema da geração como "Resumo da conversa até aqui"
 
 ### Requirement: Falha no resumo não derruba o turno
-Se a chamada de resumo falhar ou devolver texto vazio, o sistema SHALL seguir o turno com o resumo anterior e as mensagens recentes, sem gravar resumo novo.
+Se a chamada de resumo falhar ou devolver texto vazio, o sistema SHALL seguir o turno com o resumo anterior e as mensagens recentes, sem gravar resumo novo. Nesse turno, as mensagens pendentes anteriores às recentes ficam fora do contexto, e voltam a ser consideradas no próximo turno, que tenta o resumo de novo.
 
 #### Scenario: Provedor falha no resumo
 - **WHEN** a chamada de resumo falha

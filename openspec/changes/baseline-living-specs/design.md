@@ -94,6 +94,7 @@ Nada fora de `openspec/changes/baseline-living-specs/`. O archive, depois do mer
 Comportamentos atuais que a escrita revelou e que a spec registra como são, sem corrigir:
 
 - Um número de 11 dígitos seguidos, como um celular com DDD sem espaço (`11987654321`), casa com o padrão de CPF e bloqueia a mensagem. Com espaço ou hífen (`11 98765-4321`), passa.
+- Como o guardrail compara o texto sem acentos, "minha senha e meu login não funcionam" casa com o padrão de senha informada ("minha senha é …") e é bloqueada. A limitação já estava anotada na S08.
 - A API aceita `profile: {}`, e isso apaga o perfil salvo da sessão. A interface nunca manda o perfil vazio (omite o campo), então o efeito só aparece em chamadas diretas à API.
 - A janela diária do rate limit vira à meia-noite UTC (21h em Brasília).
 - Quando o resumo falha numa sessão com mais de 16 mensagens pendentes, aquele turno vê só as 10 mais recentes e o resumo antigo. As mensagens entre os dois ficam fora do contexto até o próximo resumo dar certo.
