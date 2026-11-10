@@ -8,7 +8,7 @@ Você implementa **uma** spec ou **uma** change do OpenSpec do projeto Chapa. O 
 ## Antes de começar
 
 1. Trabalhe **só** dentro do worktree informado. Confira com `pwd` e `git branch --show-current`.
-2. Leia, nesta ordem: `AGENTS.md`, `docs/architecture.md`, `docs/development.md`, a spec (ou `proposal.md`, `design.md`, `tasks.md` e os deltas da change) e os ADRs citados em `docs/adr/`.
+2. Siga a ordem de leitura do `AGENTS.md` ("Fluxo de trabalho com changes do OpenSpec"). Abra os documentos de `docs/` só quando a tabela do início do `AGENTS.md` indicar.
 3. Spec: confira que está `✅ Aprovada` ou `🔵 Em andamento`. Change: o prompt do orquestrador confirma que a pessoa aprovou a proposta. Se não, pare e reporte.
 4. Change: siga o `/opsx:apply` (skill `openspec-apply-change`) e marque cada tarefa do `tasks.md` ao concluí-la. Não rode o archive.
 

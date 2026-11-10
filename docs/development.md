@@ -13,21 +13,7 @@
 
 ## Onde mexer
 
-| Mudança | Arquivos | Cuidados |
-|---|---|---|
-| Parâmetro do RAG (`minScore`, `topK`, `alpha`, chunking) | `src/config.ts` (`RAG_PRESETS`) | Mudou o chunking: reingerir. Mudou qualquer parâmetro: rodar a avaliação ([`qa.md`](qa.md#avaliação)) |
-| Modelo de chat ou de embedding | `src/config.ts` | Modelo de embedding novo exige reingerir, porque a busca filtra por `embedding_model`. Decisão de modelo vira ADR |
-| Texto fixo (fallback, bloqueio, avisos) | `src/core/messages.ts` | Nunca duplique o texto em outro arquivo |
-| Prompt de sistema ou do RAG | `src/core/prompts.ts` | O fallback no prompt vem de `FALLBACK_MESSAGE`. Rodar a avaliação |
-| Guardrail de entrada ou de saída | `src/core/guardrails.ts`, `src/core/messages.ts` | Bloqueie padrões, nunca palavras soltas. "O repasse cai via Pix?" tem que passar: acrescente o caso nos testes |
-| Memória, resumo ou reescrita | `src/core/memory.ts`, `src/core/rewrite-query.ts` | O contexto do RAG não vai para `messages` |
-| Rota de API | `src/app/api/<rota>/route.ts` e o handler em `src/app/api/_lib/handlers.ts` | O `route.ts` só liga o handler ao container. A lógica fica no handler, testado com fakes. Exporte `runtime = "nodejs"` e `dynamic = "force-dynamic"` |
-| Validação do corpo da requisição | `src/app/api/_lib/validate.ts` | Corpo máximo de 4 KB. Mensagens de erro em PT-BR |
-| Campo novo no perfil | `src/lib/types.ts` (`PROFILE_FIELDS`), `src/core/prompts.ts`, `src/components/chat/profile-form.tsx` | O perfil é dado do usuário: não logue |
-| Interface | `src/components/chat/`, `src/app/page.tsx`, `src/lib/` | Componentes só importam `src/lib/`. `"use client"` só quando precisa de estado ou eventos |
-| Schema do banco | Nova migração em `supabase/migrations/` (`npm run db -- migration new <nome>`) | Nunca edite uma migração já aplicada. RLS ligado e sem policies. Aplicar no banco é checkpoint humano |
-| Base de conhecimento | `knowledge-base/0N-*.md` e `knowledge-base/FONTES.md` | Reescreva com palavras próprias, com fonte e data. Depois do merge, reingerir no `dev` e no `prod` |
-| Pergunta de avaliação | `eval/perguntas.json` | Ids estáveis: não renumere as perguntas existentes |
+A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fica no [`AGENTS.md`](../AGENTS.md#onde-mexer), que todo agente já carrega.
 
 ## Testes
 
