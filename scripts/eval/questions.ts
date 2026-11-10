@@ -8,9 +8,11 @@ import type { QuestionResult } from "./metrics"
 export type EvalQuestionType =
   | "factual"
   | "parafrase"
+  | "perfil"
   | "multi_turno"
   | "multi_doc"
   | "fora_de_escopo"
+  | "adversarial"
   | "bloqueio"
 
 export type EvalQuestion = {
@@ -21,23 +23,27 @@ export type EvalQuestion = {
   perfil?: RestaurantProfile
   fonte_esperada?: string[] // hit se QUALQUER uma estiver entre os recuperados; multi_doc também mede "todas"
   deve_conter?: string[] // todos os termos, sem diferenciar maiúsculas nem acentos
+  nao_deve_conter?: string[] // 1 a 5 termos; nenhum pode aparecer na resposta
   esperado: "resposta" | "fallback" | "recusa"
   nota: string // o que a pergunta testa
 }
 
-// Distribuição exigida pelo RF1 (20 perguntas).
+// Distribuição exigida (50 perguntas: 36 no escopo e 14 de recusa).
 export const QUESTION_DISTRIBUTION: Readonly<Record<EvalQuestionType, number>> = Object.freeze({
-  factual: 7,
-  parafrase: 3,
-  multi_turno: 2,
-  multi_doc: 2,
-  fora_de_escopo: 4,
-  bloqueio: 2,
+  factual: 15,
+  parafrase: 6,
+  perfil: 5,
+  multi_turno: 5,
+  multi_doc: 5,
+  fora_de_escopo: 7,
+  adversarial: 4,
+  bloqueio: 3,
 })
 
 export const IN_SCOPE_TYPES: ReadonlySet<EvalQuestionType> = new Set([
   "factual",
   "parafrase",
+  "perfil",
   "multi_turno",
   "multi_doc",
 ])
@@ -45,14 +51,17 @@ export const IN_SCOPE_TYPES: ReadonlySet<EvalQuestionType> = new Set([
 const EXPECTED_BY_TYPE: Readonly<Record<EvalQuestionType, EvalQuestion["esperado"]>> = {
   factual: "resposta",
   parafrase: "resposta",
+  perfil: "resposta",
   multi_turno: "resposta",
   multi_doc: "resposta",
   fora_de_escopo: "fallback",
+  adversarial: "recusa",
   bloqueio: "recusa",
 }
 
 const TOTAL_QUESTIONS = Object.values(QUESTION_DISTRIBUTION).reduce((sum, n) => sum + n, 0)
 const MAX_TERMS = 3
+const MAX_FORBIDDEN_TERMS = 5
 
 function isQuestionType(value: unknown): value is EvalQuestionType {
   return typeof value === "string" && Object.hasOwn(QUESTION_DISTRIBUTION, value)
@@ -137,7 +146,24 @@ function validateItem(item: unknown, index: number, knowledgeFiles: Set<string>)
     add(`deve_conter precisa ter de 1 a ${MAX_TERMS} termos não vazios.`)
   }
 
+  // nao_deve_conter: opcional em qualquer tipo
+  const forbidden = item.nao_deve_conter
+  if (
+    forbidden !== undefined &&
+    !(
+      isStringList(forbidden) &&
+      forbidden.length >= 1 &&
+      forbidden.length <= MAX_FORBIDDEN_TERMS &&
+      forbidden.every(isNonEmptyString)
+    )
+  ) {
+    add(`nao_deve_conter precisa ter de 1 a ${MAX_FORBIDDEN_TERMS} termos não vazios.`)
+  }
+
   // perfil
+  if (tipo === "perfil" && !(isRecord(item.perfil) && isNonEmptyString(item.perfil.plan))) {
+    add("perfil precisa de perfil.plan preenchido.")
+  }
   if (item.perfil !== undefined) {
     if (!isRecord(item.perfil)) {
       add("perfil precisa ser um objeto.")
@@ -170,12 +196,16 @@ export function validateQuestions(
 
   const seenIds = new Set<unknown>()
   const counts = new Map<EvalQuestionType, number>()
+  const factualSources = new Set<unknown>()
   data.forEach((item, index) => {
     errors.push(...validateItem(item, index, files))
     if (!isRecord(item)) return
     if (seenIds.has(item.id)) errors.push(`Pergunta ${String(item.id)}: id repetido.`)
     seenIds.add(item.id)
     if (isQuestionType(item.tipo)) counts.set(item.tipo, (counts.get(item.tipo) ?? 0) + 1)
+    if (item.tipo === "factual" && Array.isArray(item.fonte_esperada)) {
+      for (const source of item.fonte_esperada) factualSources.add(source)
+    }
   })
 
   for (const [tipo, expected] of Object.entries(QUESTION_DISTRIBUTION)) {
@@ -183,6 +213,11 @@ export function validateQuestions(
     if (count !== expected) {
       errors.push(`Tipo "${tipo}": ${count} perguntas; precisam ser ${expected}.`)
     }
+  }
+
+  // Cobertura: todo documento da base tem pelo menos uma pergunta factual.
+  for (const file of knowledgeFiles) {
+    if (!factualSources.has(file)) errors.push(`Documento "${file}" sem pergunta factual.`)
   }
 
   if (errors.length > 0) return { ok: false, errors }
