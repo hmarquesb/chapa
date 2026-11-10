@@ -92,7 +92,7 @@ Parte das ações abaixo foi autorizada antes das ondas. Veja "Autorizações pr
 
 ## Autorizações prévias (histórico)
 
-Registradas pela pessoa em 05/11/2026 e válidas durante a construção inicial. A que continua valendo (H5) está no [`CLAUDE.md`](../CLAUDE.md#autorizações-prévias).
+Registradas pela pessoa em 05/11/2026 e válidas durante a construção inicial. As que valem hoje estão no [`CLAUDE.md`](../CLAUDE.md#autorizações-prévias).
 
 | Checkpoint | O que estava autorizado | Limites |
 |---|---|---|

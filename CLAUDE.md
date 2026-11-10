@@ -51,12 +51,15 @@ Para uma revisão independente, use um subagente `general-purpose` que recebe o 
 
 ## Autorizações prévias
 
-As autorizações das specs S00 a S10 (H1 a H4) valiam só para aquelas specs e estão registradas no [`specs/README.md`](specs/README.md#autorizações-prévias-histórico). Numa change, chamada real de API ou de banco no `dev` só com autorização da pessoa na tarefa, repassada no campo "Chamadas reais de API e de banco" do prompt do subagente.
+As autorizações das specs S00 a S10 (H1 a H4) estão registradas no [`specs/README.md`](specs/README.md#autorizações-prévias-histórico).
 
-Continua valendo, como a autorização explícita que o `AGENTS.md` exige:
+A pessoa autorizou as ações abaixo (registrado em 10/11/2026). Elas valem como a autorização explícita que o `AGENTS.md` exige: o orquestrador não precisa pedi-las de novo e as repassa no campo "Chamadas reais de API e de banco" do prompt do subagente. O que não está aqui continua precisando de autorização na tarefa.
 
 | Checkpoint | O que está autorizado | Limites |
 |---|---|---|
+| — | Usar o Supabase `dev` e a `GEMINI_API_KEY` do `.env.local` nas verificações manuais de uma change (`npm run chat`, `npm run dev`) | Só o `dev` |
+| — | `npm run ingest` no `dev` | Só o `dev`. Se a change altera `knowledge-base/`, a ingestão só roda depois que a pessoa revisar o texto |
+| — | `npm run eval` contra o `dev`, seguindo o [`docs/qa.md`](docs/qa.md#avaliação) | Use `--delay-ms` e `--only` para respeitar a cota gratuita. Se a cota estourar, espere e retome, sem trocar de modelo |
 | H5 (parcial) | `supabase link`, `db push --remote --yes` e `npm run ingest` no projeto **`prod`**, nos passos do [`DEPLOY.md`](DEPLOY.md) | A connection string fica em `.env.prod.local`, na raiz do repositório principal (`chapa/`), não nos worktrees. A partir do worktree, use só `set -a; . ../../chapa/.env.prod.local; set +a` antes do comando. Nunca leia, imprima ou copie o arquivo |
 
 **Continuam com a pessoa:** revisar a base de conhecimento antes da ingestão; o merge dos PRs (exceto via `/merge-change <PR>`, sempre com a CI verde); a visibilidade do repositório, o projeto e as variáveis da Vercel e a autorização do smoke contra a produção.
