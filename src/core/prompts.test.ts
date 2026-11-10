@@ -27,6 +27,40 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toMatch(/150 palavras/)
     expect(SYSTEM_PROMPT).toMatch(/CPF/)
   })
+
+  it("presents Chapa as the Rango partner assistant and lists the 11 topics", () => {
+    expect(SYSTEM_PROMPT).toContain("assistente de parceiros da Rango")
+    const topics = [
+      "planos e taxas",
+      "repasse",
+      "cancelamentos e contestações",
+      "cardápio e fotos",
+      "horários e pausas",
+      "avaliações",
+      "embalagem e entrega",
+      "promoções e cupons",
+      "suporte e chamados",
+      "conta e segurança",
+      "pagamentos e notas fiscais",
+    ]
+    for (const topic of topics) expect(SYSTEM_PROMPT).toContain(topic)
+  })
+})
+
+describe("old brand terms", () => {
+  const prompts = {
+    SYSTEM_PROMPT,
+    REWRITE_PROMPT,
+    SUMMARY_PROMPT,
+    ragPrompt: buildRagPrompt("x", []),
+  }
+
+  for (const [name, text] of Object.entries(prompts)) {
+    it(`${name} does not mention "app de delivery" nor "Portal do Parceiro"`, () => {
+      expect(text.toLowerCase()).not.toContain("app de delivery")
+      expect(text.toLowerCase()).not.toContain("portal do parceiro")
+    })
+  }
 })
 
 describe("formatProfile", () => {
