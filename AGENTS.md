@@ -46,6 +46,7 @@ npm run eval -- --label v2 --preset padrao             # ⚠️ chama a API (60 
 npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada
 npm run db -- db push --remote   # Supabase CLI, no projeto linkado (só no checkpoint)
 npm run spec -- list             # OpenSpec CLI: list, show, validate, status, archive
+npm run changes          # changes ativas do OpenSpec em todos os worktrees (o `spec -- list` só vê o checkout atual)
 ```
 
 As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts locais usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis já definidas no shell.

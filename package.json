@@ -19,7 +19,8 @@
     "eval": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/eval.ts",
     "smoke": "node --env-file-if-exists=.env.local --import tsx scripts/smoke.ts",
     "db": "supabase",
-    "spec": "openspec"
+    "spec": "openspec",
+    "changes": "node --import tsx scripts/changes.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
