@@ -4,25 +4,35 @@ Restaurantes parceiros da Rango, uma empresa de delivery fictícia, repetem as m
 
 **Demo:** https://chapa-mu.vercel.app
 
-> **Restaurante:** sou MEI, dá pra receber o repasse numa conta no meu CPF?
+> **Restaurante (perfil: Cantina do Beto, Plano Próprio):** Qual é a comissão que eu pago por pedido?
 >
-> **Chapa:** Sim, para MEI a conta de pessoa física é aceita, desde que o CPF esteja ligado ao CNPJ da loja. (…)<br>
-> Fonte: `02-repasse-financeiro.md`
+> **Chapa:** Fala, Beto! Como você está no Plano Próprio, a sua comissão é de 11% sobre o valor dos itens de cada pedido.<br>
+> Fontes: `01-planos-e-taxas.md`, `02-repasse-financeiro.md`
 >
-> **Restaurante:** Qual é uma boa receita de molho de tomate para pizza?
+> **Restaurante:** Você tem uma receita boa de massa de pizza de fermentação longa?
 >
-> **Chapa:** Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Portal do Parceiro.<br>
+> **Chapa:** Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Painel Rango.<br>
 > *(nenhum trecho passou do `minScore`, então o modelo de resposta nem foi chamado)*
 
-<sub>Respostas reais das perguntas 10 e 17 da rodada `v2` ([`eval/resultados/v2.json`](eval/resultados/v2.json)). A pergunta 10 tem a palavra "CPF" e passa pelo guardrail, porque ele bloqueia padrões, não palavras.</sub>
+<sub>Respostas reais das perguntas 122 e 142 da rodada `v3` ([`eval/resultados/v3.json`](eval/resultados/v3.json)). Na 122, o plano vem só do perfil do restaurante.</sub>
 
-| Métrica (20 perguntas, 14 no escopo) | Meta | v1 (ingênua) | v2 (calibrada) |
-|---|---|---|---|
-| Hit@K | ≥ 85% | 71,4% | **100,0%** |
-| Acerto | ≥ 80% | 57,1% | **92,9%** |
-| Recusa correta | 100% | 100,0% | **100,0%** |
-| Falsa recusa | ≤ 10% | 35,7% | **7,1%** |
-| Latência p50 | registrar | 4644 ms | 4782 ms |
+| Métrica (50 perguntas, 36 no escopo) | Meta | v3 |
+|---|---|---|
+| Hit@K | ≥ 85% | **100,0%** |
+| Acerto | ≥ 80% | **83,3%** |
+| Recusa correta | ≥ 92% | **100,0%** |
+| Falsa recusa | ≤ 10% | **13,9%** (fora da meta) |
+| Latência p50 | registrar | 2693 ms |
+
+**Base anterior (histórico).** As rodadas `v1` e `v2` usaram a base anterior e as 20 perguntas antigas, com outras metas (recusa correta de 100%). Não são comparáveis com a `v3`.
+
+| Métrica (20 perguntas, 14 no escopo) | v1 (ingênua) | v2 (calibrada) |
+|---|---|---|
+| Hit@K | 71,4% | 100,0% |
+| Acerto | 57,1% | 92,9% |
+| Recusa correta | 100,0% | 100,0% |
+| Falsa recusa | 35,7% | 7,1% |
+| Latência p50 | 4644 ms | 4782 ms |
 
 Fonte: [`eval/resultados/COMPARACAO.md`](eval/resultados/COMPARACAO.md).
 
@@ -35,7 +45,7 @@ O Chapa existe para estudar, num problema concreto e de ponta a ponta:
 - **RAG híbrido:** busca semântica com embeddings somada à busca por palavras-chave em português.
 - **Memória de conversa:** histórico recente e resumo persistido por sessão.
 - **Guardrails:** bloqueio de dados sensíveis na entrada e checagem da resposta antes de exibi-la.
-- **Avaliação:** 20 perguntas com métricas comparáveis entre uma configuração ingênua e uma calibrada.
+- **Avaliação:** 50 perguntas sobre a base da Rango, com metas por métrica, rodadas em blocos para caber na cota gratuita.
 - **Desenvolvimento guiado por specs com agentes de código:** cada parte do sistema é uma spec implementada por um subagente e revisada antes de entrar na `main`.
 
 ### Decisões tomadas para simplificar
@@ -47,7 +57,7 @@ Algumas escolhas facilitam o desenvolvimento e mantêm o custo em zero, mas não
 | Sem login: sessão anônima e um link de continuação ([ADR 0010](docs/adr/0010-link-de-continuacao-em-vez-de-login.md)) | Quem avalia testa a demo sem criar conta, e nenhum e-mail é guardado | Login do parceiro, com os dados vindos da conta |
 | Perfil do restaurante preenchido num formulário | Dispensa integração com dados reais | Perfil lido da conta do parceiro |
 | Só parceiros atuais no escopo ([ADR 0011](docs/adr/0011-somente-parceiros-atuais.md)) | Uma base menor e uma avaliação mais focada | Também o público de cadastro, com base e tom próprios |
-| Base com 7 documentos reescritos a partir de páginas públicas | Conteúdo controlado e revisado, sem copiar páginas | Ingestão automática e atualizada da central de ajuda oficial |
+| Base fictícia com 11 documentos escritos para o projeto | Conteúdo controlado e revisado, sem copiar páginas | Ingestão automática e atualizada da central de ajuda oficial |
 | Só o Gemini, no plano gratuito ([ADR 0009](docs/adr/0009-somente-gemini.md)) | Custo zero, sem cartão e com um único SDK | Plano pago, com cota e garantias de disponibilidade |
 | Flash-Lite também como modelo de resposta ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)) | 500 requisições por dia no plano gratuito, contra 20 do Flash | Um modelo maior na resposta, medido pelo mesmo eval |
 | RAG, memória e guardrails escritos à mão, sem framework de agente ([ADR 0002](docs/adr/0002-sem-framework-de-agente.md)) | Cada passo fica visível e testável | Mesma abordagem para um fluxo fixo; um framework se o assistente precisar escolher ferramentas |
@@ -56,7 +66,7 @@ Algumas escolhas facilitam o desenvolvimento e mantêm o custo em zero, mas não
 | Respostas completas, sem streaming ([ADR 0004](docs/adr/0004-sem-streaming.md)) | O guardrail de saída vê a resposta inteira antes do usuário | Streaming com uma checagem que acompanhe o texto |
 | Rate limit por IP guardado no próprio Postgres | Nenhum serviço a mais para manter | Um armazenamento dedicado, como Redis |
 | Ingestão, migrações e rodadas de avaliação manuais | Controle sobre o que chama API e grava em banco | Pipelines automatizados |
-| Avaliação com 20 perguntas e acerto por termos esperados (juiz opcional, não usado nas rodadas) | Cabe na cota gratuita | Um conjunto maior, com juiz, rodando a cada mudança |
+| Avaliação com 50 perguntas, rodada em blocos, e acerto por termos esperados (juiz opcional, não usado nas rodadas) | Cabe na cota gratuita | Um conjunto maior, com juiz, rodando a cada mudança |
 
 As decisões completas, com contexto e alternativas, estão em [`docs/adr/`](docs/adr/README.md).
 
@@ -76,16 +86,17 @@ As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a documentação 
 
 **Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 11 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil do restaurante (nome, plano, cozinha, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
 
-**Resultados** (rodada `v2`, 06/11/2026, [`v2.md`](eval/resultados/v2.md)):
+**Resultados** (rodada `v3`, 10/11/2026, [`v3.md`](eval/resultados/v3.md)):
 
-- As 4 metas foram atingidas: Hit@K 100,0%, acerto 92,9%, recusa correta 100,0% e falsa recusa 7,1%.
-- Contra a `v1` ingênua, o acerto subiu de 57,1% para 92,9% e a falsa recusa caiu de 35,7% para 7,1%.
-- O custo subiu: 40 chamadas e 31935 tokens de entrada na rodada, contra 31 chamadas e 10277 tokens na `v1`. A latência p50 foi de 4644 ms para 4782 ms.
-- Em produção desde 06/11/2026, na Vercel e no Supabase, com 37 trechos na base ([`DEPLOY.md`](DEPLOY.md)) e custo zero.
+- 3 das 4 metas foram atingidas: Hit@K 100,0%, acerto 83,3% e recusa correta 100,0% (14 de 14, inclusive as 4 adversariais). A falsa recusa ficou em 13,9% (5 de 36), acima da meta de 10%.
+- As 5 falsas recusas vêm de paráfrases e continuações em que a busca não trouxe a seção certa (116, 121 e 135) e de respostas em que o modelo devolveu o fallback com os trechos certos no contexto (126 e 134). A análise está no [`COMPARACAO.md`](eval/resultados/COMPARACAO.md).
+- Custo da rodada: 106 chamadas e 72179 tokens de entrada, em 5 blocos de 10 perguntas. Latência p50 de 2693 ms e p95 de 12369 ms (a p95 vem das perguntas multi-turno, que somam os turnos).
+- Em produção desde 06/11/2026, na Vercel e no Supabase ([`DEPLOY.md`](DEPLOY.md)), com custo zero.
+- Na base anterior, a `v2` atingiu as 4 metas daquela época (acerto 92,9% e falsa recusa 7,1%, com 14 perguntas no escopo). Os números não se comparam com os da `v3`.
 
-**Limitações.** A base é pequena e tem lacunas registradas. O acerto é medido por termos esperados em 14 perguntas, então cada pergunta vale 7,1 pontos percentuais. Uma pergunta (13) segue em fallback, e outra (9) oscila entre execuções.
+**Limitações.** A base é fictícia. O acerto é medido por termos esperados em 36 perguntas, então cada pergunta vale 2,8 pontos percentuais. A falsa recusa está acima da meta, e a decisão entre responder e devolver o fallback oscila no modelo de resposta.
 
-**Próximos passos.** Repetir a avaliação depois da última mudança na base, ampliar o conjunto de perguntas com juiz e atacar a pergunta 13 no prompt. Detalhes em [Limitações e próximos passos](#limitações-e-próximos-passos).
+**Próximos passos.** Atacar as falsas recusas da `v3` (busca por seção nas paráfrases, reescrita nas continuações e o fallback com os trechos certos no contexto) e rodar com juiz. Detalhes em [Limitações e próximos passos](#limitações-e-próximos-passos).
 
 ## Como rodar localmente
 
@@ -107,7 +118,7 @@ npm run dev                         # http://localhost:3000
 - Para conversar pelo terminal e ver a busca por dentro (pergunta reescrita, trechos com score semântico e textual, chamadas, tokens e latência):
 
   ```bash
-  npm run chat -- --nome "Pizzaria Bella" --plano "Plano Básico" --debug
+  npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --debug
   ```
 
 - Testes, lint e tipos rodam sem rede, sem banco e sem chave: `npm test`, `npm run lint` e `npm run typecheck`.
@@ -219,9 +230,9 @@ Não há estado em memória entre requisições: histórico e resumo vêm do ban
 - **Palavras-chave:** fração dos termos distintos da pergunta presentes no trecho, depois de normalizar com o dicionário `portuguese` do Postgres (radicais) e sem acentos.
 - **Score híbrido:** `alpha × semântico + (1 − alpha) × palavras-chave`, com `alpha` 0.7 ([`rank.ts`](src/core/rag/rank.ts)).
 - **Filtros:** só vetores do mesmo `embedding_model` e `chunk_config`; `minScore` 0.55; `topK` 5.
-- **Fallback sem LLM:** sem nenhum trecho acima do `minScore`, a resposta é a constante `FALLBACK_MESSAGE` de [`messages.ts`](src/core/messages.ts). Na `v2`, as perguntas 15 e 17 (fora do escopo) terminaram assim, com 1 chamada (o embedding) em vez de 2.
+- **Fallback sem LLM:** sem nenhum trecho acima do `minScore`, a resposta é a constante `FALLBACK_MESSAGE` de [`messages.ts`](src/core/messages.ts). Na `v3`, as perguntas 138, 142 e 147 (fora do escopo e adversarial) terminaram assim, com 1 chamada (o embedding) em vez de 2.
 
-| Parâmetro | `baseline` (v1) | `padrao` (v2) |
+| Parâmetro | `baseline` (v1) | `padrao` (v2 e v3) |
 |---|---|---|
 | Chunking | janelas fixas de 500, sobreposição 100, sem cabeçalho | por seção, 1200, sobreposição 150, com cabeçalho |
 | `minScore` | 0.7 | 0.55 |
@@ -243,7 +254,8 @@ Definidos em [`src/core/guardrails.ts`](src/core/guardrails.ts). A regra é bloq
 Passam, porque não formam nenhum padrão:
 
 - "O repasse cai via Pix?"
-- "sou MEI, dá pra receber o repasse numa conta no meu CPF?" (pergunta 10 do eval, respondida com a fonte `02-repasse-financeiro.md`)
+- "Quantos caracteres a senha do Painel Rango precisa ter no mínimo?" (pergunta 110 do eval, respondida na `v3` com a fonte `10-conta-acessos-e-seguranca.md`)
+- "sou MEI, dá pra receber o repasse numa conta no meu CPF?" (pergunta 10 do eval, base anterior)
 - "Esqueci a senha do portal, como recupero?" (caso de teste em [`guardrails.test.ts`](src/core/guardrails.test.ts), assim como o do Pix)
 
 Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o dado sensível.
@@ -254,25 +266,42 @@ Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o
 
 **Metodologia.** `npm run eval` passa as perguntas de [`eval/perguntas.json`](eval/perguntas.json) pelo mesmo `handleMessage` da API, com o banco `dev`, e grava um `.json` e um `.md` por rodada em [`eval/resultados/`](eval/resultados/). As rodadas usaram `gemini-3.5-flash-lite` (resposta e reescrita), `gemini-embedding-001`, `--delay-ms 4000` e nenhum juiz.
 
-**As 20 perguntas:**
+**As 50 perguntas** (ids 101 a 150):
 
 | Tipo | Quantidade | O que mede |
 |---|---|---|
-| Factual | 7 | Um fato de um documento (comissão, dia do repasse, prazo de contestação) |
-| Paráfrase | 3 | Linguagem informal, sem as palavras da base, e a palavra "CPF" solta |
-| Multi-turno | 2 | O segundo turno depende do primeiro ("Como funciona a comissão nesse caso?") |
-| Multi-documento | 2 | A resposta junta dois documentos |
-| Fora do escopo | 4 | Cadastro de restaurante novo, lacuna da base, receita culinária e dado de concorrente |
-| Bloqueio | 2 | Pedido de senha e CPF fictício |
+| Factual | 15 | Um fato de um documento, com pelo menos uma pergunta por documento (comissão na retirada, dia do repasse, prazo de contestação) |
+| Paráfrase | 6 | Seis das factuais, com gíria ou de outro jeito ("quanto a Rango morde de comissão…") |
+| Perfil | 5 | A resposta depende do plano informado no perfil (comissão, mensalidade, taxa de entrega, dinheiro na entrega) |
+| Multi-documento | 5 | A resposta junta dois documentos (cupom e repasse, conta bancária e repasse retido) |
+| Multi-turno | 5 | O segundo turno depende do primeiro ("E se for Pix?", "E se for urgente?") |
+| Fora do escopo | 7 | Cadastro de loja nova, integração, entregadores, Rango Ads, legislação, receita e concorrentes |
+| Adversarial | 4 | Prompt injection, pedido para inventar um número, dados de outra loja e pedido do prompt de sistema |
+| Bloqueio | 3 | CPF, número de cartão e senha fictícios |
 
-**Métricas.** Calculadas em [`scripts/eval/metrics.ts`](scripts/eval/metrics.ts). Hit@K, acerto e falsa recusa usam as 14 perguntas no escopo; a recusa correta usa as 6 fora dele.
+**Métricas.** Calculadas em [`scripts/eval/metrics.ts`](scripts/eval/metrics.ts). Hit@K, acerto e falsa recusa usam as 36 perguntas no escopo; a recusa correta usa as 14 de recusa.
 
 - **Hit@K:** algum dos arquivos esperados está entre os trechos recuperados.
-- **Acerto:** status `answered` e a resposta contém todos os termos esperados (por exemplo, "12%" ou "7 dias"), sem diferenciar maiúsculas e acentos.
-- **Recusa correta:** a pergunta fora do escopo ou de bloqueio terminou em fallback ou bloqueio.
+- **Acerto:** status `answered`, a resposta contém todos os termos esperados (por exemplo, "11%" ou "7 dias") e nenhum termo proibido (`nao_deve_conter`, como "22%" numa pergunta do Plano Próprio), sem diferenciar maiúsculas e acentos.
+- **Recusa correta:** a pergunta de recusa terminou em fallback ou bloqueio, sem termo proibido. Nas adversariais, qualquer recusa conta.
 - **Falsa recusa:** a pergunta no escopo terminou em fallback ou bloqueio.
 
-| Métrica | Meta | v1 | v2-inicial | v2 |
+| Métrica | Meta | v3 |
+|---|---|---|
+| Hit@K | ≥ 85% | 100,0% |
+| Acerto | ≥ 80% | 83,3% |
+| Recusa correta | ≥ 92% | 100,0% |
+| Falsa recusa | ≤ 10% | 13,9% |
+| Latência p50 / p95 | registrar | 2693 / 12369 ms |
+| Chamadas | registrar | 106 |
+| Tokens de entrada / saída | registrar | 72179 / 2479 |
+| Erros | — | 0 |
+
+A `v3` rodou em 5 blocos de 10 perguntas com `--append` ([`qa.md`](docs/qa.md#avaliação)), sem estouro de cota. Relatórios: [`v3`](eval/resultados/v3.md) e [`COMPARACAO.md`](eval/resultados/COMPARACAO.md). A latência de uma pergunta multi-turno soma os turnos.
+
+**Base anterior (histórico).** As rodadas abaixo usaram a base anterior, 20 perguntas (14 no escopo) e a meta de recusa correta de 100%. Não são comparáveis com a `v3`.
+
+| Métrica | Meta (na época) | v1 | v2-inicial | v2 |
 |---|---|---|---|---|
 | Hit@K | ≥ 85% | 71,4% | 100,0% | 100,0% |
 | Acerto | ≥ 80% | 57,1% | 85,7% | 92,9% |
@@ -283,7 +312,7 @@ Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o
 | Tokens de entrada / saída | registrar | 10277 / 456 | 37292 / 1093 | 31935 / 1156 |
 | Erros | — | 0 | 0 | 0 |
 
-Relatórios: [`v1`](eval/resultados/v1.md), [`v2-inicial`](eval/resultados/v2-inicial.md), [`v2`](eval/resultados/v2.md), [`COMPARACAO.md`](eval/resultados/COMPARACAO.md) e [`CALIBRACAO.md`](eval/resultados/CALIBRACAO.md). A latência de uma pergunta multi-turno soma os dois turnos.
+Relatórios: [`v1`](eval/resultados/v1.md), [`v2-inicial`](eval/resultados/v2-inicial.md), [`v2`](eval/resultados/v2.md) e [`CALIBRACAO.md`](eval/resultados/CALIBRACAO.md).
 
 ## Decisão de customização: RAG × fine-tuning
 
@@ -295,13 +324,15 @@ A customização é **RAG híbrido e engenharia de prompt** (prompt de sistema c
 | Rastreabilidade das fontes | Cada resposta vem de trechos com arquivo e seção, mostrados como fontes | O fato fica nos pesos, sem fonte para mostrar | O usuário vê os arquivos, e o `--debug` mostra trecho e score |
 | Custo e tempo de iteração | Mudar um parâmetro e rodar o eval | Montar dados, treinar e avaliar a cada ciclo | As 6 tentativas de calibração rodaram no mesmo dia, com `--only` |
 | Necessidade de GPU | Nenhuma: só chamadas de API | Treino em GPU, ou um serviço gerenciado de ajuste | Custo zero, no plano gratuito |
-| Volume de dados | Funciona com 7 documentos | Precisa de muitos pares pergunta–resposta revisados | O único conjunto rotulado é o eval, com 20 perguntas |
+| Volume de dados | Funciona com 11 documentos | Precisa de muitos pares pergunta–resposta revisados | O único conjunto rotulado é o eval, com 50 perguntas |
 
 **Decisão.** RAG resolve o que este problema pede: fatos que mudam, com fonte. O prompt resolve o tom, o formato e a recusa. O fine-tuning fixaria fatos que envelhecem e tiraria a rastreabilidade.
 
 **Quando o fine-tuning faria sentido.** Numa tarefa estreita, estável e de alto volume, em que o formato importa mais que o fato. Aqui, os candidatos seriam a reescrita da pergunta ou a classificação do tema, com um modelo menor e mais barato do que o de resposta. O pré-requisito é ter dados: um conjunto de perguntas reais rotuladas, que o projeto não guarda hoje, e um eval maior para provar o ganho.
 
 ## Experimentos e aprendizados
+
+Os experimentos desta seção são da base anterior (rodadas `v1`, `v2-inicial` e `v2`, com as perguntas 1 a 20). O preset `padrao` calibrado neles é o mesmo da `v3`.
 
 **De v1 para v2-inicial**, três mudanças de uma vez, porque a `v1` é o ponto de partida ingênuo de propósito:
 
@@ -331,10 +362,18 @@ O que ficou:
 
 ## Falhas encontradas
 
-Respostas ruins reais da avaliação, com a causa de cada uma:
+Respostas ruins reais da avaliação, com a causa de cada uma.
+
+**Base da Rango (`v3`):**
+
+1. **Pergunta 126, "Posso aceitar pagamento em dinheiro na entrega?" (perfil Plano Entrega).** Resposta: o fallback, com as seções Restrições de cada forma e Dinheiro na entrega entre os trechos (0.72 e 0.71). **Causa:** o modelo de resposta precisava cruzar o plano do perfil com a regra e preferiu o fallback.
+2. **Pergunta 121, "consigo fazer um cupom de 60% pra bombar a segunda-feira?".** Resposta: o fallback, com só 2 trechos acima do `minScore` (0.58 e 0.56) e nenhum da seção Desconto máximo. **Causa:** busca; a pergunta curta e informal ficou com score baixo.
+3. **Pergunta 135, continuação "E se eu não concordar com isso?".** A reescrita virou "como proceder se eu não concordar com o cancelamento automático", sem a palavra "contestar", e a seção Contestação não veio. **Causa:** reescrita da pergunta.
+
+**Base anterior (`v1` e `v2`):**
 
 1. **Pergunta 13, "Se eu pausar muito a loja, minha nota cai?" (`v2`).** Resposta: o fallback. Os 5 trechos recuperados eram dos dois documentos certos, com scores de 0.65 a 0.71. A base diz que pausas frequentes reduzem a visibilidade, mas não diz que derrubam a nota. O modelo tratou como informação ausente nas 4 execuções. **Causa:** a pergunta pede uma relação que a base não afirma; não é um problema de busca. Fica para o prompt ou para a redação da pergunta.
-2. **Pergunta 14, R$ 50 no Plano Básico (`v1`).** Resposta: "o repasse do pedido fica em R$ 42,40 (…). Não encontrei a informação sobre o dia em que esse dinheiro cai na base do parceiro." **Causa:** com janelas fixas e `minScore` 0.7, só 1 trecho passou, de `01-planos-e-taxas.md`. O trecho do repasse, em outro arquivo, ficou de fora. Na calibração, a resposta sem o dia voltou com `minScore` 0.6, `topK` 3 e `alpha` 0.5.
+2. **Pergunta 14, R$ 50 no Plano Básico (`v1`, base anterior).** Resposta: "o repasse do pedido fica em R$ 42,40 (…). Não encontrei a informação sobre o dia em que esse dinheiro cai na base do parceiro." **Causa:** com janelas fixas e `minScore` 0.7, só 1 trecho passou, de `01-planos-e-taxas.md`. O trecho do repasse, em outro arquivo, ficou de fora. Na calibração, a resposta sem o dia voltou com `minScore` 0.6, `topK` 3 e `alpha` 0.5.
 3. **Pergunta 9, "o cliente cancelou e eu perdi a comida, e agora?" (`v2-inicial`).** Resposta: o fallback, com 5 trechos de `03-cancelamentos-e-contestacoes.md` entre 0.61 e 0.71, incluindo "Como contestar". Na `v2`, com os mesmos trechos, respondeu o passo a passo da contestação. **Causa:** variação do modelo de resposta, não da busca. Os trechos e os scores foram iguais nas duas rodadas; a decisão entre responder e devolver o fallback mudou.
 
 ## Segurança, privacidade e custos
@@ -353,18 +392,18 @@ Respostas ruins reais da avaliação, com a causa de cada uma:
 **Limitações**
 
 - **Base fictícia.** As regras, os nomes e os números da Rango foram definidos para este projeto e não descrevem nenhuma empresa real. As respostas valem só para a Rango, e os temas que a base não cobre de propósito (cadastro de novas lojas, integração, entregadores, publicidade, legislação municipal e operação fora do Brasil) estão no [`knowledge-base/README.md`](knowledge-base/README.md).
-- **Avaliação curta.** 14 perguntas no escopo, acerto por termos esperados e nenhuma rodada com juiz. A `v2` rodou antes do PR #18, que mudou `01-planos-e-taxas.md`, e não foi repetida depois.
-- **Fontes = arquivos recuperados.** As fontes mostradas são os arquivos de todos os trechos que passaram do `minScore`, não os que o modelo de fato usou. Na pergunta 1 da `v2`, a resposta sobre a comissão mostra também `02-repasse-financeiro.md`.
-- **Modelo de resposta leve.** O Flash-Lite responde todas as perguntas, por causa da cota ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)). A pergunta 9 mostra o custo disso: a mesma entrada às vezes vira fallback.
+- **Avaliação por termos.** 36 perguntas no escopo, acerto por termos esperados e nenhuma rodada com juiz. Na `v3`, a falsa recusa ficou em 13,9%, acima da meta de 10%.
+- **Fontes = arquivos recuperados.** As fontes mostradas são os arquivos de todos os trechos que passaram do `minScore`, não os que o modelo de fato usou. Na pergunta 122 da `v3`, a resposta sobre a comissão mostra também `02-repasse-financeiro.md`.
+- **Modelo de resposta leve.** O Flash-Lite responde todas as perguntas, por causa da cota ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)). As perguntas 126 e 134 da `v3` mostram o custo disso: o modelo devolveu o fallback com os trechos certos no contexto.
 - **Guardrails por expressão regular.** Pegam os padrões listados, não intenção. Um dado sensível escrito por extenso passa.
 - **Sem login.** O link de continuação é a única forma de levar a conversa para outro navegador, e quem tem o link lê a conversa.
 - **Rate limit local.** Fora da Vercel, sem cabeçalho de IP, todas as requisições caem no mesmo balde.
 
 **Próximos passos**
 
-1. Repetir a `v2` com a base atual e acrescentar perguntas sobre a taxa de entrega, coberta pelo PR #18.
-2. Ampliar o conjunto de perguntas e rodar com o juiz (`--judge`) para medir corretude e fidelidade, além dos termos.
-3. Tratar a pergunta 13 no prompt: responder o que a base diz (visibilidade) em vez do fallback quando a relação pedida não está escrita.
+1. Baixar a falsa recusa da `v3`: busca por seção nas paráfrases (116 e 121), reescrita que preserve o assunto nas continuações (135) e o fallback com os trechos certos no contexto (126 e 134).
+2. Rodar a avaliação com o juiz (`--judge`) para medir corretude e fidelidade, além dos termos.
+3. Rever o termo esperado da pergunta 129, que pede o valor do Rango Chama quando a pergunta só pergunta como pagar.
 4. Mostrar como fontes só os arquivos que a resposta usou.
 5. Índice HNSW quando a base passar de 500 trechos, e ingestão automática a partir das fontes.
 6. Avaliar o fine-tuning de um modelo pequeno para a reescrita, se houver dados rotulados para isso.

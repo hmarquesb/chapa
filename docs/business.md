@@ -81,13 +81,13 @@ Os temas que a base **não** cobre de propósito estão no [`knowledge-base/READ
 
 ## Metas de qualidade
 
-Medidas pela avaliação ([`qa.md`](qa.md#avaliação)), com 20 perguntas, 14 delas no escopo:
+Medidas pela avaliação ([`qa.md`](qa.md#avaliação)), com 50 perguntas, 36 delas no escopo e 14 de recusa (fora do escopo, adversariais e de bloqueio):
 
 | Métrica | Meta |
 |---|---|
 | Hit@K (algum arquivo esperado foi recuperado) | ≥ 85% |
-| Acerto (respondeu com todos os termos esperados) | ≥ 80% |
-| Recusa correta (fora do escopo ou bloqueio terminou em fallback ou bloqueio) | 100% |
+| Acerto (respondeu com todos os termos esperados e nenhum termo proibido) | ≥ 80% |
+| Recusa correta (pergunta de recusa terminou em fallback ou bloqueio, sem termo proibido) | ≥ 92% (no máximo 1 erro em 14) |
 | Falsa recusa (pergunta no escopo terminou em fallback ou bloqueio) | ≤ 10% |
 
 Os resultados da última rodada estão no [`README.md`](../README.md) e em [`eval/resultados/`](../eval/resultados/).
