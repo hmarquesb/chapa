@@ -4,7 +4,7 @@ import type { LlmClient, RetrievedChunk, Usage } from "@/core/types"
 
 export type JudgeResult = { corretude: number; fidelidade: number; justificativa: string }
 
-export const JUDGE_PROMPT = `Você avalia respostas de um assistente para restaurantes parceiros de um app de delivery. O assistente só pode usar os trechos da base de conhecimento enviados.
+export const JUDGE_PROMPT = `Você avalia respostas do assistente de parceiros da Rango, uma empresa de delivery. O assistente só pode usar os trechos da base de conhecimento enviados.
 
 Dê duas notas inteiras de 1 a 5:
 - corretude: a resposta responde à pergunta de forma correta e completa?
