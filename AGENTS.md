@@ -6,7 +6,15 @@ Instruções para qualquer agente de código (Claude Code, Codex, Cursor, subage
 
 Assistente web para restaurantes que **já são parceiros** de um app de delivery. Ele responde dúvidas operacionais (taxas e planos, repasse, cancelamentos, cardápio, horários, avaliações, embalagem) com **RAG híbrido** sobre a base em `knowledge-base/`, cita as fontes, guarda a memória por sessão e recusa o que está fora do escopo ou é sensível. Cadastro de novos restaurantes fica fora do escopo.
 
-- Arquitetura: [`ARCHITECTURE.md`](ARCHITECTURE.md). Leia antes de qualquer tarefa.
+- Documentação do projeto, em [`docs/`](docs/):
+
+  | Documento | O que cobre | Quando ler |
+  |---|---|---|
+  | [`architecture.md`](docs/architecture.md) | Stack, estrutura, fluxo de uma mensagem, banco e infraestrutura | Sempre, antes de qualquer tarefa |
+  | [`business.md`](docs/business.md) | Público, conceitos, temas cobertos, fora do escopo e metas | Ao propor ou avaliar uma mudança de produto |
+  | [`development.md`](docs/development.md) | Princípios, onde mexer para cada tipo de mudança, testes e front-end | Sempre, antes de escrever código |
+  | [`qa.md`](docs/qa.md) | Portões, verificação manual, avaliação e smoke | Antes de declarar uma mudança pronta |
+
 - Decisões e seus porquês: [`docs/adr/`](docs/adr/README.md). Uma decisão de arquitetura nova vira um ADR novo; um ADR aceito não é reescrito, e sim substituído por outro (`Substituído por`). Os ADRs são escritos em português.
 - Comportamento atual e mudanças novas: [`openspec/`](openspec/config.yaml), pelo OpenSpec (ver "Fluxo de trabalho com changes do OpenSpec").
 - Specs da construção inicial (histórico): [`specs/README.md`](specs/README.md). Cada spec traz por extenso os contratos que cria e os que usa.
@@ -110,17 +118,32 @@ Desde o [ADR 0015](docs/adr/0015-openspec-para-mudancas-incrementais.md), toda m
 1. O comportamento atual fica em `openspec/specs/<capacidade>/spec.md`. Uma mudança fica em `openspec/changes/<nome>/`: `proposal.md`, `design.md`, `tasks.md` e os deltas das specs.
 2. Use os comandos `/opsx:explore`, `/opsx:propose`, `/opsx:apply` e `/opsx:archive`, ou o CLI (`npx openspec list`, `show`, `validate`, `status`).
 3. Só faça o *apply* de uma change cuja proposta a pessoa aprovou.
-4. Leia, nesta ordem: este arquivo, o `ARCHITECTURE.md`, os artefatos da change e os ADRs que ela cita.
+4. Leia, nesta ordem: este arquivo, o `docs/architecture.md`, o `docs/development.md`, os artefatos da change e os ADRs que ela cita. Antes de terminar, siga o `docs/qa.md`.
 5. Toque **apenas** nos arquivos listados no `design.md` da change. Os contratos escritos nele são fixos: se precisar mudar um, pare e reporte.
 6. Marque as tarefas do `tasks.md` à medida que terminar cada uma.
 7. O *archive* só roda depois do merge do PR da change, num PR próprio (`docs(openspec): archive <nome>`).
 8. A definição de pronto e o relatório final são os mesmos das specs, logo abaixo.
 9. Não edite à mão os arquivos que o OpenSpec gerou em `.claude/commands/opsx/` e `.claude/skills/openspec-*/`. Eles são regenerados por `npx openspec update`.
 
+## Skills do projeto
+
+As skills ficam em `.claude/skills/`. Carregue a mais específica para cada etapa:
+
+| Etapa | Skill |
+|---|---|
+| Amadurecer uma ideia vaga, uma pergunta por vez | `feature-concept` (ou `/opsx:explore`, para uma conversa mais livre) |
+| Criar, revisar, implementar e arquivar uma change | `/opsx:propose`, `/opsx:update`, `/opsx:apply`, `/opsx:archive` |
+| Escrever ou revisar código Next.js (rotas, RSC, metadata, erros) | `next-best-practices` |
+| Escrever ou revisar componentes React com foco em performance | `vercel-react-best-practices` |
+| Adicionar ou compor componentes de interface | `shadcn` (sempre `npx shadcn`, na versão do lockfile) |
+| Revisar a interface (acessibilidade, UX) | `web-design-guidelines` |
+
+As skills são guias gerais e **não sobrepõem as regras deste arquivo**. Se uma delas sugerir uma dependência nova (SWR, `lru-cache`, bibliotecas de formulário), streaming, estado em memória entre requisições ou qualquer coisa que contrarie as regras de IA e RAG ou um ADR aceito, as regras daqui valem.
+
 ## Fluxo de trabalho com specs (S00 a S10, histórico)
 
 1. Só implemente specs com `Status: ✅ Aprovada`.
-2. Leia, nesta ordem: este arquivo, o `ARCHITECTURE.md` e a spec.
+2. Leia, nesta ordem: este arquivo, o `docs/architecture.md` (antigo `ARCHITECTURE.md`) e a spec.
 3. Toque **apenas** nos arquivos listados em "Arquivos que podem ser criados ou alterados". Outros agentes podem estar trabalhando no resto em paralelo.
 4. Os contratos de uma spec são fixos. Se precisar mudar um, pare e reporte.
 5. Não amplie o escopo. Se a spec estiver ambígua ou errada, pare e reporte em vez de improvisar.
