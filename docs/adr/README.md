@@ -21,6 +21,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0013](0013-fluxo-de-branch-por-spec.md) | Uma branch, um worktree e um PR por spec | Aceito |
 | [0014](0014-flash-lite-como-modelo-de-chat.md) | Usar o Flash-Lite também como modelo de chat | Aceito |
 | [0015](0015-openspec-para-mudancas-incrementais.md) | Usar o OpenSpec para as mudanças depois da construção inicial | Aceito |
+| [0016](0016-specs-da-construcao-em-docs-history.md) | Guardar as specs da construção em docs/history/build-specs/ | Aceito |
 
 ## Modelo
 

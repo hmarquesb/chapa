@@ -47,7 +47,7 @@ Mede o assistente com 20 perguntas, incluindo perguntas fora do escopo e com dad
   - Cada pergunta usa um `sessionId` novo.
   - Os trechos do `baseline` e do `padrao` convivem no `dev`, porque cada conjunto é identificado por `embeddingModel` + `chunkConfig`. Antes de rodar um preset, rode `npm run ingest -- --preset <mesmo preset>`.
   - O público é só quem já é parceiro. Perguntas sobre cadastro de novos restaurantes são fora do escopo.
-  - Cota gratuita: intervalo entre perguntas e juiz opcional. Desde o [ADR 0014](../docs/adr/0014-flash-lite-como-modelo-de-chat.md), a resposta, a reescrita, o resumo e o juiz usam o mesmo modelo Flash-Lite e dividem a mesma cota diária (500 requisições no painel do AI Studio em 06/11/2026). Os embeddings têm cota própria. Por isso, as tentativas de calibração usam `--only`.
+  - Cota gratuita: intervalo entre perguntas e juiz opcional. Desde o [ADR 0014](../../adr/0014-flash-lite-como-modelo-de-chat.md), a resposta, a reescrita, o resumo e o juiz usam o mesmo modelo Flash-Lite e dividem a mesma cota diária (500 requisições no painel do AI Studio em 06/11/2026). Os embeddings têm cota própria. Por isso, as tentativas de calibração usam `--only`.
 
 ### Contratos
 

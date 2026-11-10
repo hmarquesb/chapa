@@ -156,7 +156,7 @@ export interface LlmClient {
 
 | Campo | Padrão |
 |---|---|
-| `models.chat` | modelo **Flash-Lite** estável mais recente do Gemini disponível no plano gratuito, o mesmo de `models.fast` ([ADR 0014](../docs/adr/0014-flash-lite-como-modelo-de-chat.md); antes era o Flash) |
+| `models.chat` | modelo **Flash-Lite** estável mais recente do Gemini disponível no plano gratuito, o mesmo de `models.fast` ([ADR 0014](../../adr/0014-flash-lite-como-modelo-de-chat.md); antes era o Flash) |
 | `models.fast` | modelo **Flash-Lite** estável mais recente do Gemini disponível no plano gratuito |
 | `models.embedding` | `gemini-embedding-001` (ou o sucessor estável indicado na documentação) |
 | `models.embeddingDimensions` | `768` |

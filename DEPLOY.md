@@ -1,6 +1,6 @@
 # Deploy do Chapa
 
-Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Supabase `prod` com a migração e a base ingerida, variáveis de ambiente e cron. Segue a spec [S09](specs/S09-deploy.md) e as decisões dos ADRs [0003](docs/adr/0003-github-actions-e-vercel-cron.md), [0006](docs/adr/0006-bancos-dev-e-prod-separados.md) e [0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md).
+Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Supabase `prod` com a migração e a base ingerida, variáveis de ambiente e cron. Segue a spec [S09](docs/history/build-specs/S09-deploy.md) e as decisões dos ADRs [0003](docs/adr/0003-github-actions-e-vercel-cron.md), [0006](docs/adr/0006-bancos-dev-e-prod-separados.md) e [0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md).
 
 **Quem faz o quê.** "Pessoa" é a dona do projeto: só ela mexe em conta, segredo, visibilidade do repositório e Vercel. "Orquestrador" é o agente, e só executa um passo com a autorização registrada no `CLAUDE.md` (checkpoint H5).
 
@@ -93,7 +93,7 @@ Cotas por modelo no painel de cotas do AI Studio, informadas pela pessoa em 06/1
    **Verificação:** a última execução está `completed` com `success`.
 2. Antes de tornar o repositório público, rodar a varredura de segredos da spec (RF3):
    ```bash
-   git grep -nE "AIza[0-9A-Za-z_-]{20,}|postgres(ql)?://[^ ]*:[^ @]+@|CRON_SECRET[=].+|IP_HASH_SECRET[=].+" -- ':!specs/S09-deploy.md'
+   git grep -nE "AIza[0-9A-Za-z_-]{20,}|postgres(ql)?://[^ ]*:[^ @]+@|CRON_SECRET[=].+|IP_HASH_SECRET[=].+" -- ':!docs/history/build-specs/S09-deploy.md'
    git log --all --name-only --format= | grep -E '(^|/)\.env' | sort -u
    ```
    **Verificação:** o primeiro comando não imprime nada; o segundo imprime só `.env.example`. O `[=]` é o mesmo `=` da regex da spec, escrito de um jeito que não casa com o próprio texto do comando; a spec S09 fica de fora porque traz a regex original, que casa consigo mesma.

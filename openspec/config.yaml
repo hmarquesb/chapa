@@ -12,8 +12,8 @@ context: |
   siga docs/qa.md para verificar. Leia os ADRs em docs/adr/ que a mudança toca. As regras de IA e RAG, de segurança
   e de camadas do AGENTS.md valem para toda mudança.
 
-  As specs S00 a S10 em specs/ são o histórico da construção inicial e não são
-  mais editadas. O comportamento atual fica em openspec/specs/.
+  As specs S00 a S10 em docs/history/build-specs/ são o histórico da construção
+  inicial e não são mais editadas. O comportamento atual fica em openspec/specs/.
 
 rules:
   proposal:
