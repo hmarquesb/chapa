@@ -13,13 +13,13 @@ import { cn } from "@/lib/utils"
 
 type ProfileField = (typeof PROFILE_FIELDS)[number]
 
-// "Plano" stays free text (no fixed list). The example names come from knowledge-base/01-planos-e-taxas.md.
+// "Plano" stays free text (no fixed list). The example names come from knowledge-base/regras.yaml (nomes).
 const FIELDS: { key: ProfileField; label: string; placeholder: string }[] = [
   { key: "name", label: "Nome do restaurante", placeholder: "Ex.: Pizzaria Bella" },
   {
     key: "plan",
-    label: "Plano no app de delivery",
-    placeholder: "Ex.: Plano Básico ou Plano Entrega",
+    label: "Plano na Rango",
+    placeholder: "Ex.: Plano Próprio ou Plano Entrega",
   },
   { key: "cuisine", label: "Tipo de cozinha", placeholder: "Ex.: italiana" },
   { key: "city", label: "Cidade", placeholder: "Ex.: Campinas" },

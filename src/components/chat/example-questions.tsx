@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 
 export const EXAMPLE_QUESTIONS = [
   "Quando o repasse cai na minha conta?",
-  "O cliente cancelou e eu perdi a comida, e agora?",
+  "Quem paga o desconto quando eu crio um cupom?",
   "Me passa uma receita de lasanha?",
 ] as const
 
