@@ -45,7 +45,7 @@ Para cada documento: seguir as regras de redação e a linha da tabela da decis�
 
 ## 6. Ingestão no `dev` e verificação manual
 
-- [ ] 6.1 **(pessoa)** Revisar o texto dos 11 documentos, o `README.md` da base e os "Valores acrescentados" no PR. O orquestrador marca esta tarefa quando a pessoa aprovar.
+- [x] 6.1 **(pessoa)** Revisar o texto dos 11 documentos, o `README.md` da base e os "Valores acrescentados" no PR. O orquestrador marca esta tarefa quando a pessoa aprovar.
 - [ ] 6.2 **(autorização)** Rodar `npm run ingest` (preset `padrao`). Verificar: a linha `Banco:` mostra um host `*.neon.tech`, os 11 arquivos aparecem na contagem por arquivo, nenhum `regras.yaml` nem `README.md`, e o total gravado é igual ao `count` impresso.
 - [ ] 6.3 **(autorização)** Rodar `npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --debug` com três perguntas: a comissão do plano (espera 11%), quanto custa o Rango Chama (espera R$ 8,90 e R$ 1,50) e qual o prazo de um chamado financeiro (espera 3 dias úteis, fonte `09-suporte-e-chamados.md`). Verificar e registrar no relatório o status, as fontes e os termos de cada resposta. Uma resposta errada não bloqueia a change (a medição é a `v3`), mas vai para o relatório.
 
