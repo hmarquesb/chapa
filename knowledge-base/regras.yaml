@@ -1,0 +1,159 @@
+# Regras da Rango, empresa de delivery fictícia criada para fins de estudo.
+# Fonte única de todos os números citados em knowledge-base/. Não é ingerido pelo RAG.
+# O sufixo de cada chave diz a unidade: _pct, _reais, _min, _horas, _dias, _dias_uteis,
+# _km, _mb, _px, _qtd. O teste scripts/knowledge-base/knowledge-base.test.ts confere
+# os documentos contra este arquivo.
+
+empresa:
+  nome: Rango
+  vigencia: "01/11/2026"
+
+nomes:
+  painel: Painel Rango
+  app_da_loja: Rango Loja
+  plano_proprio: Plano Próprio
+  plano_entrega: Plano Entrega
+  plano_misto: Plano Misto
+  entregador_avulso: Rango Chama
+  selo: Rango Recomenda
+  publicidade: Rango Ads
+
+planos:
+  proprio:
+    comissao_pct: 11
+    mensalidade_reais: 99
+  entrega:
+    comissao_pct: 22
+    mensalidade_reais: 139
+  misto:
+    comissao_area_propria_pct: 11
+    comissao_area_rango_pct: 22
+    mensalidade_reais: 139
+  area_propria_raio_maximo_km: 7
+  comissao_retirada_pct: 6
+  base_da_comissao: valor dos itens, sem a taxa de entrega
+  isencao_mensalidade_faturamento_abaixo_reais: 2000
+  taxa_pagamento_online:
+    cartao_e_carteira_digital_pct: 3.5
+    pix_pct: 1.5
+    vale_refeicao_pct: 4.5
+    base: valor dos itens, antes de qualquer cupom
+  dinheiro_na_entrega: sem taxa; só no Plano Próprio e na área própria do Plano Misto
+  taxa_servico_cliente:
+    menor_valor_reais: 0.99
+    maior_valor_reais: 1.99
+  taxa_entrega_proprio:
+    teto_reais: 30
+    faixas_de_distancia_qtd: 5
+  taxa_entrega_plano_entrega: definida pela Rango pela distância; fica com a Rango
+  rango_chama:
+    preco_base_reais: 8.90
+    distancia_incluida_km: 4
+    km_extra_reais: 1.50
+  troca_de_plano:
+    dia_limite_do_pedido_qtd: 25
+    vale_a_partir_do_dia_qtd: 1
+    intervalo_entre_trocas_dias: 90
+
+repasse:
+  periodo_de_vendas: segunda-feira a domingo
+  dia_do_pagamento: quarta-feira seguinte
+  custo_do_repasse_semanal: sem custo
+  feriado_na_quarta: pago no próximo dia útil
+  valor_minimo_reais: 20
+  antecipacao:
+    prazo_dias_uteis: 2
+    taxa_pct: 2.49
+    valor_minimo_reais: 100
+  mensalidade_descontada: primeiro repasse do mês
+  retido_por_dado_bancario_liberacao_dias_uteis: 5
+
+cancelamentos:
+  aceite_automatico_min: 8
+  contestacao_prazo_dias: 7
+  contestacao_resposta_dias_uteis: 5
+  janela_de_calculo_dias: 30
+  perda_de_destaque_acima_de_pct: 3
+  revisao_da_conta_acima_de_pct: 6
+
+cardapio:
+  itens_qtd: 500
+  categorias_qtd: 40
+  grupos_de_complementos_por_item_qtd: 30
+  foto_formatos: [JPG, PNG]
+  foto_largura_minima_px: 1200
+  foto_altura_minima_px: 900
+  foto_tamanho_maximo_mb: 5
+  moderacao_de_foto_horas: 24
+  preco_diferente_do_salao: permitido; a loja decide
+
+horarios:
+  pedidos_ignorados_para_fechamento_qtd: 3
+  fechamento_preventivo_duracao_min: 30
+  fechamentos_no_dia_para_reabrir_a_mao_qtd: 3
+  pausa_programada_maxima_horas: 8
+  disponibilidade_minima_pct: 90
+  janela_de_calculo_dias: 30
+
+avaliacoes:
+  janela_da_nota_dias: 90
+  avaliacoes_para_mostrar_nota_qtd: 10
+  prazo_para_responder_dias: 5
+  moderacao:
+    prazo_para_pedir_dias: 7
+    resposta_dias_uteis: 3
+  selo_rango_recomenda:
+    janela_dias: 60
+    nota_minima: 4.6
+    cancelamento_maximo_pct: 2
+    disponibilidade_minima_pct: 95
+
+embalagem:
+  lacre: obrigatório em todos os pedidos entregues pela Rango
+  tempo_de_preparo_minimo_min: 5
+  tempo_de_preparo_maximo_min: 90
+  idade_minima_alcool_qtd: 18
+
+promocoes:
+  cupom_da_loja_pago_pela_loja_pct: 100
+  cupom_rango_pago_pela_rango_pct: 100
+  cupom_coparticipado_loja_pct: 50
+  cupom_coparticipado_rango_pct: 50
+  base_da_comissao_com_cupom_da_loja: valor dos itens antes do desconto
+  desconto_maximo_pct: 50
+  campanha_duracao_maxima_dias: 30
+  entrega_gratis_plano_entrega: a loja paga a taxa de entrega até o limite que definir na campanha
+
+suporte:
+  chat_no_painel_disponibilidade_horas: 24
+  telefone_horario: "8h às 22h"
+  email_resposta_dias_uteis: 2
+  prazos:
+    urgente_horas: 2
+    conta_e_acesso_horas: 24
+    cardapio_dias_uteis: 1
+    financeiro_dias_uteis: 3
+    cancelamento_e_contestacao_dias_uteis: 5
+  reaberturas_para_ouvidoria_qtd: 2
+  ouvidoria_resposta_dias_uteis: 10
+  protocolo_formato: RG-AAAA-NNNNNN
+
+conta:
+  perfis:
+    dono: tudo
+    gerente: tudo, menos financeiro e plano
+    operador: pedidos e cardápio
+  usuarios_por_loja_qtd: 10
+  senha_minimo_de_caracteres_qtd: 10
+  verificacao_em_2_etapas: obrigatória para o perfil Dono
+  sessao_no_painel_horas: 12
+  troca_de_conta_bancaria_carencia_horas: 48
+  troca_de_conta_bancaria_quem_pode: Dono
+
+pagamentos:
+  formas:
+    [cartão de crédito, cartão de débito, Pix, carteira digital, vale-refeição online, dinheiro]
+  nota_ao_cliente: emitida pela loja, sobre o valor dos itens
+  nfs_e_da_rango_ate_o_dia_qtd: 5
+  retencao_de_tributos_na_fonte: não
+  informe_anual: até o fim de fevereiro
