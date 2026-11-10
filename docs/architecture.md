@@ -28,8 +28,8 @@ knowledge-base/     base de conhecimento em .md
 eval/               perguntas.json e resultados/
 supabase/migrations/
 docs/               arquitetura, negócio, desenvolvimento, QA e adr/ (decisões)
+└── history/        specs da construção inicial em build-specs/ (histórico)
 openspec/           specs vivas (specs/) e mudanças (changes/) do OpenSpec
-specs/              specs da construção inicial (histórico)
 ```
 
 `components/` nunca importa `core/` nem `infra/`.

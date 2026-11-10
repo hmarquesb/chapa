@@ -62,7 +62,7 @@ As decisões completas, com contexto e alternativas, estão em [`docs/adr/`](doc
 
 ### Como o projeto foi construído
 
-O trabalho foi dividido em 11 specs ([`specs/`](specs/README.md)), da S00 (estrutura) à S10 (esta documentação). Cada spec lista os arquivos que pode tocar, os contratos que cria e usa e os critérios de aceite.
+O trabalho foi dividido em 11 specs ([`docs/history/build-specs/`](docs/history/build-specs/README.md)), da S00 (estrutura) à S10 (esta documentação). Cada spec lista os arquivos que pode tocar, os contratos que cria e usa e os critérios de aceite.
 
 - Specs sem dependência entre si rodaram em paralelo, em ondas, cada uma com um subagente no seu próprio `git worktree`.
 - Cada spec virou uma branch e um PR. A `main` só recebe código por PR com a CI verde (`lint`, `typecheck`, `test` e `build`).

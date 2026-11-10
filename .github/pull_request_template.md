@@ -3,7 +3,7 @@
 ## Spec / Change
 
 Implements [`<change-name>`](openspec/changes/<change-name>/proposal.md).
-<!-- For the initial-build specs: Implements [SNN — name](specs/SNN-file.md). -->
+<!-- For the initial-build specs: Implements [SNN — name](docs/history/build-specs/SNN-file.md). -->
 
 
 ## Summary

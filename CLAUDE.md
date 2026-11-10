@@ -2,7 +2,7 @@
 
 # Instruções específicas do Claude Code
 
-As regras do projeto estão no `AGENTS.md` (importado acima). Este arquivo só acrescenta **como orquestrar uma change do OpenSpec com subagentes**. O fluxo da construção inicial (ondas S00 a S10, commit 0, checkpoints H0 a H6) está no [`specs/README.md`](specs/README.md) e não se aplica mais.
+As regras do projeto estão no `AGENTS.md` (importado acima). Este arquivo só acrescenta **como orquestrar uma change do OpenSpec com subagentes**. O fluxo da construção inicial (ondas S00 a S10, commit 0, checkpoints H0 a H6) está no [`docs/history/build-specs/README.md`](docs/history/build-specs/README.md) e não se aplica mais.
 
 ## Papel da sessão principal (orquestrador)
 
@@ -51,7 +51,7 @@ Para uma revisão independente, use um subagente `general-purpose` que recebe o 
 
 ## Autorizações prévias
 
-As autorizações das specs S00 a S10 (H1 a H4) estão registradas no [`specs/README.md`](specs/README.md#autorizações-prévias-histórico).
+As autorizações das specs S00 a S10 (H1 a H4) estão registradas no [`docs/history/build-specs/README.md`](docs/history/build-specs/README.md#autorizações-prévias-histórico).
 
 A pessoa autorizou as ações abaixo (registrado em 10/11/2026). Elas valem como a autorização explícita que o `AGENTS.md` exige: o orquestrador não precisa pedi-las de novo e as repassa no campo "Chamadas reais de API e de banco" do prompt do subagente. O que não está aqui continua precisando de autorização na tarefa.
 

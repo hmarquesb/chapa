@@ -19,7 +19,7 @@ Assistente web para restaurantes que **já são parceiros** de um app de deliver
 
 - Decisões e seus porquês: [`docs/adr/`](docs/adr/README.md). Uma decisão de arquitetura nova vira um ADR novo; um ADR aceito não é reescrito, e sim substituído por outro (`Substituído por`). Os ADRs são escritos em português.
 - Comportamento atual e mudanças novas: [`openspec/`](openspec/config.yaml), pelo OpenSpec. Leia só a spec da capacidade que a tarefa toca (`openspec/specs/<capacidade>/spec.md`).
-- Specs da construção inicial (S00 a S10, todas concluídas): [`specs/`](specs/README.md). São histórico: não leia nem edite, a menos que a tarefa peça.
+- Specs da construção inicial (S00 a S10, todas concluídas): [`docs/history/build-specs/`](docs/history/build-specs/README.md), movidas para lá pelo [ADR 0016](docs/adr/0016-specs-da-construcao-em-docs-history.md). São histórico: não leia nem edite, a menos que a tarefa peça.
 
 É um projeto de estudo, **não oficial** e sem afiliação com nenhuma empresa de delivery.
 
