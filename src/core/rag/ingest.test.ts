@@ -50,7 +50,8 @@ function fakeChunks(): ChunkRepository & { replaceCalls: ReplaceCall[] } {
 const docA = "# Documento A\n\n> Fonte: x\n\n## Um\n\nTexto um.\n\n## Dois\n\nTexto dois."
 const docB = "# Documento B\n\n> Fonte: y\n\n## Único\n\nTexto único."
 const documents: SourceDocument[] = [
-  { name: "FONTES.md", content: "# Fontes\n\n## Lista\n\nurl" },
+  { name: "README.md", content: "# Base\n\n## Temas\n\nTexto." },
+  { name: "regras.yaml", content: "planos:\n  proprio:\n    comissao_pct: 11\n" },
   { name: "02-b.md", content: docB },
   { name: "01-a.md", content: docA },
 ]
@@ -58,15 +59,15 @@ const documents: SourceDocument[] = [
 describe("KNOWLEDGE_FILE_PATTERN", () => {
   it("matches only numbered markdown files", () => {
     expect(KNOWLEDGE_FILE_PATTERN.test("02-repasse-financeiro.md")).toBe(true)
-    expect(KNOWLEDGE_FILE_PATTERN.test("FONTES.md")).toBe(false)
     expect(KNOWLEDGE_FILE_PATTERN.test("README.md")).toBe(false)
+    expect(KNOWLEDGE_FILE_PATTERN.test("regras.yaml")).toBe(false)
     expect(KNOWLEDGE_FILE_PATTERN.test("02-repasse.txt")).toBe(false)
     expect(KNOWLEDGE_FILE_PATTERN.test("2-repasse.md")).toBe(false)
   })
 })
 
 describe("ingestDocuments", () => {
-  it("ignores FONTES.md, replaces the preset set once and counts per file", async () => {
+  it("ignores README.md and regras.yaml, replaces the preset set once and counts per file", async () => {
     const llm = fakeLlm()
     const chunks = fakeChunks()
     const result = await ingestDocuments({ documents, config, llm, chunks })
@@ -123,7 +124,10 @@ describe("ingestDocuments", () => {
     const chunks = fakeChunks()
     await expect(
       ingestDocuments({
-        documents: [{ name: "FONTES.md", content: "x" }],
+        documents: [
+          { name: "README.md", content: "x" },
+          { name: "regras.yaml", content: "x: 1" },
+        ],
         config,
         llm,
         chunks,

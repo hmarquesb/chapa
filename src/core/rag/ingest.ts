@@ -5,7 +5,7 @@ import type { Chunk, ChunkRepository, ChunkSetKey, LlmClient, Usage } from "@/co
 
 export type SourceDocument = { name: string; content: string }
 
-// Só os documentos numerados (01-...md). FONTES.md e README.md ficam de fora.
+// Só os documentos numerados (01-...md). README.md e regras.yaml ficam de fora.
 export const KNOWLEDGE_FILE_PATTERN: RegExp = /^\d{2}-.*\.md$/
 
 export async function ingestDocuments(input: {
