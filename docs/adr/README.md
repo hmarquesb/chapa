@@ -23,6 +23,8 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0015](0015-openspec-para-mudancas-incrementais.md) | Usar o OpenSpec para as mudanças depois da construção inicial | Aceito |
 | [0016](0016-specs-da-construcao-em-docs-history.md) | Guardar as specs da construção em docs/history/build-specs/ | Aceito |
 | [0017](0017-neon-como-banco-dev.md) | Usar o Neon como banco dev e o Supabase só no prod | Aceito |
+| [0018](0018-empresa-ficticia-rango.md) | Usar a empresa fictícia Rango no lugar de fontes públicas | Aceito |
+| [0019](0019-regras-yaml-fonte-unica.md) | Usar o regras.yaml como fonte única dos números | Aceito |
 
 ## Modelo
 
