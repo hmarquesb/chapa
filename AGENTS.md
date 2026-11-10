@@ -133,6 +133,7 @@ As skills ficam em `.claude/skills/`. Carregue a mais específica para cada etap
 |---|---|
 | Amadurecer uma ideia vaga, uma pergunta por vez | `feature-concept` (ou `/opsx:explore`, para uma conversa mais livre) |
 | Criar, revisar, implementar e arquivar uma change | `/opsx:propose`, `/opsx:update`, `/opsx:apply`, `/opsx:archive` |
+| Fazer o merge do PR de uma change e arquivá-la (só quando a pessoa pede) | `/merge-change <PR>` |
 | Escrever ou revisar código Next.js (rotas, RSC, metadata, erros) | `next-best-practices` |
 | Escrever ou revisar componentes React com foco em performance | `vercel-react-best-practices` |
 | Adicionar ou compor componentes de interface | `shadcn` (sempre `npx shadcn`, na versão do lockfile) |
@@ -184,5 +185,5 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 - Subagentes **não fazem commit nem push**, a menos que a tarefa peça.
 - O orquestrador commita na branch da spec depois de revisar, faz push **só da branch da spec** e abre o PR (`gh pr create`). Push direto na `main`, `--force` e criação de repositório remoto só com pedido explícito da pessoa.
-- O merge do PR é da pessoa, ou do orquestrador com autorização explícita naquele PR.
+- O merge do PR é da pessoa, ou do orquestrador com autorização explícita naquele PR. Rodar `/merge-change <PR>` é essa autorização para o PR da change e para o PR de archive que a skill abre.
 - Configurações pessoais de editor (`.vscode/`, `.idea/`) ficam no `.gitignore`. Rascunhos e anotações pessoais não entram no repositório.

@@ -51,6 +51,7 @@ O fluxo acima continua, trocando a spec pela change:
 3. O `spec-implementer` recebe a change no lugar da spec (ver o prompt abaixo) e executa o `tasks.md`.
 4. O orquestrador revisa, commita com o trailer `Change: <change>`, faz push e abre o PR.
 5. Depois do merge, o orquestrador roda `/opsx:archive` numa branch `docs/archive-<change>` e abre o PR `docs(openspec): archive <change>`. Várias changes da mesma leva podem ser arquivadas no mesmo PR.
+6. Atalho: quando a pessoa roda `/merge-change <PR>`, a skill [`merge-change`](.claude/skills/merge-change/SKILL.md) faz o merge e o passo 5 de uma vez: espera a CI, faz o merge do PR da change, arquiva, abre o PR de archive e faz o merge dele também.
 
 Changes paralelas seguem a mesma regra das specs: não podem compartilhar arquivos. Duas changes que alteram a mesma capacidade em `openspec/specs/` podem rodar em paralelo, porque os deltas só se juntam no archive, que é sequencial.
 
@@ -85,6 +86,6 @@ A pessoa já autorizou as ações abaixo (registrado em 05/11/2026). Elas valem 
 
 - Commit 0 e H0b: commitar a documentação, criar o repositório no GitHub e fazer o push da `main`.
 - H3: revisar a base de conhecimento. A ingestão só roda depois de "H3 aprovado".
-- Merge dos PRs.
+- Merge dos PRs, exceto quando a pessoa roda `/merge-change <PR>`: a invocação autoriza o merge daquele PR de change e do PR de archive que a skill abre, sempre com a CI verde.
 - H5: tornar o repositório público, criar ou alterar o projeto na Vercel e as variáveis de ambiente dela, e autorizar o smoke contra a produção.
 - H6.
