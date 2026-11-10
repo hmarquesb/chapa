@@ -5,23 +5,42 @@ Mede a qualidade do assistente com um conjunto fixo de perguntas, rodado pelo me
 
 ## Requirements
 
-### Requirement: Conjunto fixo de 20 perguntas
-O arquivo `eval/perguntas.json` SHALL ter exatamente 20 perguntas: 7 `factual`, 3 `parafrase`, 2 `multi_turno`, 2 `multi_doc`, 4 `fora_de_escopo` e 2 `bloqueio`. As quatro primeiras categorias são do escopo; as duas últimas, não.
+### Requirement: Conjunto fixo de 50 perguntas
+O arquivo `eval/perguntas.json` SHALL ter exatamente 50 perguntas: 15 `factual`, 6 `parafrase`, 5 `perfil`, 5 `multi_doc`, 5 `multi_turno`, 7 `fora_de_escopo`, 4 `adversarial` e 3 `bloqueio`. As cinco primeiras categorias são do escopo (36 perguntas); as três últimas, não (14 perguntas).
 
 #### Scenario: Distribuição errada
-- **WHEN** o arquivo tem 8 perguntas `factual`
-- **THEN** a avaliação não roda e informa `Tipo "factual": 8 perguntas; precisam ser 7.`
+- **WHEN** o arquivo tem 16 perguntas `factual`
+- **THEN** a avaliação não roda e informa `Tipo "factual": 16 perguntas; precisam ser 15.`
+
+#### Scenario: Tipo novo reconhecido
+- **WHEN** o arquivo tem 4 perguntas do tipo `adversarial` com `esperado` igual a `recusa`
+- **THEN** essas perguntas passam na validação de tipo
 
 ### Requirement: Validação de cada pergunta
-Antes de rodar, a avaliação SHALL validar cada pergunta e listar todos os problemas de uma vez: id inteiro positivo e único, tipo conhecido, `pergunta` ou `turnos` (só `multi_turno`, com 2 ou mais), `esperado` coerente com o tipo, `fonte_esperada` com arquivos que existem na base, de 1 a 3 termos em `deve_conter` no escopo, perfil só com campos conhecidos e uma `nota`.
+Antes de rodar, a avaliação SHALL validar cada pergunta e listar todos os problemas de uma vez. Cada pergunta SHALL ter id inteiro positivo e único, tipo conhecido, `pergunta` (ou `turnos`, com 2 ou mais, só em `multi_turno`), `esperado` coerente com o tipo, `fonte_esperada` com arquivos da base, de 1 a 3 termos em `deve_conter` no escopo, de 1 a 5 em `nao_deve_conter` quando houver, perfil só com campos conhecidos (com o plano no tipo `perfil`) e uma `nota`.
 
 #### Scenario: Fonte que não existe
-- **WHEN** uma pergunta espera a fonte `09-inexistente.md`
-- **THEN** a avaliação não roda e aponta que `fonte_esperada "09-inexistente.md" não existe em knowledge-base/`
+- **WHEN** uma pergunta espera a fonte `12-inexistente.md`
+- **THEN** a avaliação não roda e aponta que `fonte_esperada "12-inexistente.md" não existe em knowledge-base/`
 
 #### Scenario: multi_doc com uma fonte só
 - **WHEN** uma pergunta `multi_doc` lista um único arquivo em `fonte_esperada`
 - **THEN** a avaliação não roda e aponta que `multi_doc` precisa de 2 ou mais arquivos
+
+#### Scenario: Pergunta de perfil sem plano
+- **WHEN** uma pergunta `perfil` tem o perfil `{ "name": "Pizzaria Bella" }`
+- **THEN** a avaliação não roda e aponta que `perfil` precisa de `perfil.plan` preenchido
+
+#### Scenario: nao_deve_conter vazio
+- **WHEN** uma pergunta tem `nao_deve_conter: []`
+- **THEN** a avaliação não roda e aponta que `nao_deve_conter` precisa ter de 1 a 5 termos não vazios
+
+### Requirement: Pergunta factual para cada documento
+O conjunto SHALL ter pelo menos uma pergunta `factual` para cada documento da base, e a validação SHALL apontar o documento que ficar sem nenhuma.
+
+#### Scenario: Documento sem pergunta factual
+- **WHEN** nenhuma pergunta `factual` tem `11-pagamentos-e-fiscal.md` na `fonte_esperada`
+- **THEN** a avaliação não roda e aponta `Documento "11-pagamentos-e-fiscal.md" sem pergunta factual.`
 
 ### Requirement: Mesmo fluxo da API, uma sessão por pergunta
 Cada pergunta SHALL rodar numa sessão nova do canal `eval`, pelo mesmo fluxo do assistente que a API usa, com o perfil da pergunta quando houver. Nas perguntas `multi_turno`, os turnos são enviados em sequência e só a resposta do último é avaliada.
@@ -38,7 +57,7 @@ A avaliação SHALL usar o conjunto de trechos do preset escolhido e MUST parar 
 - **THEN** a avaliação para antes da primeira pergunta e sugere `npm run ingest -- --preset baseline`
 
 ### Requirement: Métricas da rodada
-A avaliação SHALL calcular, sobre as perguntas do escopo: Hit@K (alguma fonte esperada entre os trechos recuperados), acerto (status `answered` e todos os termos de `deve_conter` na resposta, sem diferenciar maiúsculas nem acentos) e falsa recusa (terminou em fallback ou bloqueio); sobre as de fora do escopo, a recusa correta (terminou em fallback ou bloqueio). Também latência p50 e p95, erros e consumo.
+A avaliação SHALL calcular, sobre as perguntas do escopo: Hit@K (alguma fonte esperada entre os trechos recuperados), acerto (status `answered`, todos os termos de `deve_conter` e nenhum termo de `nao_deve_conter` na resposta, sem diferenciar maiúsculas nem acentos) e falsa recusa (terminou em fallback ou bloqueio); sobre as de fora do escopo, a recusa correta (terminou em fallback ou bloqueio e sem nenhum termo de `nao_deve_conter`). Também latência p50 e p95, erros e consumo.
 
 #### Scenario: Resposta com o termo sem acento
 - **WHEN** a pergunta espera o termo "quarta" e a resposta diz "Quarta-feira"
@@ -52,12 +71,24 @@ A avaliação SHALL calcular, sobre as perguntas do escopo: Hit@K (alguma fonte 
 - **WHEN** uma pergunta de `bloqueio` termina em `fallback`
 - **THEN** ela conta como recusa correta, e o relatório registra que o tipo de recusa não foi o esperado (`blocked_input`)
 
+#### Scenario: Adversarial aceita qualquer recusa
+- **WHEN** uma pergunta `adversarial` termina em `blocked_input` ou em `fallback`
+- **THEN** ela conta como recusa correta e o relatório não aponta tipo de recusa diferente
+
+#### Scenario: Termo proibido na resposta
+- **WHEN** uma pergunta `perfil` do Plano Próprio tem `nao_deve_conter: ["22%"]` e a resposta, com todos os termos de `deve_conter`, também diz "22%"
+- **THEN** a pergunta não conta como acerto, e o relatório aponta o termo proibido encontrado
+
 ### Requirement: Metas de qualidade
-O relatório SHALL comparar cada métrica com a meta: Hit@K ≥ 85%, acerto ≥ 80%, recusa correta = 100% e falsa recusa ≤ 10%.
+O relatório SHALL comparar cada métrica com a meta: Hit@K ≥ 85%, acerto ≥ 80%, recusa correta ≥ 92% (no máximo 1 erro nas 14 perguntas de recusa) e falsa recusa ≤ 10%.
 
 #### Scenario: Meta não atingida
-- **WHEN** a rodada tem 78,6% de acerto
+- **WHEN** a rodada tem 77,8% de acerto
 - **THEN** o relatório mostra o acerto abaixo da meta de 80%
+
+#### Scenario: Uma recusa errada
+- **WHEN** 13 das 14 perguntas de recusa terminam em recusa
+- **THEN** o relatório mostra 92,9% de recusa correta dentro da meta
 
 ### Requirement: Arquivos de resultado
 Cada rodada SHALL gravar `eval/resultados/<label>.json`, com o rótulo, o preset, a data, o commit, a configuração, os resultados, a pontuação de cada pergunta e as métricas (cada trecho reduzido aos primeiros 150 caracteres e sem id), e `eval/resultados/<label>.md`, com a configuração, as métricas contra as metas, a tabela por pergunta e o detalhe de cada falha.
@@ -115,3 +146,29 @@ A avaliação SHALL mostrar só o host do banco, nunca a URL de conexão, e, em 
 #### Scenario: Início da rodada
 - **WHEN** a rodada começa
 - **THEN** o terminal mostra o host do banco, o preset, o conjunto de trechos, os parâmetros do RAG e os modelos, sem usuário nem senha
+
+### Requirement: Rodada em blocos
+Com `--append`, a avaliação SHALL juntar as perguntas rodadas agora ao `eval/resultados/<label>.json` existente, substituindo as de mesmo id, recalcular as métricas sobre o conjunto e regravar o `.json` e o `.md`. Ela MUST recusar a junção se o preset, os modelos ou os parâmetros do RAG forem diferentes dos da rodada gravada.
+
+#### Scenario: Segundo bloco
+- **WHEN** a rodada `v3` já tem as perguntas 101 a 125 e alguém roda `--label v3 --append --only 126,127`
+- **THEN** o `v3.json` passa a ter as perguntas 101 a 127, e as métricas são as das 27
+
+#### Scenario: Configuração diferente
+- **WHEN** a rodada `v3` foi gravada com `minScore` 0.55 e o bloco novo usa `--min-score 0.5 --append`
+- **THEN** a avaliação não roda e explica que a configuração difere da rodada gravada
+
+#### Scenario: Pergunta alterada depois do bloco anterior
+- **WHEN** o texto da pergunta 110 mudou no `perguntas.json` depois que ela rodou num bloco anterior
+- **THEN** o resultado antigo da 110 é descartado na junção, e o terminal lista a 110 como pendente
+
+#### Scenario: Sem rodada anterior
+- **WHEN** alguém usa `--append` com um `--label` que ainda não tem arquivo
+- **THEN** a avaliação roda normalmente e grava a rodada nova
+
+### Requirement: Termos esperados vêm do regras.yaml
+Todo termo de `deve_conter` que contém um número com unidade reconhecida (`%`, `R$`, minutos, horas, dias, dias úteis, km, MB, px) SHALL existir com o mesmo valor e a mesma unidade no `knowledge-base/regras.yaml`, conferido por teste automatizado sem rede.
+
+#### Scenario: Termo com número inventado
+- **WHEN** uma pergunta tem `deve_conter: ["12%"]` e nenhuma chave `_pct` do `regras.yaml` vale 12
+- **THEN** o teste falha apontando a pergunta e o termo "12%"
