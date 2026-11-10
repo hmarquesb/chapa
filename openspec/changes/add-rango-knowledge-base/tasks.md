@@ -45,9 +45,10 @@ Para cada documento: seguir as regras de redação e a linha da tabela da decis�
 
 ## 6. Ingestão no `dev` e verificação manual
 
+- [x] 6.0 Acrescentar `llm.embedBatchDelayMs` (60.000 ms) ao `src/config.ts` e fazer o `embed` do `src/infra/llm/gemini-client.ts` esperar esse tempo entre um lote e o seguinte, nunca depois do último (decisão 12). Teste antes do código em `gemini-client.test.ts` (pausa entre lotes, nenhuma pausa com um lote só) e o `config.test.ts` atualizado. Verificar que `npx vitest run src/infra/llm/ src/config.test.ts` passa.
 - [x] 6.1 **(pessoa)** Revisar o texto dos 11 documentos, o `README.md` da base e os "Valores acrescentados" no PR. O orquestrador marca esta tarefa quando a pessoa aprovar.
-- [ ] 6.2 **(autorização)** Rodar `npm run ingest` (preset `padrao`). Verificar: a linha `Banco:` mostra um host `*.neon.tech`, os 11 arquivos aparecem na contagem por arquivo, nenhum `regras.yaml` nem `README.md`, e o total gravado é igual ao `count` impresso.
-- [ ] 6.3 **(autorização)** Rodar `npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --debug` com três perguntas: a comissão do plano (espera 11%), quanto custa o Rango Chama (espera R$ 8,90 e R$ 1,50) e qual o prazo de um chamado financeiro (espera 3 dias úteis, fonte `09-suporte-e-chamados.md`). Verificar e registrar no relatório o status, as fontes e os termos de cada resposta. Uma resposta errada não bloqueia a change (a medição é a `v3`), mas vai para o relatório.
+- [x] 6.2 **(autorização)** Rodar `npm run ingest` (preset `padrao`). Verificar: a linha `Banco:` mostra um host `*.neon.tech`, os 11 arquivos aparecem na contagem por arquivo, nenhum `regras.yaml` nem `README.md`, e o total gravado é igual ao `count` impresso.
+- [x] 6.3 **(autorização)** Rodar `npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --debug` com três perguntas: a comissão do plano (espera 11%), quanto custa o Rango Chama (espera R$ 8,90 e R$ 1,50) e qual o prazo de um chamado financeiro (espera 3 dias úteis, fonte `09-suporte-e-chamados.md`). Verificar e registrar no relatório o status, as fontes e os termos de cada resposta. Uma resposta errada não bloqueia a change (a medição é a `v3`), mas vai para o relatório.
 
 ## 7. Verificação final
 
