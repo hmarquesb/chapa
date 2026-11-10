@@ -4,7 +4,7 @@ Instruções para qualquer agente de código (Claude Code, Codex, Cursor, subage
 
 ## O que é o projeto
 
-Assistente web para restaurantes que **já são parceiros** de um app de delivery. Ele responde dúvidas operacionais (taxas e planos, repasse, cancelamentos, cardápio, horários, avaliações, embalagem) com **RAG híbrido** sobre a base em `knowledge-base/`, cita as fontes, guarda a memória por sessão e recusa o que está fora do escopo ou é sensível. Cadastro de novos restaurantes fica fora do escopo.
+Assistente web para restaurantes que **já são parceiros** da Rango, uma empresa de delivery fictícia. Ele responde dúvidas operacionais (taxas e planos, repasse, cancelamentos, cardápio, horários, avaliações, embalagem) com **RAG híbrido** sobre a base em `knowledge-base/`, cita as fontes, guarda a memória por sessão e recusa o que está fora do escopo ou é sensível. Cadastro de novos restaurantes fica fora do escopo.
 
 - Documentação do projeto, em [`docs/`](docs/):
 
@@ -74,7 +74,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts 
 | Campo novo no perfil | `src/lib/types.ts` (`PROFILE_FIELDS`), `src/core/prompts.ts`, `src/components/chat/profile-form.tsx` | O perfil é dado do usuário: não logue |
 | Interface | `src/components/chat/` (entrada em `chat-app.tsx`), `src/app/page.tsx`, `src/lib/` (`chat-state`, `api-client`, `session-id`) | Componentes só importam `src/lib/` |
 | Schema do banco | Nova migração em `supabase/migrations/` (`npm run db -- migration new <nome>`) | Nunca edite uma migração já aplicada. RLS ligado e sem policies. Aplicar no banco é checkpoint humano |
-| Base de conhecimento | `knowledge-base/0N-*.md` e `knowledge-base/FONTES.md` | Reescreva com palavras próprias, com fonte e data. Depois do merge, reingerir no `dev` e no `prod` |
+| Base de conhecimento | `knowledge-base/NN-*.md` e `knowledge-base/regras.yaml` | Número novo entra primeiro no `regras.yaml`; rode `npm test`. Depois do merge, reingerir no `dev` e no `prod` |
 | Avaliação | `scripts/eval.ts`, `scripts/eval/`, `eval/perguntas.json` | Ids estáveis: não renumere as perguntas existentes |
 
 ## Camadas e importações
@@ -126,10 +126,9 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts 
 
 ## Marca e conteúdo
 
-- Sem logo, nome ou cores de empresas reais na interface, no código e nos nomes de recursos. O nome de uma empresa real só pode aparecer nas URLs de fonte da base e no aviso de não afiliação do README.
-- Os arquivos de `knowledge-base/` são **reescritos com palavras próprias**, com a URL da fonte e a data de consulta no cabeçalho. Não copie páginas nem parágrafos.
-- **Números (comissão, prazos, valores) só entram se estiverem na fonte**, no formato "conforme <página>, consultada em DD/MM/AAAA". Sem fonte, o texto fica genérico. Nunca invente números.
-- O plano gratuito do Gemini pode usar o conteúdo enviado. A base só tem texto público, e os testes usam só dados fictícios.
+- Sem logo, nome ou cores de empresas reais na interface, no código e nos nomes de recursos. O nome de uma empresa real só pode aparecer no aviso de não afiliação do README e no histórico em `docs/history/`.
+- A base é a política de parceiros da Rango, empresa fictícia ([ADR 0018](docs/adr/0018-empresa-ficticia-rango.md)); todo número vem do `regras.yaml` ([ADR 0019](docs/adr/0019-regras-yaml-fonte-unica.md)).
+- O plano gratuito do Gemini pode usar o conteúdo enviado. A base só tem texto fictício, e os testes usam só dados fictícios.
 
 ## Custo e cota de API
 
