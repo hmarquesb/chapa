@@ -72,11 +72,11 @@ O sistema SHALL bloquear a mensagem em que o parceiro informa a senha ("minha se
 - **THEN** a mensagem é bloqueada como senha informada, porque o texto normalizado contém "minha senha e" seguido de texto
 
 ### Requirement: Pedido de senha é recusado
-O sistema SHALL bloquear a mensagem que pede uma senha ("qual é a minha senha", "me passa a senha", "manda pra mim a senha" e variações), com o status `blocked_input` e a mensagem fixa que diz que o assistente não tem acesso a senhas e indica a recuperação de senha do Portal do Parceiro.
+O sistema SHALL bloquear a mensagem que pede uma senha ("qual é a minha senha", "me passa a senha", "manda pra mim a senha" e variações), com o status `blocked_input` e a mensagem fixa que diz que o assistente não tem acesso a senhas e indica a recuperação de senha do Painel Rango.
 
 #### Scenario: Pede a senha
 - **WHEN** o parceiro envia "Qual a senha do meu portal?"
-- **THEN** a resposta tem o status `blocked_input` e a mensagem "Não tenho acesso a senhas e nunca peço senha. Para recuperar o acesso, use a opção de recuperação de senha do Portal do Parceiro."
+- **THEN** a resposta tem o status `blocked_input` e a mensagem "Não tenho acesso a senhas e nunca peço senha. Para recuperar o acesso, use a opção de recuperação de senha do Painel Rango."
 
 ### Requirement: Palavras soltas não bloqueiam
 O sistema MUST NOT bloquear uma mensagem só por conter palavras como "CPF", "CNPJ", "Pix", "cartão" ou "senha" fora dos padrões acima.
@@ -97,7 +97,7 @@ O sistema SHALL barrar a resposta gerada que contém um CPF ou um número de car
 
 #### Scenario: Cartão na resposta
 - **WHEN** o modelo gera "Use o cartão 4111 1111 1111 1111."
-- **THEN** a resposta tem o status `blocked_output`, a mensagem "Não consegui montar uma resposta segura para essa pergunta. Tente reformular ou fale com o suporte pelo Portal do Parceiro." e nenhuma fonte
+- **THEN** a resposta tem o status `blocked_output`, a mensagem "Não consegui montar uma resposta segura para essa pergunta. Tente reformular ou fale com o suporte pelo Painel Rango." e nenhuma fonte
 
 ### Requirement: Sinais proibidos na resposta são barrados
 O sistema SHALL barrar com o status `blocked_output` a resposta que contém um dos sinais proibidos: conselho pessoal ("eu acho que você deveria", "o meu conselho para você é"), autorreferência ("como modelo de linguagem") ou pedido de senha ("informe sua senha", "me envie sua senha", "digite sua senha aqui").
