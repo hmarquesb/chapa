@@ -40,6 +40,7 @@ Nenhum outro arquivo é tocado.
 | `scripts/knowledge-base/knowledge-base.test.ts` | Criar: testes sobre os arquivos reais (decisão 5) |
 | `src/core/rag/ingest.test.ts` | Acrescentar `regras.yaml` aos casos do `KNOWLEDGE_FILE_PATTERN` e trocar a fixture `FONTES.md` por `README.md` e `regras.yaml` |
 | `src/core/rag/ingest.ts` | Só o comentário da linha 8 ("`README.md` e `regras.yaml` ficam de fora") |
+| `src/config.ts`, `src/config.test.ts`, `src/infra/llm/index.ts`, `src/infra/llm/gemini-client.ts`, `src/infra/llm/gemini-client.test.ts` | Pausa entre os lotes de embedding (decisão 12) |
 | `scripts/eval/questions.test.ts` | Só os testes com o `eval/perguntas.json` real: a contagem passa de 7 para 11 documentos, e "uma pergunta factual por documento" passa a exigir que as fontes factuais sejam documentos da base, cobrindo de `01` a `07`, até a change `expand-eval-to-50-questions` voltar a exigir os 11 |
 | `package.json`, `package-lock.json` | `yaml` em `devDependencies` (decisão 4) |
 | `docs/adr/0018-empresa-ficticia-rango.md`, `docs/adr/0019-regras-yaml-fonte-unica.md`, `docs/adr/README.md` | Criar e indexar (decisão 9) |
@@ -335,6 +336,15 @@ Os dois no modelo do `docs/adr/README.md`, com status **Aceito** e data 2026-11-
 - A ingestão no `dev` só roda depois que a pessoa revisar o texto dos 11 documentos no PR. Até lá, as tarefas que chamam o banco ficam abertas e o PR pode ser aberto em rascunho.
 - O `prod` não é tocado aqui. Depois do merge desta change e da `rebrand-app-texts-to-rango`, a pessoa (ou o orquestrador, com a autorização do H5) reingere o `prod` e roda o smoke, para que a demo nunca mostre a base da Rango com os textos antigos do app, nem o contrário.
 - A `expand-eval-to-50-questions` começa o *apply* depois do merge desta change, porque as perguntas novas citam os documentos `08` a `11` e o teste delas usa o módulo da decisão 3.
+
+### 12. Pausa entre os lotes de embedding
+
+Acrescentada durante o *apply*. A base nova gera 117 trechos no preset `padrao`, contra 37 da antiga. O `embed` manda lotes de 50 textos em sequência, sem pausa, e o plano gratuito do `gemini-embedding-001` conta cada texto do lote no limite de 100 requisições por minuto: a ingestão recebia 429 mesmo com a cota diária zerada, e o retry (1 s e 2 s) não espera o minuto virar. Como a ingestão grava o conjunto inteiro no fim, não dá para dividi-la em várias execuções.
+
+- `AppConfig.llm.embedBatchDelayMs = 60000` em `src/config.ts`, passado pelo `getLlmClient` (`src/infra/llm/index.ts`) a `createGeminiClient`.
+- O `embed` espera `embedBatchDelayMs` entre um lote e o seguinte, nunca antes do primeiro nem depois do último. Uma chamada de um lote só (o embedding da pergunta, na API) não espera nada, então a latência do chat não muda.
+- A pausa usa a mesma função `sleep` opcional que o cliente já recebe, para os testes não esperarem.
+- O modelo, a dimensão, o `taskType` e o tamanho do lote não mudam, então os vetores são os mesmos e não há ADR.
 
 ## Risks / Trade-offs
 
