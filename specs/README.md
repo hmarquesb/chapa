@@ -1,5 +1,7 @@
 # Specs — Chapa
 
+> **Histórico.** Estas specs construíram o projeto e estão todas concluídas. Desde o [ADR 0015](../docs/adr/0015-openspec-para-mudancas-incrementais.md), as mudanças novas são changes do OpenSpec em [`openspec/`](../openspec/config.yaml), e estas specs não são mais editadas.
+
 As specs dividem o projeto em pacotes de trabalho que **um subagente consegue executar sozinho**, com arquivos próprios, contratos escritos por extenso e critérios de aceite verificáveis. Toda spec segue o [`_template.md`](_template.md) e se sustenta sozinha: quem implementa lê só o `AGENTS.md`, o `ARCHITECTURE.md` e a spec.
 
 ## Status

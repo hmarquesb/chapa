@@ -36,11 +36,23 @@ Depois do merge: `git worktree remove ../chapa-worktrees/s04` e `git branch -d f
 As regras do implementador ficam em [`.claude/agents/spec-implementer.md`](.claude/agents/spec-implementer.md). No prompt, passe só o que muda de spec para spec:
 
 ```
-Spec: <ID> (specs/<arquivo-da-spec>.md)
+Spec: <ID> (specs/<arquivo-da-spec>.md)   # ou: Change: <nome> (openspec/changes/<nome>/)
 Worktree: <caminho absoluto de ../chapa-worktrees/<id>>
 Chamadas reais de API e de banco: <PROIBIDAS | AUTORIZADAS: quais e em qual ambiente (dev)>
 Observações: <opcional>
 ```
+
+## Changes do OpenSpec (desde o ADR 0015)
+
+O fluxo acima continua, trocando a spec pela change:
+
+1. A proposta nasce com `/opsx:propose` (ou `/opsx:explore` antes, para amadurecer a ideia), na branch e no worktree da change: `git worktree add ../chapa-worktrees/<change> -b <tipo>/<change>`.
+2. A pessoa revisa `proposal.md`, `design.md`, `tasks.md` e os deltas. O *apply* só começa depois de ela dizer que aprovou.
+3. O `spec-implementer` recebe a change no lugar da spec (ver o prompt abaixo) e executa o `tasks.md`.
+4. O orquestrador revisa, commita com o trailer `Change: <change>`, faz push e abre o PR.
+5. Depois do merge, o orquestrador roda `/opsx:archive` numa branch `docs/archive-<change>` e abre o PR `docs(openspec): archive <change>`. Várias changes da mesma leva podem ser arquivadas no mesmo PR.
+
+Changes paralelas seguem a mesma regra das specs: não podem compartilhar arquivos. Duas changes que alteram a mesma capacidade em `openspec/specs/` podem rodar em paralelo, porque os deltas só se juntam no archive, que é sequencial.
 
 ## Escolha do tipo de subagente
 
@@ -52,7 +64,7 @@ Observações: <opcional>
 
 ## Cuidados
 
-- Subagentes paralelos **não podem compartilhar arquivos**. Se duas specs da mesma onda precisarem do mesmo arquivo, rode-as em sequência. O `package.json` só muda na S00 e na S07.
+- Subagentes paralelos **não podem compartilhar arquivos**. Se duas specs da mesma onda precisarem do mesmo arquivo, rode-as em sequência. Nas ondas, o `package.json` só mudou na S00 e na S07. Nas changes, só a change que precisa de uma dependência nova (justificada na proposta) mexe nele, e nunca em paralelo com outra que também mexa.
 - A S00 roda sozinha porque cria a estrutura, instala as dependências e escreve os contratos que todas as outras usam. Revise-a com atenção antes de abrir a onda 1.
 - Para specs que tocam o banco, diga no prompt se o subagente pode usar o Supabase `dev` (só depois do H2). Nunca autorize o `prod` fora do H5.
 - Nunca passe o conteúdo de `.env*` ou de `../api-key.md` no prompt de um subagente.
