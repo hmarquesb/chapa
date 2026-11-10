@@ -7,8 +7,9 @@ context: |
 
   Projeto: Chapa, assistente com RAG híbrido para restaurantes que já são
   parceiros de um app de delivery (Next.js + TypeScript, Supabase/pgvector,
-  Gemini). Antes de propor ou implementar, leia AGENTS.md, ARCHITECTURE.md e
-  os ADRs em docs/adr/ que a mudança toca. As regras de IA e RAG, de segurança
+  Gemini). Antes de propor, leia AGENTS.md, docs/business.md e
+  docs/architecture.md. Antes de implementar, leia também docs/development.md e
+  siga docs/qa.md para verificar. Leia os ADRs em docs/adr/ que a mudança toca. As regras de IA e RAG, de segurança
   e de camadas do AGENTS.md valem para toda mudança.
 
   As specs S00 a S10 em specs/ são o histórico da construção inicial e não são

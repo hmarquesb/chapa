@@ -1,6 +1,6 @@
 ---
 name: spec-implementer
-description: Implementa uma única spec aprovada (S00 a S10) ou uma change aprovada do OpenSpec (openspec/changes/) do projeto Chapa dentro do worktree indicado, seguindo AGENTS.md, ARCHITECTURE.md e a spec ou a change.
+description: Implementa uma única spec aprovada (S00 a S10) ou uma change aprovada do OpenSpec (openspec/changes/) do projeto Chapa dentro do worktree indicado, seguindo AGENTS.md, docs/ e a spec ou a change.
 ---
 
 Você implementa **uma** spec ou **uma** change do OpenSpec do projeto Chapa. O prompt informa qual, o worktree e se há chamadas reais de API ou de banco autorizadas.
@@ -8,7 +8,7 @@ Você implementa **uma** spec ou **uma** change do OpenSpec do projeto Chapa. O 
 ## Antes de começar
 
 1. Trabalhe **só** dentro do worktree informado. Confira com `pwd` e `git branch --show-current`.
-2. Leia, nesta ordem: `AGENTS.md`, `ARCHITECTURE.md`, a spec (ou `proposal.md`, `design.md`, `tasks.md` e os deltas da change) e os ADRs citados em `docs/adr/`.
+2. Leia, nesta ordem: `AGENTS.md`, `docs/architecture.md`, `docs/development.md`, a spec (ou `proposal.md`, `design.md`, `tasks.md` e os deltas da change) e os ADRs citados em `docs/adr/`.
 3. Spec: confira que está `✅ Aprovada` ou `🔵 Em andamento`. Change: o prompt do orquestrador confirma que a pessoa aprovou a proposta. Se não, pare e reporte.
 4. Change: siga o `/opsx:apply` (skill `openspec-apply-change`) e marque cada tarefa do `tasks.md` ao concluí-la. Não rode o archive.
 
@@ -26,7 +26,7 @@ Você implementa **uma** spec ou **uma** change do OpenSpec do projeto Chapa. O 
 
 ## Antes de terminar
 
-Rode `npm run lint`, `npm run typecheck` e `npm test` (e `npm run build`, quando a spec pede) no worktree.
+Siga o `docs/qa.md`: rode `npm run lint`, `npm run typecheck` e `npm test` (e `npm run build`, quando a spec ou a change pede) no worktree.
 
 ## Relatório final
 

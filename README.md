@@ -68,7 +68,7 @@ O trabalho foi dividido em 11 specs ([`specs/`](specs/README.md)), da S00 (estru
 - Cada spec virou uma branch e um PR. A `main` só recebe código por PR com a CI verde (`lint`, `typecheck`, `test` e `build`).
 - Os passos que exigem conta, chave de API ou publicação foram checkpoints em que a pessoa agiu.
 
-As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a arquitetura para agentes, no [`ARCHITECTURE.md`](ARCHITECTURE.md).
+As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a documentação para agentes (arquitetura, negócio, desenvolvimento e QA), em [`docs/`](docs/).
 
 ## Resumo executivo
 
