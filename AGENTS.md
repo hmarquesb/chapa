@@ -117,6 +117,21 @@ Desde o [ADR 0015](docs/adr/0015-openspec-para-mudancas-incrementais.md), toda m
 8. A definição de pronto e o relatório final são os mesmos das specs, logo abaixo.
 9. Não edite à mão os arquivos que o OpenSpec gerou em `.claude/commands/opsx/` e `.claude/skills/openspec-*/`. Eles são regenerados por `npx openspec update`.
 
+## Skills do projeto
+
+As skills ficam em `.claude/skills/`. Carregue a mais específica para cada etapa:
+
+| Etapa | Skill |
+|---|---|
+| Amadurecer uma ideia vaga, uma pergunta por vez | `feature-concept` (ou `/opsx:explore`, para uma conversa mais livre) |
+| Criar, revisar, implementar e arquivar uma change | `/opsx:propose`, `/opsx:update`, `/opsx:apply`, `/opsx:archive` |
+| Escrever ou revisar código Next.js (rotas, RSC, metadata, erros) | `next-best-practices` |
+| Escrever ou revisar componentes React com foco em performance | `vercel-react-best-practices` |
+| Adicionar ou compor componentes de interface | `shadcn` (sempre `npx shadcn`, na versão do lockfile) |
+| Revisar a interface (acessibilidade, UX) | `web-design-guidelines` |
+
+As skills são guias gerais e **não sobrepõem as regras deste arquivo**. Se uma delas sugerir uma dependência nova (SWR, `lru-cache`, bibliotecas de formulário), streaming, estado em memória entre requisições ou qualquer coisa que contrarie as regras de IA e RAG ou um ADR aceito, as regras daqui valem.
+
 ## Fluxo de trabalho com specs (S00 a S10, histórico)
 
 1. Só implemente specs com `Status: ✅ Aprovada`.
