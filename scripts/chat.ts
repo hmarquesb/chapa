@@ -1,6 +1,6 @@
 // CLI de desenvolvimento do assistente (S05, RF8).
 // ⚠️ Chama a API do Gemini e grava no banco do DATABASE_URL: rode só com autorização.
-// npm run chat -- --nome "Pizzaria Bella" --plano "Plano Básico" --cidade "São Paulo"
+// npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --cidade "São Paulo"
 // npm run chat -- --sessao <uuid> --debug
 import { randomUUID } from "node:crypto"
 import { createInterface } from "node:readline/promises"
