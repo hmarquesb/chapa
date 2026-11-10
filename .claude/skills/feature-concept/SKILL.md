@@ -14,10 +14,10 @@ Converta uma ideia vaga em um conceito validado e assertivo. Você é o entrevis
 
 1. **UMA PERGUNTA POR VEZ.** Nunca empilhe perguntas. Uma pergunta, espere a resposta, registre, só então avance. Perguntas empilhadas recebem respostas pela metade.
 2. **TODA PERGUNTA TEM RESPOSTA RECOMENDADA.** Nunca pergunte "do zero" — ofereça sua melhor sugestão com justificativa de uma linha: "Recomendo X, porque Y. Concorda ou muda algo?". A resposta recomendada acelera a entrevista e expõe o viés do interrogador.
-3. **EXPLORE ANTES DE PERGUNTAR.** Se o repositório, a documentação (`AGENTS.md`, `ARCHITECTURE.md`, `docs/adr/`), as specs vivas (`openspec/specs/`), o git ou as skills do projeto respondem à pergunta, responda você mesmo. A atenção humana é apenas para decisões genuínas.
+3. **EXPLORE ANTES DE PERGUNTAR.** Se o repositório, a documentação (`AGENTS.md`, `docs/` e `docs/adr/`), as specs vivas (`openspec/specs/`), o git ou as skills do projeto respondem à pergunta, responda você mesmo. A atenção humana é apenas para decisões genuínas.
 4. **SEM SAÍDA PREMATURA.** Não encerre porque "já parece bom". Só pare quando a fronteira estiver vazia, o usuário adiar explicitamente, ou um fork não tiver recomendação defensável — aí apresente o fork cru e aguarde.
 5. **QUESTÃO QUE EXIGE REAÇÃO NÃO SE GRILLA.** Perguntas de preferência ("um form longo ou três páginas?") só se respondem vendo algo. Se esbarrar em uma, peça para construir um protótipo descartável e voltar com a resposta — não adivinhe.
-6. **RESPEITE O CONTEXTO DO PROJETO.** Perguntas e recomendações devem estar alinhadas ao escopo e às regras do `AGENTS.md` (regras de IA e RAG, segurança, custo de API), à arquitetura (`ARCHITECTURE.md`), às decisões aceitas (`docs/adr/`) e ao comportamento atual (`openspec/specs/`). Uma ideia que contraria um ADR aceito vira uma pergunta explícita: manter o ADR ou propor um novo que o substitua.
+6. **RESPEITE O CONTEXTO DO PROJETO.** Perguntas e recomendações devem estar alinhadas ao escopo e às regras do `AGENTS.md` (regras de IA e RAG, segurança, custo de API), ao domínio (`docs/business.md`), à arquitetura (`docs/architecture.md`), aos padrões (`docs/development.md`), às decisões aceitas (`docs/adr/`) e ao comportamento atual (`openspec/specs/`). Uma ideia que contraria um ADR aceito vira uma pergunta explícita: manter o ADR ou propor um novo que o substitua.
 
 ## Fluxo
 
@@ -66,7 +66,7 @@ Cubra apenas o que for **material** ao conceito:
 - Dependências e integrações (conectores, APIs, dados)
 - Riscos e trade-offs (o que escolhemos NÃO fazer)
 - Público/usuário e fluxo
-- A11y, responsividade, observabilidade e segurança quando aplicáveis (ver `AGENTS.md`)
+- A11y, responsividade, observabilidade e segurança quando aplicáveis (ver `AGENTS.md` e `docs/development.md`)
 - Chamadas reais de API ou de banco (ingest, eval, smoke, db push) e checkpoints humanos que a mudança vai exigir
 
 ## Anti-padrões

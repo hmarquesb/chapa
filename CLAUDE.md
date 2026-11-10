@@ -2,7 +2,7 @@
 
 # Instruções específicas do Claude Code
 
-As regras do projeto estão no `AGENTS.md` (importado acima) e a arquitetura no `ARCHITECTURE.md`. Este arquivo só acrescenta **como orquestrar a implementação com subagentes**.
+As regras do projeto estão no `AGENTS.md` (importado acima) e a documentação em `docs/` (`architecture.md`, `business.md`, `development.md` e `qa.md`). Este arquivo só acrescenta **como orquestrar a implementação com subagentes**.
 
 ## Papel da sessão principal (orquestrador)
 
