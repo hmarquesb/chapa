@@ -1,6 +1,6 @@
 # Specs — Chapa
 
-> **Histórico.** Estas specs construíram o projeto e estão todas concluídas. Desde o [ADR 0015](../docs/adr/0015-openspec-para-mudancas-incrementais.md), as mudanças novas são changes do OpenSpec em [`openspec/`](../openspec/config.yaml), e estas specs não são mais editadas. O `ARCHITECTURE.md` citado nelas agora é o [`docs/architecture.md`](../docs/architecture.md).
+> **Histórico.** Estas specs construíram o projeto e estão todas concluídas. Desde o [ADR 0015](../../adr/0015-openspec-para-mudancas-incrementais.md), as mudanças novas são changes do OpenSpec em [`openspec/`](../../../openspec/config.yaml), e estas specs não são mais editadas. O `ARCHITECTURE.md` citado nelas agora é o [`docs/architecture.md`](../../architecture.md).
 
 As specs dividem o projeto em pacotes de trabalho que **um subagente consegue executar sozinho**, com arquivos próprios, contratos escritos por extenso e critérios de aceite verificáveis. Toda spec segue o [`_template.md`](_template.md) e se sustenta sozinha: quem implementa lê só o `AGENTS.md`, o `ARCHITECTURE.md` e a spec.
 
@@ -92,7 +92,7 @@ Parte das ações abaixo foi autorizada antes das ondas. Veja "Autorizações pr
 
 ## Autorizações prévias (histórico)
 
-Registradas pela pessoa em 05/11/2026 e válidas durante a construção inicial. As que valem hoje estão no [`CLAUDE.md`](../CLAUDE.md#autorizações-prévias).
+Registradas pela pessoa em 05/11/2026 e válidas durante a construção inicial. As que valem hoje estão no [`CLAUDE.md`](../../../CLAUDE.md#autorizações-prévias).
 
 | Checkpoint | O que estava autorizado | Limites |
 |---|---|---|
@@ -109,7 +109,7 @@ Para cada spec da onda, o orquestrador criava a branch `<tipo>/sNN-<nome>` e o w
 
 | Risco | Mitigação |
 |---|---|
-| Cota gratuita do Gemini estoura no eval ou na demo | `--delay-ms` e `--only` no eval, Flash-Lite no chat e nas tarefas auxiliares ([ADR 0014](../docs/adr/0014-flash-lite-como-modelo-de-chat.md)), juiz opcional, rate limit por IP por minuto e por dia |
+| Cota gratuita do Gemini estoura no eval ou na demo | `--delay-ms` e `--only` no eval, Flash-Lite no chat e nas tarefas auxiliares ([ADR 0014](../../adr/0014-flash-lite-como-modelo-de-chat.md)), juiz opcional, rate limit por IP por minuto e por dia |
 | Limites dos planos gratuitos mudaram | Conferência obrigatória no passo 1 do `DEPLOY.md` (S09), antes do deploy |
 | As páginas oficiais não trazem os números | Texto genérico na base, e a lacuna vira pergunta de fallback no eval |
 | `minScore` mal calibrado (falsa recusa ou alucinação) | Calibração de uma variável por vez, registrada em `CALIBRACAO.md` |
