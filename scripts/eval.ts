@@ -2,6 +2,7 @@
 // ⚠️ Chama a API do Gemini e grava sessões no banco do DATABASE_URL: rode só com autorização (H4).
 // npm run eval -- --label v1 --preset baseline
 // npm run eval -- --label v2 --preset padrao [--judge] [--delay-ms 4000] [--only 1,5,16]
+// npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 101,102 (rodada em blocos)
 // npm run eval -- --label teste-minscore --preset padrao --min-score 0.45 --only 3,9
 // npm run eval -- --compare eval/resultados/v1.json eval/resultados/v2.json
 import { execFileSync } from "node:child_process"
@@ -22,6 +23,7 @@ import { KNOWLEDGE_FILE_PATTERN } from "@/core/rag/ingest"
 import type { RetrievedChunk } from "@/core/types"
 import { closeSql, createChunkRepository, createSessionRepository, getSql } from "@/infra/db"
 import { getLlmClient } from "@/infra/llm"
+import { mergeRuns, parseStoredRun, sameRunConfig } from "./eval/append"
 import { renderComparison } from "./eval/compare"
 import { judgeAnswer } from "./eval/judge"
 import { aggregate, type QuestionResult, scoreQuestion } from "./eval/metrics"
@@ -125,6 +127,54 @@ function parseOnly(flags: Flags, questions: EvalQuestion[]): EvalQuestion[] {
   }
   const wanted = new Set(ids)
   return questions.filter((question) => wanted.has(String(question.id)))
+}
+
+// --append não leva valor: "--append 101" deixaria o 101 sem sentido.
+function appendFlag(flags: Flags): boolean {
+  const value = flags.append
+  if (value === undefined) return false
+  if (value !== true) throw new UsageError("A flag --append não leva valor.")
+  return true
+}
+
+function isMissingFile(error: unknown): boolean {
+  return error instanceof Error && (error as NodeJS.ErrnoException).code === "ENOENT"
+}
+
+// Rodada gravada com o mesmo rótulo, para o --append. Sem arquivo: null (primeiro bloco).
+// Roda antes de abrir a conexão com o banco, para que uma configuração diferente pare sem custo.
+async function loadPreviousRun(
+  label: string,
+  current: Pick<EvalRun, "preset" | "config">,
+): Promise<EvalRun | null> {
+  const path = join(RESULTS_DIR, `${label}.json`)
+  let text: string
+  try {
+    text = await readFile(path, "utf8")
+  } catch (error) {
+    if (isMissingFile(error)) return null
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new UsageError(`Não consegui ler eval/resultados/${label}.json: ${detail}`)
+  }
+  let previous: EvalRun | null = null
+  try {
+    previous = parseStoredRun(JSON.parse(text))
+  } catch {
+    previous = null
+  }
+  if (previous === null) {
+    throw new UsageError(
+      `eval/resultados/${label}.json não tem o formato de uma rodada gravada.` +
+        " Use outro --label ou rode sem --append.",
+    )
+  }
+  if (!sameRunConfig(previous, current)) {
+    throw new UsageError(
+      `A rodada "${label}" foi gravada com outra configuração (preset, modelos ou RAG).` +
+        " Use outro --label ou rode sem --append.",
+    )
+  }
+  return previous
 }
 
 async function loadQuestions(): Promise<EvalQuestion[]> {
@@ -233,7 +283,15 @@ async function evaluate(flags: Flags): Promise<void> {
   const delayMs = numberFlag(flags, "delay-ms", true) ?? DEFAULT_DELAY_MS
   if (delayMs < 0) throw new UsageError("--delay-ms precisa ser maior ou igual a 0.")
   const useJudge = flags.judge === true
-  const questions = parseOnly(flags, await loadQuestions())
+  const append = appendFlag(flags)
+  const allQuestions = await loadQuestions()
+  const questions = parseOnly(flags, allQuestions)
+  const previous = append
+    ? await loadPreviousRun(label, {
+        preset,
+        config: { models: appConfig.models, rag: appConfig.rag },
+      })
+    : null
 
   const key = {
     embeddingModel: appConfig.models.embedding,
@@ -285,7 +343,7 @@ async function evaluate(flags: Flags): Promise<void> {
     onProgress: ({ index, total, result }) => console.log(progressLine(index, total, result)),
   })
 
-  const run: EvalRun = {
+  const thisRun: EvalRun = {
     label,
     preset,
     date: new Date().toISOString(),
@@ -295,6 +353,11 @@ async function evaluate(flags: Flags): Promise<void> {
     scores: results.map(scoreQuestion),
     metrics: aggregate(results),
   }
+  // Com --append, junta ao que já estava gravado (sem arquivo, junta a uma rodada vazia).
+  const merged = append
+    ? mergeRuns(previous ?? { ...thisRun, results: [] }, thisRun, allQuestions)
+    : null
+  const run = merged?.run ?? thisRun
 
   await mkdir(RESULTS_DIR, { recursive: true })
   const jsonPath = join(RESULTS_DIR, `${label}.json`)
@@ -315,6 +378,17 @@ async function evaluate(flags: Flags): Promise<void> {
       ` ${metrics.usage.outputTokens} de saída`,
   )
   console.log(`Gravado: eval/resultados/${label}.json e eval/resultados/${label}.md`)
+  if (merged !== null) {
+    console.log(
+      `Junção: ${run.results.length} de ${allQuestions.length} perguntas gravadas | commits: ${run.commit}`,
+    )
+    if (merged.discarded.length > 0) {
+      console.log(
+        `Descartadas (a pergunta mudou ou saiu do arquivo): ${merged.discarded.join(", ")}`,
+      )
+    }
+    console.log(`Pendentes: ${merged.pending.length === 0 ? "nenhuma" : merged.pending.join(",")}`)
+  }
   if (stoppedByQuota) {
     console.warn(
       `A cota do Gemini acabou: a rodada parou depois de ${results.length} de ${questions.length}` +
