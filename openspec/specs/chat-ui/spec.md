@@ -55,7 +55,7 @@ Cada mensagem SHALL mostrar o horário em 24 horas no formato do Brasil (por exe
 - **THEN** ela mostra "14:05"
 
 ### Requirement: Perguntas de exemplo
-Com a conversa vazia e sem carregamento em curso, a interface SHALL mostrar três perguntas de exemplo, "Quando o repasse cai na minha conta?", "O cliente cancelou e eu perdi a comida, e agora?" e "Me passa uma receita de lasanha?", e enviar a escolhida como se o parceiro a tivesse digitado.
+Com a conversa vazia e sem carregamento em curso, a interface SHALL mostrar três perguntas de exemplo, "Quando o repasse cai na minha conta?", "Quem paga o desconto quando eu crio um cupom?" e "Me passa uma receita de lasanha?", e enviar a escolhida como se o parceiro a tivesse digitado.
 
 #### Scenario: Clique num exemplo
 - **WHEN** o parceiro clica em "Quando o repasse cai na minha conta?"
