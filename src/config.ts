@@ -38,6 +38,8 @@ export type AppConfig = {
     baseDelayMs: number
     timeoutMs: number
     embedBatchSize: number
+    // Pausa entre lotes de embedding: o plano gratuito conta cada texto do lote no limite por minuto.
+    embedBatchDelayMs: number
   }
 }
 
@@ -125,6 +127,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       baseDelayMs: 1000,
       timeoutMs: 25000,
       embedBatchSize: 50,
+      embedBatchDelayMs: 60000,
     },
   }
 }
