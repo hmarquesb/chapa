@@ -1,0 +1,37 @@
+schema: spec-driven
+
+context: |
+  Language: pt-BR
+  All artifacts must be written in pt-BR.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  Projeto: Chapa, assistente com RAG híbrido para restaurantes que já são
+  parceiros de um app de delivery (Next.js + TypeScript, Supabase/pgvector,
+  Gemini). Antes de propor ou implementar, leia AGENTS.md, ARCHITECTURE.md e
+  os ADRs em docs/adr/ que a mudança toca. As regras de IA e RAG, de segurança
+  e de camadas do AGENTS.md valem para toda mudança.
+
+  As specs S00 a S10 em specs/ são o histórico da construção inicial e não são
+  mais editadas. O comportamento atual fica em openspec/specs/.
+
+rules:
+  proposal:
+    - Diga explicitamente o que fica fora do escopo
+    - Diga se a mudança chama API ou banco real (ingest, eval, smoke, db push) e quais checkpoints humanos precisa
+    - Uma decisão de arquitetura nova vira um ADR em docs/adr/, citado na proposta
+  design:
+    - Liste os arquivos que podem ser criados ou alterados; o implementador não toca em mais nada
+    - Escreva por extenso os contratos (tipos, assinaturas, rotas) que a mudança cria ou altera
+    - Nenhuma dependência nova sem justificar na proposta
+  tasks:
+    - Tarefas pequenas e verificáveis, com teste antes do código nas funções puras
+    - A última tarefa é rodar npm run lint, npm run typecheck e npm test (e npm run build quando a mudança toca build ou rotas)
+
+operations:
+  apply:
+    guidance:
+      - Trabalhe só no worktree da mudança e não faça commit nem push; quem commita é o orquestrador
+      - Chamadas reais de API e de banco só com autorização escrita na tarefa
+  archive:
+    guidance:
+      - Arquive só depois do merge do PR da mudança, num PR próprio de arquivamento

@@ -18,7 +18,8 @@
     "chat": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/chat.ts",
     "eval": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/eval.ts",
     "smoke": "node --env-file-if-exists=.env.local --import tsx scripts/smoke.ts",
-    "db": "supabase"
+    "db": "supabase",
+    "spec": "openspec"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.5",
+    "@fission-ai/openspec": "^1.17.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
