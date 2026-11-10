@@ -89,19 +89,21 @@ As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a documentação 
 
 ## Como rodar localmente
 
-Pré-requisitos: Node 24, uma chave do Gemini (Google AI Studio, plano gratuito, sem cartão) e um projeto no Supabase (plano gratuito).
+Pré-requisitos: Node 24, uma chave do Gemini (Google AI Studio, plano gratuito, sem cartão) e um Postgres 17 com pgvector (o `dev` usa o Neon Free; o Supabase também serve).
 
 ```bash
 npm install
-cp .env.example .env.local          # preencha as 4 variáveis (ver abaixo)
-npx supabase link --project-ref <ref-do-projeto>
-npx supabase db push --remote       # cria tabelas, extensões e a função de busca
+cp .env.example .env.local          # preencha as variáveis (ver abaixo)
+# prepara o banco e aplica as migrações (tabelas, extensões e a função de busca)
+( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --yes -f supabase/dev-bootstrap.sql )
+( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --dry-run )
+( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --yes )
 npm run ingest                      # ⚠️ chama a API de embeddings e grava os trechos
 npm run dev                         # http://localhost:3000
 ```
 
-- `.env.local`: `GEMINI_API_KEY`, `DATABASE_URL` (connection string do pooler do Supabase em modo transação, porta 6543), `IP_HASH_SECRET` e `CRON_SECRET` (os dois com `openssl rand -hex 32`). `CHAT_MODEL`, `FAST_MODEL` e `EMBEDDING_MODEL` são opcionais.
-- Se a Supabase CLI pedir autenticação no `link`, rode `npx supabase login` antes.
+- `.env.local`: `GEMINI_API_KEY`, `DATABASE_URL` (connection string com pooler em modo transação: no Neon, o host com `-pooler`), `DATABASE_URL_UNPOOLED` (a string direta do Neon, só para a Supabase CLI), `IP_HASH_SECRET` e `CRON_SECRET` (os dois com `openssl rand -hex 32`). `CHAT_MODEL`, `FAST_MODEL` e `EMBEDDING_MODEL` são opcionais.
+- O `supabase/dev-bootstrap.sql` cria o que a migração espera e só o Supabase traz pronto (o schema `extensions` e os papéis `anon` e `authenticated`), e recusa rodar num projeto Supabase. Num projeto Supabase, pule o bootstrap. Passo a passo em [`DEPLOY.md`](DEPLOY.md), "Banco `dev` no Neon".
 - Para conversar pelo terminal e ver a busca por dentro (pergunta reescrita, trechos com score semântico e textual, chamadas, tokens e latência):
 
   ```bash
@@ -342,7 +344,7 @@ Respostas ruins reais da avaliação, com a causa de cada uma:
 - **IP como HMAC.** O rate limit guarda só o HMAC-SHA256 do IP, com o segredo `IP_HASH_SECRET`.
 - **Logs sem conteúdo.** Uma linha por requisição, com rota, status, latência, chamadas, tokens e o nome do erro. Nunca a mensagem, o perfil, o id da sessão ou o IP. O erro do provedor nunca chega ao navegador: a API responde com textos fixos em português.
 - **Link de continuação como credencial.** Quem tem o link lê a conversa. Por isso a página manda `Referrer-Policy: no-referrer`, o servidor não loga o id, e a sessão expira depois de 7 dias sem uso.
-- **Planos gratuitos.** Vercel Hobby, Supabase Free (dois projetos, `dev` e `prod`) e Gemini no plano gratuito. O Supabase pausa um projeto depois de 7 dias com pouca atividade; o cron diário mantém o `prod` ativo.
+- **Planos gratuitos.** Vercel Hobby, Supabase Free (só o `prod`), Neon Free (o `dev`, [ADR 0017](docs/adr/0017-neon-como-banco-dev.md)) e Gemini no plano gratuito. O Supabase pausa um projeto depois de 7 dias com pouca atividade; o cron diário mantém o `prod` ativo.
 - **Cota do Gemini.** Os limites valem por projeto do Google Cloud, não por chave: a demo, o eval e a CLI dividem a mesma cota se as chaves forem do mesmo projeto. O limite diário (RPD) zera à meia-noite do horário do Pacífico. No painel da conta, em 06/11/2026: `gemini-3.5-flash-lite` com 15 por minuto e 500 por dia; `gemini-embedding-001` com 100 por minuto e 1000 por dia. Isso dá perto de 160 mensagens por dia na demo ([`DEPLOY.md`](DEPLOY.md)). Ao estourar, a API responde 429 com um aviso em português.
 - **Uso dos dados pelo provedor.** No plano gratuito, o Google pode usar o conteúdo enviado para melhorar os produtos dele. Por isso a base só tem texto público, os testes usam só dados fictícios e a demo não deve receber dados reais.
 

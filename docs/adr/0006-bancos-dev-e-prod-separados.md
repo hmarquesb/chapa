@@ -1,6 +1,6 @@
 # 0006. Usar dois projetos Supabase, dev e prod
 
-- **Status:** Aceito
+- **Status:** Substituído por [0017](0017-neon-como-banco-dev.md)
 - **Data:** 2026-11-05
 
 ## Contexto

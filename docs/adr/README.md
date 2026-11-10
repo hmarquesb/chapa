@@ -6,12 +6,12 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 
 | ADR | Decisão | Status |
 |---|---|---|
-| [0001](0001-supabase-postgres-pgvector.md) | Usar Supabase Postgres com pgvector em vez de SQLite | Aceito |
+| [0001](0001-supabase-postgres-pgvector.md) | Usar Supabase Postgres com pgvector em vez de SQLite | Aceito (o `dev` passou para o Neon pelo 0017) |
 | [0002](0002-sem-framework-de-agente.md) | Construir RAG, memória e guardrails à mão, sem framework de agente | Aceito |
 | [0003](0003-github-actions-e-vercel-cron.md) | Automatizar com GitHub Actions e Vercel Cron, não com n8n nem pg_cron | Aceito |
 | [0004](0004-sem-streaming.md) | Devolver respostas completas em vez de streaming | Aceito |
 | [0005](0005-driver-postgres-rls-sem-policies.md) | Acessar o banco só pelo servidor, com o driver postgres | Aceito |
-| [0006](0006-bancos-dev-e-prod-separados.md) | Usar dois projetos Supabase, dev e prod | Aceito |
+| [0006](0006-bancos-dev-e-prod-separados.md) | Usar dois projetos Supabase, dev e prod | Substituído por 0017 |
 | [0007](0007-pasta-knowledge-base.md) | Chamar a pasta de fontes do RAG de knowledge-base/ | Aceito |
 | [0008](0008-vitest-e-tsx.md) | Usar Vitest e tsx nos testes e nos scripts locais | Aceito |
 | [0009](0009-somente-gemini.md) | Usar o Gemini como único provedor de LLM, pelo @google/genai | Aceito |
@@ -22,6 +22,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0014](0014-flash-lite-como-modelo-de-chat.md) | Usar o Flash-Lite também como modelo de chat | Aceito |
 | [0015](0015-openspec-para-mudancas-incrementais.md) | Usar o OpenSpec para as mudanças depois da construção inicial | Aceito |
 | [0016](0016-specs-da-construcao-em-docs-history.md) | Guardar as specs da construção em docs/history/build-specs/ | Aceito |
+| [0017](0017-neon-como-banco-dev.md) | Usar o Neon como banco dev e o Supabase só no prod | Aceito |
 
 ## Modelo
 

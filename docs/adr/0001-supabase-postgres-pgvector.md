@@ -1,6 +1,6 @@
 # 0001. Usar Supabase Postgres com pgvector em vez de SQLite
 
-- **Status:** Aceito
+- **Status:** Aceito (o banco dev passou para o Neon pelo [ADR 0017](0017-neon-como-banco-dev.md))
 - **Data:** 2026-11-05
 
 ## Contexto

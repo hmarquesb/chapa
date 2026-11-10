@@ -27,7 +27,7 @@ Assistente web para restaurantes que **já são parceiros** de um app de deliver
 
 - **Next.js (App Router) + React + TypeScript**, num projeto só, com front e API. Deploy na **Vercel** (região `gru1`).
 - **Tailwind CSS + shadcn/ui** na interface. **Biome** para lint e formatação.
-- **Supabase (Postgres + pgvector + busca textual em português)**, acessado pelo driver `postgres` no pooler em modo transação. Projetos `dev` e `prod`.
+- **Supabase (Postgres + pgvector + busca textual em português)**, acessado pelo driver `postgres` no pooler em modo transação. `prod` no Supabase; `dev` num Postgres do Neon ([ADR 0017](docs/adr/0017-neon-como-banco-dev.md)).
 - **Gemini** pelo SDK `@google/genai`, para chat e embeddings. Único provedor.
 - **Vitest** para testes e **tsx** para os scripts locais (`ingest`, `chat`, `eval`, `smoke`).
 - Node 24.
@@ -46,7 +46,8 @@ npm run ingest           # ⚠️ chama a API de embeddings e grava no banco (pa
 npm run chat -- --nome "Pizzaria Bella" --debug        # ⚠️ chama a API
 npm run eval -- --label v2 --preset padrao             # ⚠️ chama a API (60 a 90 chamadas)
 npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada
-npm run db -- db push --remote   # Supabase CLI, no projeto linkado (só no checkpoint)
+npm run db -- db push --remote   # Supabase CLI, no `prod` (único projeto linkado, só no checkpoint)
+# dev (Neon): bootstrap e db push sempre com --remote="$U" num subshell; comandos no DEPLOY.md, "Banco `dev` no Neon"
 npm run spec -- list             # OpenSpec CLI: list, show, validate, status, archive
 npm run changes          # changes ativas do OpenSpec em todos os worktrees (o `spec -- list` só vê o checkout atual)
 ```

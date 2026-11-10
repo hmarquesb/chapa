@@ -1,13 +1,13 @@
 # Deploy do Chapa
 
-Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Supabase `prod` com a migração e a base ingerida, variáveis de ambiente e cron. Segue a spec [S09](docs/history/build-specs/S09-deploy.md) e as decisões dos ADRs [0003](docs/adr/0003-github-actions-e-vercel-cron.md), [0006](docs/adr/0006-bancos-dev-e-prod-separados.md) e [0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md).
+Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Supabase `prod` com a migração e a base ingerida, variáveis de ambiente e cron. Segue a spec [S09](docs/history/build-specs/S09-deploy.md) e as decisões dos ADRs [0003](docs/adr/0003-github-actions-e-vercel-cron.md), [0017](docs/adr/0017-neon-como-banco-dev.md) e [0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md).
 
 **Quem faz o quê.** "Pessoa" é a dona do projeto: só ela mexe em conta, segredo, visibilidade do repositório e Vercel. "Orquestrador" é o agente, e só executa um passo com a autorização registrada no `CLAUDE.md` (checkpoint H5).
 
 **Regras que valem para todos os passos:**
 
 - Nenhum valor de segredo entra em arquivo versionado, log, print ou mensagem. As variáveis ficam no `.env.local` (`dev`), no `.env.prod.local` (`prod`, só na raiz do checkout principal) e na Vercel.
-- Local e preview usam o Supabase `dev`. Só a produção da Vercel e os passos 3 e 4 tocam o `prod`.
+- Local e preview usam o `dev` no Neon (ver "Banco `dev` no Neon"). Só a produção da Vercel e os passos 3 e 4 tocam o `prod`.
 - Os comandos `npx supabase ...` e `npm run ...` rodam na raiz do repositório (ou no worktree da S09).
 
 ## Resumo
@@ -54,9 +54,18 @@ Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Su
 
 | Limite | Valor | Impacto no Chapa | Fonte (consultada em 06/11/2026) |
 |---|---|---|---|
-| Projetos | 2 projetos ativos grátis (projetos pausados não contam) | Exatamente o `dev` e o `prod`: não sobra vaga | [Pricing](https://supabase.com/pricing) e [Billing on Supabase](https://supabase.com/docs/guides/platform/billing-on-supabase) |
+| Projetos | 2 projetos ativos grátis (projetos pausados não contam) | Só o `prod`: sobra uma vaga (o `dev` está no Neon, ADR 0017) | [Pricing](https://supabase.com/pricing) e [Billing on Supabase](https://supabase.com/docs/guides/platform/billing-on-supabase) |
 | Banco | 500 MB por projeto; 5 GB de egress (mais 5 GB em cache) | A base tem 35 trechos de 768 dimensões (passo 4): bem abaixo | [Pricing](https://supabase.com/pricing) |
-| Pausa por inatividade | Projeto com pouca atividade no banco num período de **7 dias** é pausado. "Algumas requisições ao banco por dia" na última semana evitam a pausa. Pausado, volta pelo painel (**Resume project**) em até 1 ano, com os dados | `prod`: o cron diário faz consultas no banco e mantém o projeto ativo (ADR 0003). `dev`: não tem cron; se ficar 7 dias sem uso, o preview responde 503 até a pessoa clicar em Resume | [Free plan pausing](https://supabase.com/docs/guides/platform/free-plan-pausing) (página sem data) |
+| Pausa por inatividade | Projeto com pouca atividade no banco num período de **7 dias** é pausado. "Algumas requisições ao banco por dia" na última semana evitam a pausa. Pausado, volta pelo painel (**Resume project**) em até 1 ano, com os dados | `prod`: o cron diário faz consultas no banco e mantém o projeto ativo (ADR 0003) | [Free plan pausing](https://supabase.com/docs/guides/platform/free-plan-pausing) (página sem data) |
+
+### Neon Free
+
+| Limite | Valor | Impacto no Chapa | Fonte (consultada em 10/11/2026) |
+|---|---|---|---|
+| Projetos | 100 projetos | O Chapa usa 1 (`chapa-dev`) | [Pricing](https://neon.com/pricing) e [Neon plans](https://neon.com/docs/introduction/plans) (página atualizada em 04/11/2026) |
+| Armazenamento | 1 GB de Postgres por projeto, 20 GB no total da conta | A base tem 37 trechos de 768 dimensões (ver "Banco `dev` no Neon"): bem abaixo | Mesmas páginas |
+| Computação | 100 CU-hora por projeto por mês, com autoscaling até 2 CU (8 GB de RAM). Ao esgotar as horas, a computação fica suspensa até o próximo ciclo | Um banco de desenvolvimento ocioso quase todo o tempo: suficiente | Mesmas páginas |
+| Scale-to-zero | A computação suspende depois de **5 min** sem atividade e acorda na próxima conexão. No Free, não dá para desligar | A primeira requisição depois de 5 min ocioso demora alguns segundos a mais. O `dev` não é pausado por inatividade como no Supabase | Mesmas páginas |
 
 ### Gemini (Google AI Studio, plano gratuito)
 
@@ -118,7 +127,13 @@ npx supabase db query --remote --read-only "select count(*) as policies from pg_
 
 Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`.
 
-**Atenção:** o link fica gravado em `supabase/.temp/` do diretório onde o comando rodou. Depois deste passo, qualquer `db push --remote` naquele diretório vai para o `prod`. Para voltar ao `dev`, rode `npx supabase link --project-ref <ref-do-dev>`.
+**Atenção:** o link fica gravado em `supabase/.temp/` do diretório onde o comando rodou. Enquanto ele existir, qualquer `db push --remote` sem URL naquele diretório vai para o `prod`. Ao final deste passo, desfaça o link:
+
+```bash
+npx supabase unlink
+```
+
+O `dev` não usa link: os comandos dele sempre passam a URL com `--remote="$U"` (ver "Banco `dev` no Neon").
 
 **Resultado:** ver "Registro da execução", no fim deste arquivo.
 
@@ -137,7 +152,7 @@ A connection string do `prod` (pooler em modo transação, porta 6543) fica em `
 
 Os scripts usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis do shell: o `DATABASE_URL` vem do `.env.prod.local`, e a `GEMINI_API_KEY`, do `.env.local`. Nunca rode `cat`, `echo` ou `grep` nesses arquivos.
 
-**Verificação:** a saída lista cada arquivo da base, o `Total gravado`, o `Preset: padrao`, o modelo `gemini-embedding-001`, o `chunkConfig: markdown:1200:150` e a linha `Trechos no banco para este conjunto (count)`, que precisa ser igual ao total. A linha `Banco:` mostra só o host do pooler, que é o mesmo para `dev` e `prod` na mesma região: a confirmação de que o dado foi para o `prod` é o `chunks` do `/api/health` da produção no passo 6.
+**Verificação:** a saída lista cada arquivo da base, o `Total gravado`, o `Preset: padrao`, o modelo `gemini-embedding-001`, o `chunkConfig: markdown:1200:150` e a linha `Trechos no banco para este conjunto (count)`, que precisa ser igual ao total. A linha `Banco:` mostra só o host: no `prod`, o pooler do Supabase; no `dev`, um host que termina em `neon.tech`. Se aparecer `neon.tech` aqui, o `.env.prod.local` não foi carregado. A confirmação final de que o dado foi para o `prod` é o `chunks` do `/api/health` da produção no passo 6.
 
 A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkConfig`. Rodar de novo não duplica nada.
 
@@ -153,7 +168,7 @@ A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkCon
    | Variável | Production | Preview |
    |---|---|---|
    | `GEMINI_API_KEY` | chave do AI Studio | chave do AI Studio (a mesma ou outra; ver "Escopo" no passo 1) |
-   | `DATABASE_URL` | pooler do **`prod`**, porta 6543 | pooler do **`dev`**, porta 6543 |
+   | `DATABASE_URL` | pooler do **`prod`** (Supabase), porta 6543 | string com pooler do **`dev`** (Neon, host com `-pooler`) |
    | `IP_HASH_SECRET` | `openssl rand -hex 32` | outro `openssl rand -hex 32` |
    | `CRON_SECRET` | `openssl rand -hex 32` | outro `openssl rand -hex 32` |
    | `CHAT_MODEL`, `FAST_MODEL`, `EMBEDDING_MODEL` | não criar (valem os padrões de `src/config.ts`) | não criar |
@@ -161,7 +176,7 @@ A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkCon
    Nenhuma variável com prefixo `NEXT_PUBLIC_`. Gere os segredos direto no terminal e cole no painel; não os salve em arquivo do repositório. O `CRON_SECRET` só pode ter letras e números (vai num header HTTP); o `openssl rand -hex` já garante isso.
 5. **Settings → Deployment Protection:** manter a **Standard Protection** (Vercel Authentication nos previews, produção pública). Em **Protection Bypass for Automation**, gerar um segredo para o smoke do passo 7.
 
-**Verificação (RNF2):** a lista de variáveis mostra 4 em Production e 4 em Preview, nenhuma `NEXT_PUBLIC_`; abrindo o valor do `DATABASE_URL` de Preview no painel, o usuário do pooler (`postgres.<ref>`) é o do projeto `dev`, nunca o do `prod`. Mudança de variável só vale para deploys novos: depois de editar, faça **Redeploy**.
+**Verificação (RNF2):** a lista de variáveis mostra 4 em Production e 4 em Preview, nenhuma `NEXT_PUBLIC_`; abrindo o valor do `DATABASE_URL` de Preview no painel, o host é o do Neon (termina em `neon.tech`), nunca o pooler do Supabase com o usuário `postgres.<ref>` do `prod`. Mudança de variável só vale para deploys novos: depois de editar, faça **Redeploy**.
 
 ## 6. Primeiro deploy de produção
 
@@ -201,7 +216,7 @@ Se falhar:
    ```
 3. Fechar o PR **sem merge** e apagar a branch.
 
-**Verificação:** 7 ✅. O passo 1 mostra o total de trechos do `dev` (não do `prod`), e a sessão fictícia aparece no `dev`. Um 401 em todos os passos indica que o bypass não foi enviado ou está errado.
+**Verificação:** 7 ✅. O passo 1 mostra o total de trechos do `dev` no Neon (não do `prod`), e a sessão fictícia aparece no `dev`. Se só a primeira chamada falhar por timeout, repita uma vez: é o scale-to-zero do Neon acordando. Um 401 em todos os passos indica que o bypass não foi enviado ou está errado.
 
 ## 8. Cron
 
@@ -249,11 +264,53 @@ Se falhar:
 
 **Reingerir a base no `prod`.** Rode de novo o passo 4. A ingestão substitui os trechos do mesmo modelo e `chunkConfig`, então serve tanto para atualizar a base quanto para recuperar de uma ingestão incompleta. Confira depois com o `/api/health` da produção (ou `npm run smoke`).
 
-**Migração.** Não há migração de volta. Uma correção de schema vira uma migração nova, por PR, aplicada primeiro no `dev` e depois no `prod` (passo 3).
+**Migração.** Não há migração de volta. Uma correção de schema vira uma migração nova, por PR, aplicada primeiro no `dev` (ver "Banco `dev` no Neon") e depois no `prod` (passo 3).
 
 **Cron.** Para parar a limpeza sem deploy: **Settings → Cron Jobs → Disable Cron Jobs** (o ajuste persiste entre deploys e rollbacks). Lembre que sem o cron o `prod` pode ser pausado depois de 7 dias sem uso.
 
-**Segredo vazado.** Gere outro (AI Studio para a `GEMINI_API_KEY`; Supabase → Database → Reset password para o `DATABASE_URL`; `openssl rand -hex 32` para os outros), atualize na Vercel e no `.env*.local`, e faça Redeploy.
+**Segredo vazado.** Gere outro (AI Studio para a `GEMINI_API_KEY`; Supabase → Database → Reset password para o `DATABASE_URL` do `prod`; Neon → Roles → Reset password para o `DATABASE_URL` e o `DATABASE_URL_UNPOOLED` do `dev`; `openssl rand -hex 32` para os outros), atualize na Vercel e no `.env*.local`, e faça Redeploy.
+
+---
+
+## Banco `dev` no Neon
+
+Desde o [ADR 0017](docs/adr/0017-neon-como-banco-dev.md), o `dev` (local, `chat`, `eval`, `ingest` e Preview da Vercel) é um projeto Postgres do Neon Free. O Supabase fica só com o `prod`.
+
+**Quem faz o quê.** A pessoa cria o projeto, grava as strings e mexe na Vercel e no painel do Supabase. O orquestrador roda o bootstrap, a migração, as consultas e a ingestão, com a autorização do `CLAUDE.md`.
+
+1. **Projeto (pessoa).** No Neon, criar o projeto com **Postgres 17** (igual ao `prod`), na região `aws-sa-east-1` (São Paulo), no branch padrão `main`. Sem a integração da Vercel pelo Marketplace: ela cria variáveis sozinha, inclusive em Production.
+2. **Strings de conexão (pessoa).** Gravar no `.env.local` do checkout principal, sem colar na conversa nem no terminal:
+   - `DATABASE_URL`: a string **com pooler** (host com `-pooler`), que o app usa;
+   - `DATABASE_URL_UNPOOLED`: a string **direta** (sem `-pooler`), só para a Supabase CLI.
+
+   O `neon env pull --project-id <id> --branch main --file .env.local -e DATABASE_URL,DATABASE_URL_UNPOOLED` grava as duas e preserva as outras linhas.
+3. **Bootstrap e migração (orquestrador).** Os comandos carregam o `.env.local` num subshell e passam a URL pela variável `U`, sem escrevê-la. O `U` é a string direta sem o parâmetro `channel_binding`, que o driver da CLI repassa ao servidor e o Neon recusa. O bootstrap cria o schema `extensions` e os papéis `anon` e `authenticated`, que a migração espera e só o Supabase traz prontos. Ele é idempotente e recusa rodar num projeto Supabase.
+
+   ```bash
+   # na raiz do checkout principal (ou no worktree com o link .env.local)
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --yes -f supabase/dev-bootstrap.sql )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --dry-run )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --yes )
+   ```
+
+   Nunca rode `db push` no `dev` sem `--remote=` explícito: sem URL, ele vai para o projeto linkado. Nunca rode estes comandos com o `.env.prod.local` carregado.
+4. **Verificação (orquestrador).** As mesmas consultas do passo 3, somente leitura, no `dev`:
+
+   ```bash
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname" )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --read-only "select count(*) as policies from pg_policies where schemaname = 'public'" )
+   ```
+
+   Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`. O `--dry-run` de novo responde `Remote database is up to date`.
+5. **Ingestão (orquestrador).**
+
+   ```bash
+   npm run ingest   # lê o DATABASE_URL do .env.local, que agora é o Neon
+   ```
+
+   Verificação: a linha `Banco:` mostra um host que termina em `neon.tech`, e o `Total gravado` é igual ao `count`.
+6. **Preview (pessoa).** Na Vercel, trocar só o `DATABASE_URL` de **Preview** pela string com pooler do Neon (passo 5) e fazer Redeploy. Depois, o smoke do passo 7.
+7. **Supabase `dev` antigo (pessoa).** Depois do smoke verde no preview, pausar o projeto no painel do Supabase, o que já libera a vaga. Só excluir depois de alguns dias sem problema no Neon, porque a exclusão não tem volta. Enquanto ele estiver só pausado, voltar é restaurá-lo e recolocar a string antiga no `.env.local` e no Preview.
 
 ---
 
@@ -273,6 +330,23 @@ Executados no worktree da S09 com a Supabase CLI 3.0.0, no projeto `chapa-prod` 
 | Conferência direta no `chapa-prod` | 35 trechos de 7 arquivos, todos com `gemini-embedding-001` e `markdown:1200:150` |
 
 Depois da conferência, o worktree voltou a ser linkado ao `dev`. O passo 6 confirma o mesmo total pelo `/api/health` da produção.
+
+### Banco `dev` no Neon (orquestrador, 10/11/2026)
+
+Executado no worktree da change `move-dev-database-to-neon`, com a Supabase CLI 3.0.0 e os comandos da seção "Banco `dev` no Neon", no projeto `chapa-dev` (`aws-sa-east-1`, Postgres 17.11). Host direto: `ep-wispy-forest-b6iqox05.c-2.sa-east-1.aws.neon.tech`; host com pooler: `ep-wispy-forest-b6iqox05-pooler.c-2.sa-east-1.aws.neon.tech`. Nenhum comando pediu senha ou entrada interativa.
+
+| Verificação | Resultado |
+|---|---|
+| `db query --yes -f supabase/dev-bootstrap.sql`, duas vezes seguidas | `DO` e saída 0 nas duas: o script é idempotente |
+| `db push --dry-run` | 1 migração pendente: `20261106003144_schema_inicial.sql` |
+| `db push --yes` | Aplicou `20261106003144_schema_inicial.sql` sem erro |
+| RLS (`pg_class.relrowsecurity`) | `true` em `document_chunks`, `messages`, `rate_limits` e `sessions` |
+| Policies em `public` (`pg_policies`) | 0 |
+| `db push --dry-run` depois da migração | `Remote database is up to date` |
+| `npm run ingest` (preset `padrao`) | 7 arquivos; `Total gravado: 37 trechos`; `gemini-embedding-001`; `markdown:1200:150`; `Banco:` com o host do pooler do Neon; `count` = 37; 1 chamada de embedding |
+| `npm run chat -- --nome "Pizzaria Bella" --debug`, pergunta sobre o prazo do repasse | Resposta com fontes (`02-repasse-financeiro.md`, `03-cancelamentos-e-contestacoes.md`); debug com 5 trechos e scores semântico e textual; 2 chamadas |
+
+Na primeira tentativa, os comandos falharam por dois motivos, já corrigidos na seção: o `db query` pedia confirmação (`--yes`) e a string direta do `neon env pull` traz `channel_binding=require`, que o Neon recusa quando vem da CLI. O bootstrap também precisou virar um único comando `do`, porque o `db query -f` não aceita vários comandos num arquivo.
 
 ## Links da demo
 

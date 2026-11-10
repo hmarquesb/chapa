@@ -35,6 +35,7 @@ npm run chat -- --sessao <uuid> --debug                              # retoma um
 
 - O `--debug` mostra a pergunta reescrita, os trechos com score semântico e textual, as chamadas, os tokens e a latência. É o jeito mais rápido de entender por que uma resposta caiu no fallback.
 - Na interface, confira pelo menos: uma pergunta respondida com fontes, uma fora do escopo (fallback), uma com CPF fictício (bloqueio), o recarregar da página (histórico volta), o link de continuação e o botão "Nova conversa".
+- O `dev` roda no Neon, que suspende a computação depois de 5 min ocioso: a primeira requisição depois disso pode demorar alguns segundos.
 - Fora da Vercel não há cabeçalho de IP, então todas as requisições locais caem no mesmo balde do rate limit.
 
 ## Avaliação
