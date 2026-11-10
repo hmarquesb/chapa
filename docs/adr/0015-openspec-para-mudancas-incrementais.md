@@ -1,6 +1,6 @@
 # 0015. Usar o OpenSpec para as mudanças depois da construção inicial
 
-- **Status:** Aceito
+- **Status:** Aceito (a pasta das specs S00 a S10 foi alterada pelo [ADR 0016](0016-specs-da-construcao-em-docs-history.md))
 - **Data:** 2026-11-10
 
 ## Contexto
