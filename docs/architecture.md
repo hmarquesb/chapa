@@ -86,14 +86,15 @@ Supabase: PostgreSQL com `pgvector` e busca textual com o dicionário `portugues
 - `document_chunks` tem `embedding_model` e `chunk_config`, e toda busca filtra pelos dois. Nunca compare vetores de modelos ou de fatiamentos diferentes.
 - Busca híbrida: o SQL devolve `semantic` e `keyword` por trecho, e uma função pura em TS combina os dois com `alpha`, filtra por `minScore` e corta em `topK`.
 - As mensagens são ordenadas por `id`, não por `created_at`.
-- O banco é acessado com o driver `postgres` pelo pooler do Supabase (modo transação, sem prepared statements), sem `supabase-js` e sem a chave `anon`.
+- O banco é acessado com o driver `postgres` pelo pooler em modo transação (Supabase no `prod`, Neon no `dev`), sem prepared statements, sem `supabase-js` e sem a chave `anon`.
 - RLS ligado em todas as tabelas, sem nenhuma policy.
-- O schema fica em `supabase/migrations/` e é aplicado com a Supabase CLI.
+- O schema fica em `supabase/migrations/` e é aplicado com a Supabase CLI. No `dev`, a migração roda depois do `supabase/dev-bootstrap.sql`.
 
 ## Infraestrutura
 
 - **Vercel:** hospeda o front e a API, na região `gru1`.
-- **Supabase:** dois projetos, `dev` e `prod`, na região `sa-east-1`. Local e preview usam o `dev`.
+- **Supabase:** só o `prod`, em `sa-east-1`.
+- **Neon:** o `dev`, usado no local e no preview, em `aws-sa-east-1` ([ADR 0017](adr/0017-neon-como-banco-dev.md)).
 - **Gemini (Google AI Studio, sem cartão):** único provedor, para chat e embeddings.
 
 Variáveis: `GEMINI_API_KEY`, `DATABASE_URL`, `IP_HASH_SECRET`, `CRON_SECRET` e `*_MODEL` (opcionais). Nenhuma variável secreta usa o prefixo `NEXT_PUBLIC_`.
