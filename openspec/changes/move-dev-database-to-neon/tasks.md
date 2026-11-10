@@ -34,8 +34,8 @@ As tarefas marcadas **(pessoa)** dependem de conta, de segredo ou do painel da V
 
 ## 5. Preview na Vercel
 
-- [ ] 5.1 **(pessoa)** Na Vercel, trocar o `DATABASE_URL` de **Preview** (Sensitive) pela string com pooler do Neon, sem tocar em Production, e fazer Redeploy do preview do PR desta change. Verificar: no painel, o `DATABASE_URL` de Production continua com o host do pooler do Supabase.
-- [ ] 5.2 **(pessoa, ou orquestrador com autorização)** Rodar `npm run smoke -- --url <preview do PR>` com o segredo de bypass, como no passo 7 do `DEPLOY.md`. Verificar: 7 ✅, e o total de trechos do primeiro passo é igual ao da tarefa 2.6. Se só a primeira chamada falhar por timeout, repetir uma vez (cold start) e registrar no relatório.
+- [x] 5.1 **(pessoa)** Na Vercel, trocar o `DATABASE_URL` de **Preview** (Sensitive) pela string com pooler do Neon, sem tocar em Production, e fazer Redeploy do preview do PR desta change. Verificar: no painel, o `DATABASE_URL` de Production continua com o host do pooler do Supabase.
+- [x] 5.2 **(pessoa, ou orquestrador com autorização)** Rodar `npm run smoke -- --url <preview do PR>` com o segredo de bypass, como no passo 7 do `DEPLOY.md`. Verificar: 7 ✅, e o total de trechos do primeiro passo é igual ao da tarefa 2.6. Se só a primeira chamada falhar por timeout, repetir uma vez (cold start) e registrar no relatório.
 
 ## 6. Verificação final
 
