@@ -27,17 +27,17 @@
 
 - [x] 5.1 Reescrever `eval/perguntas.json` com os ids 101 a 150 e a matriz da decisão 8. Verificar com `npx vitest run scripts/eval/` que a validação real passa (distribuição, cobertura por documento, `perfil` com plano) e que o teste do `regras.yaml` passa.
 - [x] 5.2 Reativar o caso com o `perguntas.json` real em `questions.test.ts`, se tiver sido marcado como `todo`. Verificar que `npm test` passa por inteiro.
-- [ ] 5.3 **(pessoa)** Revisar as 50 perguntas no PR, em especial as `adversarial` e as `perfil`. O orquestrador marca esta tarefa quando a pessoa aprovar.
+- [x] 5.3 **(pessoa)** Revisar as 50 perguntas no PR, em especial as `adversarial` e as `perfil`. O orquestrador marca esta tarefa quando a pessoa aprovar.
 
 ## 6. Rodada `v3`
 
-- [ ] 6.1 Confirmar que a branch está rebaseada numa `main` com as três changes (`git log --oneline main -5`) e que o `dev` tem a base da Rango no preset `padrao`. **(autorização)** Se não tiver, rodar `npm run ingest` e esperar 90 s. Verificar: a contagem por arquivo lista os 11 documentos.
-- [ ] 6.2 **(autorização)** Rodar a `v3` em blocos de 10, como na decisão 9, até `Pendentes: nenhuma`. Repetir uma vez as perguntas que terminaram em erro. Verificar que `eval/resultados/v3.json` tem 50 resultados e registrar no relatório os blocos, as esperas por cota e os commits envolvidos.
-- [ ] 6.3 Atualizar o `COMPARACAO.md` (decisão 9). Se alguma meta não foi atingida, explicar com as perguntas que falharam. Verificar que a tabela antiga continua intacta embaixo (`git diff eval/resultados/COMPARACAO.md`).
+- [x] 6.1 Confirmar que a branch está rebaseada numa `main` com as três changes (`git log --oneline main -5`) e que o `dev` tem a base da Rango no preset `padrao`. **(autorização)** Se não tiver, rodar `npm run ingest` e esperar 90 s. Verificar: a contagem por arquivo lista os 11 documentos.
+- [x] 6.2 **(autorização)** Rodar a `v3` em blocos de 10, como na decisão 9, até `Pendentes: nenhuma`. Repetir uma vez as perguntas que terminaram em erro. Verificar que `eval/resultados/v3.json` tem 50 resultados e registrar no relatório os blocos, as esperas por cota e os commits envolvidos.
+- [x] 6.3 Atualizar o `COMPARACAO.md` (decisão 9). Se alguma meta não foi atingida, explicar com as perguntas que falharam. Verificar que a tabela antiga continua intacta embaixo (`git diff eval/resultados/COMPARACAO.md`).
 
 ## 7. Documentação
 
-- [ ] 7.1 Atualizar `docs/qa.md`, `docs/business.md` e `README.md` como na decisão 10, com os números reais da `v3`. Verificar que os comandos do `qa.md` são os que rodaram na tarefa 6.2 e que `git grep -n "Plano Básico" -- docs/qa.md README.md` só encontra trechos marcados como "(base anterior)".
+- [x] 7.1 Atualizar `docs/qa.md`, `docs/business.md` e `README.md` como na decisão 10, com os números reais da `v3`. Verificar que os comandos do `qa.md` são os que rodaram na tarefa 6.2 e que `git grep -n "Plano Básico" -- docs/qa.md README.md` só encontra trechos marcados como "(base anterior)".
 
 ## 8. Verificação final
 
