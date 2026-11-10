@@ -1,8 +1,10 @@
 <!-- Title: Conventional Commits, e.g. "feat(rag): add hybrid retrieval" (used as the squash commit). -->
 
-## Spec
+## Spec / Change
 
-Implements [SNN — name](specs/SNN-file.md).
+Implements [`<change-name>`](openspec/changes/<change-name>/proposal.md).
+<!-- For the initial-build specs: Implements [SNN — name](specs/SNN-file.md). -->
+
 
 ## Summary
 
@@ -31,8 +33,9 @@ None.
 
 ## Checklist
 
-- [ ] Only files listed in the spec were touched
-- [ ] No new dependencies beyond the spec
+- [ ] Only files listed in the spec / the change's `design.md` were touched
+- [ ] No new dependencies beyond the spec / change proposal
 - [ ] No secrets, `.env*` or real API calls in tests
-- [ ] Spec status updated to 🟢 in its own file (index is updated in the wave-closing PR)
+- [ ] Change: all tasks in `tasks.md` checked; `npx openspec validate <change-name>` passes (archive happens in a separate PR after merge)
+- [ ] Spec (S00–S10 only): status updated to 🟢 in its own file
 - [ ] New architectural decision? Added an ADR in `docs/adr/`

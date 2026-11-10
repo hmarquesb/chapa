@@ -8,7 +8,8 @@ Assistente web para restaurantes que **já são parceiros** de um app de deliver
 
 - Arquitetura: [`ARCHITECTURE.md`](ARCHITECTURE.md). Leia antes de qualquer tarefa.
 - Decisões e seus porquês: [`docs/adr/`](docs/adr/README.md). Uma decisão de arquitetura nova vira um ADR novo; um ADR aceito não é reescrito, e sim substituído por outro (`Substituído por`). Os ADRs são escritos em português.
-- Specs de implementação: [`specs/README.md`](specs/README.md). Cada spec traz por extenso os contratos que cria e os que usa.
+- Comportamento atual e mudanças novas: [`openspec/`](openspec/config.yaml), pelo OpenSpec (ver "Fluxo de trabalho com changes do OpenSpec").
+- Specs da construção inicial (histórico): [`specs/README.md`](specs/README.md). Cada spec traz por extenso os contratos que cria e os que usa.
 
 É um projeto de estudo, **não oficial** e sem afiliação com nenhuma empresa de delivery.
 
@@ -36,6 +37,7 @@ npm run chat -- --nome "Pizzaria Bella" --debug        # ⚠️ chama a API
 npm run eval -- --label v2 --preset padrao             # ⚠️ chama a API (60 a 90 chamadas)
 npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada
 npm run db -- db push --remote   # Supabase CLI, no projeto linkado (só no checkpoint)
+npm run spec -- list             # OpenSpec CLI: list, show, validate, status, archive
 ```
 
 As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts locais usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis já definidas no shell.
@@ -101,7 +103,21 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts 
 - Os testes automatizados nunca fazem chamadas de rede nem acessam banco. Injete fakes.
 - A CI roda só `lint`, `typecheck`, `test` e `build`, sem segredos.
 
-## Fluxo de trabalho com specs
+## Fluxo de trabalho com changes do OpenSpec
+
+Desde o [ADR 0015](docs/adr/0015-openspec-para-mudancas-incrementais.md), toda mudança nova é uma *change* do OpenSpec. As specs S00 a S10 em `specs/` são o histórico da construção e não são mais editadas.
+
+1. O comportamento atual fica em `openspec/specs/<capacidade>/spec.md`. Uma mudança fica em `openspec/changes/<nome>/`: `proposal.md`, `design.md`, `tasks.md` e os deltas das specs.
+2. Use os comandos `/opsx:explore`, `/opsx:propose`, `/opsx:apply` e `/opsx:archive`, ou o CLI (`npx openspec list`, `show`, `validate`, `status`).
+3. Só faça o *apply* de uma change cuja proposta a pessoa aprovou.
+4. Leia, nesta ordem: este arquivo, o `ARCHITECTURE.md`, os artefatos da change e os ADRs que ela cita.
+5. Toque **apenas** nos arquivos listados no `design.md` da change. Os contratos escritos nele são fixos: se precisar mudar um, pare e reporte.
+6. Marque as tarefas do `tasks.md` à medida que terminar cada uma.
+7. O *archive* só roda depois do merge do PR da change, num PR próprio (`docs(openspec): archive <nome>`).
+8. A definição de pronto e o relatório final são os mesmos das specs, logo abaixo.
+9. Não edite à mão os arquivos que o OpenSpec gerou em `.claude/commands/opsx/` e `.claude/skills/openspec-*/`. Eles são regenerados por `npx openspec update`.
+
+## Fluxo de trabalho com specs (S00 a S10, histórico)
 
 1. Só implemente specs com `Status: ✅ Aprovada`.
 2. Leia, nesta ordem: este arquivo, o `ARCHITECTURE.md` e a spec.
@@ -119,6 +135,7 @@ O histórico, as branches e os PRs ficam **em inglês**. Os ADRs e o texto que o
 
 - A `main` só recebe código por **PR com a CI verde**. A única exceção é o commit 0 (documentação e specs).
 - **Uma branch por spec**, criada a partir da `main` atualizada: `<tipo>/sNN-<nome-curto-em-ingles>`, por exemplo `feat/s04-ingestion-and-search`, `docs/s10-readme`.
+- **Uma branch por change** do OpenSpec, com o nome da change em inglês e `kebab-case`: `<tipo>/<nome-da-change>`, por exemplo `feat/add-faq-shortcuts`. O worktree fica em `../chapa-worktrees/<nome-da-change>`.
 - Specs da mesma onda rodam em paralelo, cada uma no **seu próprio worktree** (`../chapa-worktrees/sNN`, via `git worktree add`). Nunca duas branches no mesmo diretório.
 - O PR segue o [`.github/pull_request_template.md`](.github/pull_request_template.md): link da spec, critérios de aceite com evidência, desvios e pendências humanas. O relatório final do subagente vai para a descrição do PR.
 - Merge por **squash**, com título no padrão Conventional Commits. A branch é apagada depois do merge.
@@ -129,7 +146,7 @@ O histórico, as branches e os PRs ficam **em inglês**. Os ADRs e o texto que o
 - Pequenos e atômicos, no padrão **Conventional Commits em inglês**: `feat(rag): combine semantic and keyword scores`.
 - Tipos: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `perf`. Escopo pela camada ou área: `config`, `llm`, `db`, `rag`, `assistant`, `api`, `ui`, `kb`, `eval`, `deploy`, `specs`, `adr`.
 - O assunto diz **o quê**, no imperativo e com até ~72 caracteres. O corpo, quando existir, diz **por quê**.
-- Todo commit de implementação leva o trailer `Spec: SNN`. Commit com código gerado por agente leva também `Co-Authored-By` do agente.
+- Todo commit de implementação leva o trailer `Spec: SNN`, ou `Change: <nome-da-change>` nas changes do OpenSpec. Commit com código gerado por agente leva também `Co-Authored-By` do agente.
 
 ```
 feat(rag): combine semantic and keyword scores
