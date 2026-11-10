@@ -10,14 +10,16 @@ Assistente web para restaurantes que **já são parceiros** de um app de deliver
 
   | Documento | O que cobre | Quando ler |
   |---|---|---|
-  | [`architecture.md`](docs/architecture.md) | Stack, estrutura, fluxo de uma mensagem, banco e infraestrutura | Sempre, antes de qualquer tarefa |
+  | [`architecture.md`](docs/architecture.md) | Stack, fluxo de uma mensagem, rotas, banco e infraestrutura | Ao mudar o fluxo da mensagem, uma rota, o banco ou a infraestrutura |
   | [`business.md`](docs/business.md) | Público, conceitos, temas cobertos, fora do escopo e metas | Ao propor ou avaliar uma mudança de produto |
-  | [`development.md`](docs/development.md) | Princípios, onde mexer para cada tipo de mudança, testes e front-end | Sempre, antes de escrever código |
+  | [`development.md`](docs/development.md) | Princípios, testes, front-end e scripts | Ao criar um módulo, um teste novo ou um componente |
   | [`qa.md`](docs/qa.md) | Portões, verificação manual, avaliação e smoke | Antes de declarar uma mudança pronta |
 
+  Para um ajuste localizado, este arquivo e a tabela "Onde mexer" bastam: não abra os outros documentos sem necessidade.
+
 - Decisões e seus porquês: [`docs/adr/`](docs/adr/README.md). Uma decisão de arquitetura nova vira um ADR novo; um ADR aceito não é reescrito, e sim substituído por outro (`Substituído por`). Os ADRs são escritos em português.
-- Comportamento atual e mudanças novas: [`openspec/`](openspec/config.yaml), pelo OpenSpec (ver "Fluxo de trabalho com changes do OpenSpec").
-- Specs da construção inicial (histórico): [`specs/README.md`](specs/README.md). Cada spec traz por extenso os contratos que cria e os que usa.
+- Comportamento atual e mudanças novas: [`openspec/`](openspec/config.yaml), pelo OpenSpec. Leia só a spec da capacidade que a tarefa toca (`openspec/specs/<capacidade>/spec.md`).
+- Specs da construção inicial (S00 a S10, todas concluídas): [`specs/`](specs/README.md). São histórico: não leia nem edite, a menos que a tarefa peça.
 
 É um projeto de estudo, **não oficial** e sem afiliação com nenhuma empresa de delivery.
 
@@ -50,6 +52,29 @@ npm run changes          # changes ativas do OpenSpec em todos os worktrees (o `
 ```
 
 As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts locais usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis já definidas no shell.
+
+## Onde mexer
+
+| Mudança | Arquivos | Cuidados |
+|---|---|---|
+| Fluxo de uma mensagem (`handleMessage`) | `src/core/assistant.ts` | API, CLI e eval chamam a mesma função: a mudança vale nos três |
+| Busca, ranking, chunking, ingestão | `src/core/rag/` (`retrieve`, `rank`, `chunking`, `ingest`) e `scripts/ingest.ts` | Mudou o chunking: reingerir |
+| Parâmetro do RAG (`minScore`, `topK`, `alpha`, chunking) | `src/config.ts` (`RAG_PRESETS`) | Mudou qualquer parâmetro: rodar a avaliação ([`qa.md`](docs/qa.md#avaliação)) |
+| Modelo de chat ou de embedding | `src/config.ts` | Modelo de embedding novo exige reingerir. Decisão de modelo vira ADR |
+| Chamada ao Gemini (retry, tokens) | `src/infra/llm/` (`gemini-client.ts`, `retry.ts`) | Único lugar que importa `@google/genai` |
+| Consulta ao banco | `src/infra/db/` (`*-repository.ts`, `mappers.ts`) | Toda busca filtra por `embedding_model` e `chunk_config` |
+| Ligação das portas às implementações | `src/infra/container.ts` | — |
+| Texto fixo (fallback, bloqueio, avisos) | `src/core/messages.ts` | Nunca duplique o texto em outro arquivo |
+| Prompt de sistema ou do RAG | `src/core/prompts.ts` | O fallback no prompt vem de `FALLBACK_MESSAGE`. Rodar a avaliação |
+| Guardrail de entrada ou de saída | `src/core/guardrails.ts`, `src/core/messages.ts` | Bloqueie padrões, nunca palavras soltas. "O repasse cai via Pix?" tem que passar: acrescente o caso nos testes |
+| Memória, resumo ou reescrita | `src/core/memory.ts`, `src/core/rewrite-query.ts` | O contexto do RAG não vai para `messages` |
+| Rota de API | `src/app/api/<rota>/route.ts` e o handler em `src/app/api/_lib/handlers.ts` | O `route.ts` só liga o handler ao container. A lógica fica no handler, testado com fakes |
+| Validação, rate limit, logs da API | `src/app/api/_lib/` (`validate.ts`, `rate-limit.ts`, `log.ts`) | Corpo máximo de 4 KB. Mensagens de erro em PT-BR |
+| Campo novo no perfil | `src/lib/types.ts` (`PROFILE_FIELDS`), `src/core/prompts.ts`, `src/components/chat/profile-form.tsx` | O perfil é dado do usuário: não logue |
+| Interface | `src/components/chat/` (entrada em `chat-app.tsx`), `src/app/page.tsx`, `src/lib/` (`chat-state`, `api-client`, `session-id`) | Componentes só importam `src/lib/` |
+| Schema do banco | Nova migração em `supabase/migrations/` (`npm run db -- migration new <nome>`) | Nunca edite uma migração já aplicada. RLS ligado e sem policies. Aplicar no banco é checkpoint humano |
+| Base de conhecimento | `knowledge-base/0N-*.md` e `knowledge-base/FONTES.md` | Reescreva com palavras próprias, com fonte e data. Depois do merge, reingerir no `dev` e no `prod` |
+| Avaliação | `scripts/eval.ts`, `scripts/eval/`, `eval/perguntas.json` | Ids estáveis: não renumere as perguntas existentes |
 
 ## Camadas e importações
 
@@ -114,16 +139,16 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts 
 
 ## Fluxo de trabalho com changes do OpenSpec
 
-Desde o [ADR 0015](docs/adr/0015-openspec-para-mudancas-incrementais.md), toda mudança nova é uma *change* do OpenSpec. As specs S00 a S10 em `specs/` são o histórico da construção e não são mais editadas.
+Desde o [ADR 0015](docs/adr/0015-openspec-para-mudancas-incrementais.md), toda mudança nova é uma *change* do OpenSpec.
 
 1. O comportamento atual fica em `openspec/specs/<capacidade>/spec.md`. Uma mudança fica em `openspec/changes/<nome>/`: `proposal.md`, `design.md`, `tasks.md` e os deltas das specs.
 2. Use os comandos `/opsx:explore`, `/opsx:propose`, `/opsx:apply` e `/opsx:archive`, ou o CLI (`npx openspec list`, `show`, `validate`, `status`).
 3. Só faça o *apply* de uma change cuja proposta a pessoa aprovou.
-4. Leia, nesta ordem: este arquivo, o `docs/architecture.md`, o `docs/development.md`, os artefatos da change e os ADRs que ela cita. Antes de terminar, siga o `docs/qa.md`.
-5. Toque **apenas** nos arquivos listados no `design.md` da change. Os contratos escritos nele são fixos: se precisar mudar um, pare e reporte.
+4. Leia, nesta ordem: este arquivo, os artefatos da change, os ADRs que ela cita e os documentos de `docs/` que a tabela do início indica para o tipo de mudança.
+5. Toque **apenas** nos arquivos listados no `design.md` da change. Os contratos escritos nele são fixos: se precisar mudar um, pare e reporte. Se a change estiver ambígua ou errada, pare e reporte em vez de improvisar.
 6. Marque as tarefas do `tasks.md` à medida que terminar cada uma.
 7. O *archive* só roda depois do merge do PR da change, num PR próprio (`docs(openspec): archive <nome>`).
-8. A definição de pronto e o relatório final são os mesmos das specs, logo abaixo.
+8. **Definição de pronto:** `npm run lint`, `npm run typecheck` e `npm test` passam (e `npm run build`, quando a change pede), e cada critério de aceite foi checado com evidência (ver o [`docs/qa.md`](docs/qa.md)). O relatório final lista os arquivos alterados, os critérios com a evidência, os desvios e as pendências humanas.
 9. Não edite à mão os arquivos que o OpenSpec gerou em `.claude/commands/opsx/` e `.claude/skills/openspec-*/`. Eles são regenerados por `npx openspec update`.
 
 ## Skills do projeto
@@ -142,49 +167,36 @@ As skills ficam em `.claude/skills/`. Carregue a mais específica para cada etap
 
 As skills são guias gerais e **não sobrepõem as regras deste arquivo**. Se uma delas sugerir uma dependência nova (SWR, `lru-cache`, bibliotecas de formulário), streaming, estado em memória entre requisições ou qualquer coisa que contrarie as regras de IA e RAG ou um ADR aceito, as regras daqui valem.
 
-## Fluxo de trabalho com specs (S00 a S10, histórico)
-
-1. Só implemente specs com `Status: ✅ Aprovada`.
-2. Leia, nesta ordem: este arquivo, o `docs/architecture.md` (antigo `ARCHITECTURE.md`) e a spec.
-3. Toque **apenas** nos arquivos listados em "Arquivos que podem ser criados ou alterados". Outros agentes podem estar trabalhando no resto em paralelo.
-4. Os contratos de uma spec são fixos. Se precisar mudar um, pare e reporte.
-5. Não amplie o escopo. Se a spec estiver ambígua ou errada, pare e reporte em vez de improvisar.
-6. **Definição de pronto:** `npm run lint`, `npm run typecheck` e `npm test` passam (e `npm run build`, quando a spec pede), e todos os critérios de aceite foram checados um a um, com evidência.
-7. No relatório final, liste os arquivos alterados, os critérios de aceite com a evidência de cada um, os desvios da spec e as pendências humanas.
-
 ## Git
 
 O histórico, as branches e os PRs ficam **em inglês**. Os ADRs e o texto que o usuário final lê ficam em PT-BR.
 
 ### Branches e PRs
 
-- A `main` só recebe código por **PR com a CI verde**. A única exceção é o commit 0 (documentação e specs).
-- **Uma branch por spec**, criada a partir da `main` atualizada: `<tipo>/sNN-<nome-curto-em-ingles>`, por exemplo `feat/s04-ingestion-and-search`, `docs/s10-readme`.
-- **Uma branch por change** do OpenSpec, com o nome da change em inglês e `kebab-case`: `<tipo>/<nome-da-change>`, por exemplo `feat/add-faq-shortcuts`. O worktree fica em `../chapa-worktrees/<nome-da-change>`.
-- Specs da mesma onda rodam em paralelo, cada uma no **seu próprio worktree** (`../chapa-worktrees/sNN`, via `git worktree add`). Nunca duas branches no mesmo diretório.
-- O PR segue o [`.github/pull_request_template.md`](.github/pull_request_template.md): link da spec, critérios de aceite com evidência, desvios e pendências humanas. O relatório final do subagente vai para a descrição do PR.
+- A `main` só recebe código por **PR com a CI verde**.
+- **Uma branch por change** do OpenSpec, criada a partir da `main` atualizada, com o nome da change em inglês e `kebab-case`: `<tipo>/<nome-da-change>`, por exemplo `feat/add-faq-shortcuts`. O worktree fica em `../chapa-worktrees/<nome-da-change>`. Nunca duas branches no mesmo diretório.
+- O PR segue o [`.github/pull_request_template.md`](.github/pull_request_template.md): link da change, critérios de aceite com evidência, desvios e pendências humanas. O relatório final do subagente vai para a descrição do PR.
 - Merge por **squash**, com título no padrão Conventional Commits. A branch é apagada depois do merge.
-- Na branch, a spec só muda o **próprio** status (`🔵` → `🟢`) dentro do arquivo dela. O índice de `specs/README.md` é atualizado num PR pequeno de fechamento da onda, para que PRs paralelos não entrem em conflito.
 
 ### Commits
 
 - Pequenos e atômicos, no padrão **Conventional Commits em inglês**: `feat(rag): combine semantic and keyword scores`.
 - Tipos: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `perf`. Escopo pela camada ou área: `config`, `llm`, `db`, `rag`, `assistant`, `api`, `ui`, `kb`, `eval`, `deploy`, `specs`, `adr`.
 - O assunto diz **o quê**, no imperativo e com até ~72 caracteres. O corpo, quando existir, diz **por quê**.
-- Todo commit de implementação leva o trailer `Spec: SNN`, ou `Change: <nome-da-change>` nas changes do OpenSpec. Commit com código gerado por agente leva também `Co-Authored-By` do agente.
+- Todo commit de implementação leva o trailer `Change: <nome-da-change>`. Commit com código gerado por agente leva também `Co-Authored-By` do agente.
 
 ```
 feat(rag): combine semantic and keyword scores
 
 Weighted sum keeps keyword hits that embeddings miss on short queries.
 
-Spec: S04
+Change: tune-hybrid-ranking
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 ### Quem faz o quê
 
 - Subagentes **não fazem commit nem push**, a menos que a tarefa peça.
-- O orquestrador commita na branch da spec depois de revisar, faz push **só da branch da spec** e abre o PR (`gh pr create`). Push direto na `main`, `--force` e criação de repositório remoto só com pedido explícito da pessoa.
+- O orquestrador commita na branch da change depois de revisar, faz push **só dessa branch** e abre o PR (`gh pr create`). Push direto na `main`, `--force` e criação de repositório remoto só com pedido explícito da pessoa.
 - O merge do PR é da pessoa, ou do orquestrador com autorização explícita naquele PR. Rodar `/merge-change <PR>` é essa autorização para o PR da change e para o PR de archive que a skill abre.
 - Configurações pessoais de editor (`.vscode/`, `.idea/`) ficam no `.gitignore`. Rascunhos e anotações pessoais não entram no repositório.

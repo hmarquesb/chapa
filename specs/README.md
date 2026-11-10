@@ -77,7 +77,7 @@ Na branch, cada spec atualiza só o status do próprio arquivo. Este índice é 
 
 ## Checkpoints humanos
 
-Parte das ações abaixo já está autorizada. Veja a seção "Autorizações prévias" do [`CLAUDE.md`](../CLAUDE.md).
+Parte das ações abaixo foi autorizada antes das ondas. Veja "Autorizações prévias (histórico)", logo abaixo.
 
 | ID | Quando | O que você faz |
 |---|---|---|
@@ -89,6 +89,21 @@ Parte das ações abaixo já está autorizada. Veja a seção "Autorizações pr
 | **H4** | Depois da S08 | Autorizar as rodadas de avaliação (v1, calibração e v2) no plano gratuito do Gemini. |
 | **H5** | S09 | Tornar o repositório público, se ainda for privado; aplicar a migração e a ingestão no `prod`; criar o projeto na Vercel e configurar as variáveis de Production e Preview; autorizar o smoke contra a produção. |
 | **H6** | Depois da S10 | Gravar o GIF da demo, informar o nome para a licença e fixar o repositório no perfil. |
+
+## Autorizações prévias (histórico)
+
+Registradas pela pessoa em 05/11/2026 e válidas durante a construção inicial. As que valem hoje estão no [`CLAUDE.md`](../CLAUDE.md#autorizações-prévias).
+
+| Checkpoint | O que estava autorizado | Limites |
+|---|---|---|
+| H1 | Teste de fumaça da S01 (1 `generate` e 1 `embed`) com a `GEMINI_API_KEY` do `.env.local` | Só esse teste |
+| H2 | Depois que a S03 estiver no worktree: `npx supabase link --project-ref <dev>` e `npx supabase db push --remote --yes` no projeto **`dev`**, e as verificações manuais da S03 contra o `dev` | Só o `dev`. Se o comando pedir senha ou outra entrada interativa, parar e pedir à pessoa |
+| — | Usar o `dev` nas verificações manuais da S04, S05 e S06, e rodar `npm run ingest` no `dev` depois do H3 | Só o `dev` |
+| H4 | As rodadas de avaliação da S08 (v1, v2-inicial, calibração e v2) contra o `dev`, seguindo o protocolo do RF7 | `--delay-ms` e `--only` para respeitar a cota gratuita. Se a cota estourasse, esperar e retomar, sem trocar de modelo |
+
+## Orquestração das ondas (histórico)
+
+Para cada spec da onda, o orquestrador criava a branch `<tipo>/sNN-<nome>` e o worktree `../chapa-worktrees/sNN` a partir da `main`, mudava o status para `🔵`, despachava um `spec-implementer` (specs da mesma onda em paralelo), revisava a entrega, commitava com o trailer `Spec: SNN`, mudava o status para `🟢` no próprio arquivo e abria o PR. Quando todos os PRs da onda entravam, abria o PR `docs(specs): close wave N` com o índice atualizado.
 
 ## Riscos principais
 
