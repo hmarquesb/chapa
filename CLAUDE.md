@@ -51,7 +51,7 @@ O fluxo acima continua, trocando a spec pela change:
 3. O `spec-implementer` recebe a change no lugar da spec (ver o prompt abaixo) e executa o `tasks.md`.
 4. O orquestrador revisa, commita com o trailer `Change: <change>`, faz push e abre o PR.
 5. Depois do merge, o orquestrador roda `/opsx:archive` numa branch `docs/archive-<change>` e abre o PR `docs(openspec): archive <change>`. Várias changes da mesma leva podem ser arquivadas no mesmo PR.
-6. Atalho: quando a pessoa roda `/merge-change <PR>`, a skill [`merge-change`](.claude/skills/merge-change/SKILL.md) faz os passos 5 e 6 de uma vez: espera a CI, faz o merge do PR da change, arquiva, abre o PR de archive e faz o merge dele também.
+6. Atalho: quando a pessoa roda `/merge-change <PR>`, a skill [`merge-change`](.claude/skills/merge-change/SKILL.md) faz o merge e o passo 5 de uma vez: espera a CI, faz o merge do PR da change, arquiva, abre o PR de archive e faz o merge dele também.
 
 Changes paralelas seguem a mesma regra das specs: não podem compartilhar arquivos. Duas changes que alteram a mesma capacidade em `openspec/specs/` podem rodar em paralelo, porque os deltas só se juntam no archive, que é sequencial.
 
