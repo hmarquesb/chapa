@@ -6,7 +6,13 @@ import { LlmQuotaError, LlmUnavailableError } from "@/core/errors"
 import { validateInput } from "@/core/guardrails"
 import { KNOWLEDGE_FILE_PATTERN } from "@/core/rag/ingest"
 import type { Assistant, AssistantReply, HandleMessageInput, Usage } from "@/core/types"
-import { type EvalQuestion, runQuestions, validateQuestions } from "./questions"
+import {
+  type EvalQuestion,
+  type EvalQuestionType,
+  IN_SCOPE_TYPES,
+  runQuestions,
+  validateQuestions,
+} from "./questions"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..")
 const KNOWLEDGE_FILES = readdirSync(join(ROOT, "knowledge-base")).filter((name) =>
@@ -30,19 +36,25 @@ function q(overrides: Partial<EvalQuestion> & { id: number }): EvalQuestion {
   }
 }
 
-// Conjunto mínimo válido com a distribuição exigida (7/3/2/2/4/2).
+// Conjunto mínimo válido com a distribuição exigida (15/6/5/5/5/7/4/3), com uma pergunta
+// factual por arquivo de FILES.
 function validSet(): EvalQuestion[] {
   const items: EvalQuestion[] = []
   let id = 1
-  for (let i = 0; i < 7; i++) items.push(q({ id: id++ }))
-  for (let i = 0; i < 3; i++) items.push(q({ id: id++, tipo: "parafrase" }))
-  for (let i = 0; i < 2; i++) {
-    items.push(q({ id: id++, tipo: "multi_turno", pergunta: undefined, turnos: ["a", "b"] }))
+  for (let i = 0; i < 15; i++) {
+    items.push(q({ id: id++, fonte_esperada: [i === 0 ? "02-b.md" : "01-a.md"] }))
   }
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 6; i++) items.push(q({ id: id++, tipo: "parafrase" }))
+  for (let i = 0; i < 5; i++) {
+    items.push(q({ id: id++, tipo: "perfil", perfil: { plan: "Plano Próprio" } }))
+  }
+  for (let i = 0; i < 5; i++) {
     items.push(q({ id: id++, tipo: "multi_doc", fonte_esperada: ["01-a.md", "02-b.md"] }))
   }
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
+    items.push(q({ id: id++, tipo: "multi_turno", pergunta: undefined, turnos: ["a", "b"] }))
+  }
+  for (let i = 0; i < 7; i++) {
     items.push({
       id: id++,
       tipo: "fora_de_escopo",
@@ -51,10 +63,23 @@ function validSet(): EvalQuestion[] {
       nota: "n",
     })
   }
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 4; i++) {
+    items.push({ id: id++, tipo: "adversarial", pergunta: "z?", esperado: "recusa", nota: "n" })
+  }
+  for (let i = 0; i < 3; i++) {
     items.push({ id: id++, tipo: "bloqueio", pergunta: "y?", esperado: "recusa", nota: "n" })
   }
   return items
+}
+
+// Índice da primeira pergunta do tipo no validSet().
+function firstOf(items: EvalQuestion[], tipo: EvalQuestionType): number {
+  return items.findIndex((item) => item.tipo === tipo)
+}
+
+function replace(items: unknown[], index: number, overrides: Record<string, unknown>): number {
+  items[index] = { ...(items[index] as EvalQuestion), ...overrides }
+  return (items[index] as EvalQuestion).id
 }
 
 function errorsOf(data: unknown, files = FILES): string[] {
@@ -62,42 +87,67 @@ function errorsOf(data: unknown, files = FILES): string[] {
   return result.ok ? [] : result.errors
 }
 
+function onlyMessages(items: unknown[]): string[] {
+  return (items as EvalQuestion[]).flatMap((item) => item.turnos ?? [item.pergunta ?? ""])
+}
+
 describe("validateQuestions with the real eval/perguntas.json", () => {
   it("passes against the files of knowledge-base/", () => {
     expect(KNOWLEDGE_FILES.length).toBe(11)
     const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     expect(result.ok ? [] : result.errors).toEqual([])
-    expect(result.ok && result.questions).toHaveLength(20)
+    expect(result.ok && result.questions).toHaveLength(50)
   })
 
-  it("uses a profile in at least 2 in-scope questions", () => {
+  it("uses the ids 101 to 150, grouped by type in the distribution order", () => {
     const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
-    const withProfile = result.questions.filter(
-      (item) => item.esperado === "resposta" && item.perfil !== undefined,
+    expect(result.questions.map((item) => item.id)).toEqual(
+      Array.from({ length: 50 }, (_, i) => 101 + i),
     )
-    expect(withProfile.length).toBeGreaterThanOrEqual(2)
+    const order: EvalQuestionType[] = [
+      "factual",
+      "parafrase",
+      "perfil",
+      "multi_doc",
+      "multi_turno",
+      "fora_de_escopo",
+      "adversarial",
+      "bloqueio",
+    ]
+    const types = result.questions.map((item) => item.tipo)
+    expect([...types].sort((a, b) => order.indexOf(a) - order.indexOf(b))).toEqual(types)
   })
 
-  // Documents 08 to 11 get their factual questions in the expand-eval-to-50-questions change,
-  // which restores the one-per-document check over all 11 files.
-  it("has one factual question per knowledge document from 01 to 07", () => {
+  it("has a factual question for every knowledge document", () => {
     const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
-    const factualSources = result.questions
-      .filter((item) => item.tipo === "factual")
-      .flatMap((item) => item.fonte_esperada ?? [])
-    const covered = KNOWLEDGE_FILES.filter((name) => /^0[1-7]-/.test(name))
-    expect(covered).toHaveLength(7)
-    expect([...factualSources].sort()).toEqual([...covered].sort())
+    const factualSources = new Set(
+      result.questions
+        .filter((item) => item.tipo === "factual")
+        .flatMap((item) => item.fonte_esperada ?? []),
+    )
+    expect([...factualSources].sort()).toEqual([...KNOWLEDGE_FILES].sort())
   })
 
-  it("matches the input guardrail: blocks only the bloqueio questions", () => {
+  it("covers at least 5 documents in the parafrase questions", () => {
+    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+    const sources = new Set(
+      result.questions
+        .filter((item) => item.tipo === "parafrase")
+        .flatMap((item) => item.fonte_esperada ?? []),
+    )
+    expect(sources.size).toBeGreaterThanOrEqual(5)
+  })
+
+  it("matches the input guardrail: blocks the bloqueio questions and nothing in scope", () => {
     const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     for (const item of result.questions) {
-      const messages = item.turnos ?? [item.pergunta ?? ""]
-      const blocked = messages.some((message) => !validateInput(message, 1000).ok)
+      // adversarial: any refusal counts, so the guardrail may or may not block it.
+      if (item.tipo === "adversarial") continue
+      const blocked = onlyMessages([item]).some((message) => !validateInput(message, 1000).ok)
       expect({ id: item.id, blocked }).toEqual({ id: item.id, blocked: item.tipo === "bloqueio" })
     }
   })
@@ -107,53 +157,144 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     if (!result.ok) throw new Error(result.errors.join("\n"))
     const sensitive = /\b(cpf|cnpj|pix|senha|cart[aã]o)\b/i
     const found = result.questions.filter(
-      (item) =>
-        item.esperado === "resposta" &&
-        (item.turnos ?? [item.pergunta ?? ""]).some((text) => sensitive.test(text)),
+      (item) => item.esperado === "resposta" && onlyMessages([item]).some((t) => sensitive.test(t)),
     )
     expect(found.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it("never uses a bare number as a nao_deve_conter term", () => {
+    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+    const bare = result.questions.flatMap((item) =>
+      (item.nao_deve_conter ?? [])
+        .filter((term) => /^\d+$/.test(term.trim()))
+        .map((term) => `${item.id}: ${term}`),
+    )
+    expect(bare).toEqual([])
   })
 })
 
 describe("validateQuestions", () => {
   it("accepts a valid set", () => {
     const result = validateQuestions(validSet(), FILES)
-    expect(result.ok).toBe(true)
+    expect(result.ok ? [] : result.errors).toEqual([])
   })
 
   it("rejects data that is not an array", () => {
     expect(errorsOf({ perguntas: [] })).toEqual(["O arquivo precisa ser uma lista de perguntas."])
   })
 
-  it("requires exactly 20 items", () => {
-    const errors = errorsOf(validSet().slice(0, 19))
-    expect(errors).toContain("São 19 perguntas; precisam ser 20.")
+  it("requires exactly 50 items", () => {
+    const errors = errorsOf(validSet().slice(0, 49))
+    expect(errors).toContain("São 49 perguntas; precisam ser 50.")
   })
 
   it("rejects duplicated ids", () => {
     const items = validSet()
-    items[1] = { ...(items[1] as EvalQuestion), id: 1 }
+    replace(items, 1, { id: 1 })
     expect(errorsOf(items)).toContain("Pergunta 1: id repetido.")
   })
 
   it("checks the distribution by type", () => {
     const items = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), tipo: "parafrase" }
+    replace(items, firstOf(items, "parafrase"), { tipo: "factual" })
     const errors = errorsOf(items)
-    expect(errors).toContain('Tipo "factual": 6 perguntas; precisam ser 7.')
-    expect(errors).toContain('Tipo "parafrase": 4 perguntas; precisam ser 3.')
+    expect(errors).toContain('Tipo "factual": 16 perguntas; precisam ser 15.')
+    expect(errors).toContain('Tipo "parafrase": 5 perguntas; precisam ser 6.')
   })
 
   it("rejects an unknown type", () => {
     const items: unknown[] = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), tipo: "outro" }
-    expect(errorsOf(items)).toContain('Pergunta 1: tipo inválido "outro".')
+    replace(items, 1, { tipo: "outro" })
+    expect(errorsOf(items)).toContain('Pergunta 2: tipo inválido "outro".')
+  })
+
+  it("treats perfil as in scope and adversarial as out of scope", () => {
+    expect(IN_SCOPE_TYPES.has("perfil")).toBe(true)
+    expect(IN_SCOPE_TYPES.has("adversarial")).toBe(false)
+  })
+
+  it("accepts adversarial questions with esperado recusa and rejects other values", () => {
+    const items = validSet()
+    expect(items.filter((item) => item.tipo === "adversarial")).toHaveLength(4)
+    expect(errorsOf(items)).toEqual([])
+    const id = replace(items, firstOf(items, "adversarial"), { esperado: "fallback" })
+    expect(errorsOf(items)).toContain(
+      `Pergunta ${id}: tipo adversarial precisa de esperado "recusa".`,
+    )
+  })
+
+  it("requires esperado resposta, fonte_esperada and deve_conter in perfil", () => {
+    const items = validSet()
+    const index = firstOf(items, "perfil")
+    const id = replace(items, index, { esperado: "recusa" })
+    const id2 = replace(items, index + 1, { fonte_esperada: undefined, deve_conter: undefined })
+    const errors = errorsOf(items)
+    expect(errors).toContain(`Pergunta ${id}: tipo perfil precisa de esperado "resposta".`)
+    expect(errors).toContain(`Pergunta ${id2}: perguntas no escopo precisam de fonte_esperada.`)
+    expect(errors).toContain(`Pergunta ${id2}: deve_conter precisa ter de 1 a 3 termos não vazios.`)
+  })
+
+  it("requires perfil.plan in perfil questions", () => {
+    const items = validSet()
+    const index = firstOf(items, "perfil")
+    const noPlan = replace(items, index, { perfil: { name: "Pizzaria Bella" } })
+    const blankPlan = replace(items, index + 1, { perfil: { plan: "   " } })
+    const noProfile = replace(items, index + 2, { perfil: undefined })
+    const errors = errorsOf(items)
+    for (const id of [noPlan, blankPlan, noProfile]) {
+      expect(errors).toContain(`Pergunta ${id}: perfil precisa de perfil.plan preenchido.`)
+    }
+  })
+
+  it("does not require a plan in the profile of other types", () => {
+    const items = validSet()
+    replace(items, 0, { perfil: { name: "Pizzaria Bella" } })
+    expect(errorsOf(items)).toEqual([])
+  })
+
+  it("accepts nao_deve_conter with 1 to 5 terms in any type", () => {
+    const items = validSet()
+    replace(items, 0, { nao_deve_conter: ["22%"] })
+    replace(items, firstOf(items, "adversarial"), { nao_deve_conter: ["a", "b", "c", "d", "e"] })
+    replace(items, firstOf(items, "fora_de_escopo"), { nao_deve_conter: ["x"] })
+    expect(errorsOf(items)).toEqual([])
+  })
+
+  it("rejects an empty nao_deve_conter, more than 5 terms and blank terms", () => {
+    const items: unknown[] = validSet()
+    const empty = replace(items, 0, { nao_deve_conter: [] })
+    const six = replace(items, 1, { nao_deve_conter: ["a", "b", "c", "d", "e", "f"] })
+    const blank = replace(items, 2, { nao_deve_conter: ["ok", " "] })
+    const notList = replace(items, 3, { nao_deve_conter: "22%" })
+    const errors = errorsOf(items)
+    for (const id of [empty, six, blank, notList]) {
+      expect(errors).toContain(
+        `Pergunta ${id}: nao_deve_conter precisa ter de 1 a 5 termos não vazios.`,
+      )
+    }
+  })
+
+  it("requires a factual question for every knowledge document", () => {
+    const items = validSet()
+    replace(items, 0, { fonte_esperada: ["01-a.md"] })
+    const errors = errorsOf(items)
+    expect(errors).toContain('Documento "02-b.md" sem pergunta factual.')
+    expect(errors).not.toContain('Documento "01-a.md" sem pergunta factual.')
+  })
+
+  it("does not count other types toward document coverage", () => {
+    const items = validSet()
+    replace(items, 0, { fonte_esperada: ["01-a.md"] })
+    // parafrase and multi_doc still cite 02-b.md, but only factual counts.
+    replace(items, firstOf(items, "parafrase"), { fonte_esperada: ["02-b.md"] })
+    expect(errorsOf(items)).toContain('Documento "02-b.md" sem pergunta factual.')
   })
 
   it("requires pergunta and turnos to be mutually exclusive", () => {
     const items = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), turnos: ["a", "b"] }
-    items[1] = { ...(items[1] as EvalQuestion), pergunta: undefined }
+    replace(items, 0, { turnos: ["a", "b"] })
+    replace(items, 1, { pergunta: undefined })
     const errors = errorsOf(items)
     expect(errors).toContain("Pergunta 1: use pergunta ou turnos, não os dois.")
     expect(errors).toContain("Pergunta 2: falta pergunta ou turnos.")
@@ -161,60 +302,62 @@ describe("validateQuestions", () => {
 
   it("requires turnos (at least 2) in multi_turno and only there", () => {
     const items = validSet()
-    items[10] = { ...(items[10] as EvalQuestion), turnos: ["só um"] }
-    items[0] = { ...(items[0] as EvalQuestion), pergunta: undefined, turnos: ["a", "b"] }
+    const id = replace(items, firstOf(items, "multi_turno"), { turnos: ["só um"] })
+    replace(items, 0, { pergunta: undefined, turnos: ["a", "b"] })
     const errors = errorsOf(items)
-    expect(errors).toContain("Pergunta 11: multi_turno precisa de turnos com 2 ou mais mensagens.")
+    expect(errors).toContain(
+      `Pergunta ${id}: multi_turno precisa de turnos com 2 ou mais mensagens.`,
+    )
     expect(errors).toContain("Pergunta 1: só multi_turno usa turnos.")
   })
 
   it("requires esperado coherent with the type", () => {
     const items = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), esperado: "fallback" }
-    items[15] = { ...(items[15] as EvalQuestion), esperado: "recusa" }
-    items[19] = { ...(items[19] as EvalQuestion), esperado: "fallback" }
+    replace(items, 0, { esperado: "fallback" })
+    const out = replace(items, firstOf(items, "fora_de_escopo"), { esperado: "recusa" })
+    const block = replace(items, firstOf(items, "bloqueio"), { esperado: "fallback" })
     const errors = errorsOf(items)
     expect(errors).toContain('Pergunta 1: tipo factual precisa de esperado "resposta".')
-    expect(errors).toContain('Pergunta 16: tipo fora_de_escopo precisa de esperado "fallback".')
-    expect(errors).toContain('Pergunta 20: tipo bloqueio precisa de esperado "recusa".')
+    expect(errors).toContain(`Pergunta ${out}: tipo fora_de_escopo precisa de esperado "fallback".`)
+    expect(errors).toContain(`Pergunta ${block}: tipo bloqueio precisa de esperado "recusa".`)
   })
 
   it("requires every fonte_esperada to exist in knowledge-base/", () => {
     const items = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), fonte_esperada: ["99-nao-existe.md"] }
+    replace(items, 1, { fonte_esperada: ["12-inexistente.md"] })
     expect(errorsOf(items)).toContain(
-      'Pergunta 1: fonte_esperada "99-nao-existe.md" não existe em knowledge-base/.',
+      'Pergunta 2: fonte_esperada "12-inexistente.md" não existe em knowledge-base/.',
     )
   })
 
   it("requires fonte_esperada and 1 to 3 deve_conter terms in scope", () => {
     const items = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), fonte_esperada: [] }
-    items[1] = { ...(items[1] as EvalQuestion), deve_conter: ["a", "b", "c", "d"] }
-    items[2] = { ...(items[2] as EvalQuestion), deve_conter: [""] }
+    replace(items, 1, { fonte_esperada: [] })
+    replace(items, 2, { deve_conter: ["a", "b", "c", "d"] })
+    replace(items, 3, { deve_conter: [""] })
     const errors = errorsOf(items)
-    expect(errors).toContain("Pergunta 1: perguntas no escopo precisam de fonte_esperada.")
-    expect(errors).toContain("Pergunta 2: deve_conter precisa ter de 1 a 3 termos não vazios.")
+    expect(errors).toContain("Pergunta 2: perguntas no escopo precisam de fonte_esperada.")
     expect(errors).toContain("Pergunta 3: deve_conter precisa ter de 1 a 3 termos não vazios.")
+    expect(errors).toContain("Pergunta 4: deve_conter precisa ter de 1 a 3 termos não vazios.")
   })
 
   it("requires 2 or more distinct sources in multi_doc", () => {
     const items = validSet()
-    items[12] = { ...(items[12] as EvalQuestion), fonte_esperada: ["01-a.md"] }
+    const id = replace(items, firstOf(items, "multi_doc"), { fonte_esperada: ["01-a.md"] })
     expect(errorsOf(items)).toContain(
-      "Pergunta 13: multi_doc precisa de 2 ou mais arquivos em fonte_esperada.",
+      `Pergunta ${id}: multi_doc precisa de 2 ou mais arquivos em fonte_esperada.`,
     )
   })
 
   it("requires a nota on every question", () => {
     const items = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), nota: " " }
+    replace(items, 0, { nota: " " })
     expect(errorsOf(items)).toContain("Pergunta 1: falta a nota.")
   })
 
   it("rejects an invalid perfil", () => {
     const items: unknown[] = validSet()
-    items[0] = { ...(items[0] as EvalQuestion), perfil: { name: 3, idade: "x" } }
+    replace(items, 0, { perfil: { name: 3, idade: "x" } })
     const errors = errorsOf(items)
     expect(errors).toContain("Pergunta 1: perfil.name precisa ser texto.")
     expect(errors).toContain('Pergunta 1: perfil tem campo desconhecido "idade".')

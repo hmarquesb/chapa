@@ -29,7 +29,7 @@ npm run build       # next build
 
 ```bash
 npm run dev                                                          # http://localhost:3000
-npm run chat -- --nome "Pizzaria Bella" --plano "Plano Básico" --debug   # ⚠️ chama a API
+npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --debug  # ⚠️ chama a API
 npm run chat -- --sessao <uuid> --debug                              # retoma uma sessão
 ```
 
@@ -40,23 +40,39 @@ npm run chat -- --sessao <uuid> --debug                              # retoma um
 
 ## Avaliação
 
-`npm run eval` passa as perguntas de [`eval/perguntas.json`](../eval/perguntas.json) pelo mesmo `handleMessage` da API, no banco `dev`, e grava um `.json` e um `.md` em [`eval/resultados/`](../eval/resultados/). As métricas e as metas estão em [`business.md`](business.md#metas-de-qualidade).
+`npm run eval` passa as 50 perguntas de [`eval/perguntas.json`](../eval/perguntas.json) (36 no escopo e 14 de recusa, com os ids 101 a 150) pelo mesmo `handleMessage` da API, no banco `dev`, e grava um `.json` e um `.md` em [`eval/resultados/`](../eval/resultados/). As métricas e as metas estão em [`business.md`](business.md#metas-de-qualidade).
 
 ```bash
-npm run ingest -- --preset padrao                                   # ⚠️ antes, se o chunking ou o modelo mudou
-npm run eval -- --label <nome> --preset padrao --delay-ms 4000      # ⚠️ 60 a 90 chamadas
-npm run eval -- --label <nome> --preset padrao --only 3,9           # só algumas perguntas
-npm run eval -- --label <nome> --preset padrao --min-score 0.5 --only 3,9
-npm run eval -- --label <nome> --preset padrao --no-rewrite --only 11
-npm run eval -- --compare eval/resultados/v1.json eval/resultados/<nome>.json
+npm run ingest -- --preset padrao                                   # ⚠️ antes, se a base, o chunking ou o modelo mudou
+npm run eval -- --label <nome> --preset padrao --delay-ms 4000 --append --only 101,102,103,104,105,106,107,108,109,110   # ⚠️ um bloco
+npm run eval -- --label <nome> --preset padrao --only 116,121       # só algumas perguntas, sobrescrevendo o arquivo
+npm run eval -- --label <nome> --preset padrao --min-score 0.5 --only 116,121
+npm run eval -- --label <nome> --preset padrao --no-rewrite --only 135
+npm run eval -- --compare eval/resultados/v2.json eval/resultados/<nome>.json
 ```
+
+**Rodada completa em blocos.** Uma rodada das 50 perguntas faz de 100 a 225 chamadas (a `v3` fez 106, sem juiz) e não deve ir de uma vez na cota gratuita. Rode em blocos de 10 com `--append`, que junta cada bloco ao `eval/resultados/<label>.json` existente e recalcula as métricas:
+
+```bash
+npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 101,102,103,104,105,106,107,108,109,110
+npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 111,112,113,114,115,116,117,118,119,120
+npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 121,122,123,124,125,126,127,128,129,130
+npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 131,132,133,134,135,136,137,138,139,140
+npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 141,142,143,144,145,146,147,148,149,150
+```
+
+- Cada bloco termina com `Pendentes: <ids>`; a rodada está completa com `Pendentes: nenhuma`.
+- O `--append` para antes de abrir o banco se o preset, os modelos ou o RAG forem diferentes dos da rodada gravada. Uma pergunta que mudou no `perguntas.json` depois de rodar é descartada e volta para os pendentes.
+- Uma pergunta que termina em erro (não em resposta) é repetida uma vez com `--append --only <id>` antes de entrar na conta, e a repetição fica registrada.
+- Sem `--append`, o arquivo do rótulo é sobrescrito, como antes.
 
 Regras:
 
 - **Mesmo preset na ingestão e na rodada.** Os trechos de cada preset convivem no `dev`, separados por `embedding_model` e `chunk_config`.
 - **Uma variável por vez** na calibração, com `--only` nas perguntas afetadas para economizar cota. Cada tentativa vira uma linha em [`eval/resultados/CALIBRACAO.md`](../eval/resultados/CALIBRACAO.md): data, variável, valor, perguntas e efeito.
-- **Uma rodada é ruidosa.** Com 14 perguntas no escopo, cada uma vale 7,1 pontos. Antes de concluir que algo piorou, repita as perguntas que mudaram.
-- **Cota.** Use `--delay-ms` para respeitar o limite por minuto. Se a cota estourar, o eval grava o parcial: espere e continue com `--only`, sem trocar de modelo. Espere cerca de 90 s entre uma ingestão e uma rodada.
+- **Uma rodada é ruidosa.** Com 36 perguntas no escopo, cada uma vale 2,8 pontos. Antes de concluir que algo piorou, repita as perguntas que mudaram.
+- **Cota.** Use `--delay-ms` para respeitar o limite por minuto. Se a cota estourar, o eval grava o parcial (junto ao que já estava, com `--append`): espere e continue com `--append --only` nos pendentes, sem trocar de modelo. Espere cerca de 90 s entre uma ingestão e uma rodada.
+- **Linhas de base.** A `v3` é a linha de base da base da Rango. As rodadas `v1`, `v2` e `cal-*` usaram a base anterior e outras perguntas: não compare com elas ([`COMPARACAO.md`](../eval/resultados/COMPARACAO.md)).
 - O juiz (`--judge`) é opcional e gasta uma chamada a mais por pergunta.
 - As sessões do eval usam o canal `eval` e são apagadas pelo cron depois de 7 dias.
 
