@@ -1,6 +1,6 @@
 // CLI de desenvolvimento do assistente (S05, RF8).
 // ⚠️ Chama a API do Gemini e grava no banco do DATABASE_URL: rode só com autorização.
-// npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --cidade "São Paulo"
+// npm run chat -- --nome "Pizzaria Bella" --plano misto --cidade "São Paulo"
 // npm run chat -- --sessao <uuid> --debug
 import { randomUUID } from "node:crypto"
 import { createInterface } from "node:readline/promises"
@@ -14,6 +14,7 @@ import {
 import type { AssistantReply, RetrievedChunk } from "@/core/types"
 import { getContainer } from "@/infra/container"
 import { closeSql } from "@/infra/db"
+import { parsePlanId } from "@/lib/plans"
 import { isUuid } from "@/lib/session-id"
 import type { RestaurantProfile } from "@/lib/types"
 import { parseArgs } from "./lib/args"
@@ -29,11 +30,23 @@ const PROFILE_FLAGS: Record<string, keyof RestaurantProfile> = {
 const EXIT_COMMAND = "sair"
 
 // Perfil só com as flags informadas. Sem nenhuma, devolve undefined para manter o da sessão.
-function profileFromFlags(flags: Record<string, string | true>): RestaurantProfile | undefined {
+// Um --plano inválido vira erro: devolve a mensagem em vez do perfil.
+const INVALID_PLAN_MESSAGE = "--plano precisa ser proprio, entrega ou misto (ou o nome do plano)."
+
+function profileFromFlags(
+  flags: Record<string, string | true>,
+): RestaurantProfile | undefined | { error: string } {
   const profile: RestaurantProfile = {}
   for (const [flag, field] of Object.entries(PROFILE_FLAGS)) {
     const value = flags[flag]
-    if (typeof value === "string" && value.trim() !== "") profile[field] = value.trim()
+    if (typeof value !== "string" || value.trim() === "") continue
+    if (field === "plan") {
+      const plan = parsePlanId(value)
+      if (plan === null) return { error: INVALID_PLAN_MESSAGE }
+      profile.plan = plan
+    } else {
+      profile[field] = value.trim()
+    }
   }
   return Object.keys(profile).length > 0 ? profile : undefined
 }
@@ -100,7 +113,13 @@ async function main(): Promise<void> {
     return
   }
   const sessionId = typeof sessionFlag === "string" ? sessionFlag : randomUUID()
-  const profile = profileFromFlags(flags)
+  const parsedProfile = profileFromFlags(flags)
+  if (parsedProfile !== undefined && "error" in parsedProfile) {
+    console.error(parsedProfile.error)
+    process.exitCode = 1
+    return
+  }
+  const profile = parsedProfile
 
   const { config, chunks, sessions, assistant } = getContainer()
   const key = { embeddingModel: config.models.embedding, chunkConfig: chunkConfigKey(config.rag) }

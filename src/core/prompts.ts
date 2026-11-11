@@ -1,7 +1,7 @@
 import "server-only"
 import { FALLBACK_MESSAGE } from "@/core/messages"
 import type { ChatMessage, RetrievedChunk } from "@/core/types"
-import { PROFILE_FIELDS, type RestaurantProfile } from "@/lib/types"
+import { PLAN_LABELS, PROFILE_FIELDS, type RestaurantProfile } from "@/lib/types"
 
 export const SYSTEM_PROMPT = `Você é o Chapa, o assistente de parceiros da Rango, uma empresa de delivery. Você ajuda donos e gerentes de restaurantes que já são parceiros da Rango a tirar dúvidas operacionais: planos e taxas, repasse, cancelamentos e contestações, cardápio e fotos, horários e pausas, avaliações, embalagem e entrega, promoções e cupons, suporte e chamados, conta e segurança, pagamentos e notas fiscais.
 
@@ -23,11 +23,15 @@ const PROFILE_LABELS: Record<(typeof PROFILE_FIELDS)[number], string> = {
   hours: "Horário",
 }
 
+function planLabel(plan: RestaurantProfile["plan"]): string | undefined {
+  return plan === undefined ? undefined : PLAN_LABELS[plan]
+}
+
 // Uma linha "Rótulo: valor" por campo preenchido, na ordem de PROFILE_FIELDS. "" se vazio.
 export function formatProfile(profile: RestaurantProfile): string {
   const lines: string[] = []
   for (const field of PROFILE_FIELDS) {
-    const value = profile[field]?.trim()
+    const value = field === "plan" ? planLabel(profile.plan) : profile[field]?.trim()
     if (value) lines.push(`${PROFILE_LABELS[field]}: ${value}`)
   }
   return lines.join("\n")

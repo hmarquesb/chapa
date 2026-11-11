@@ -15,6 +15,7 @@ import {
   checkChatAnswered,
   checkChatFallback,
   checkCronUnauthorized,
+  checkDemoProfile,
   checkDemoSignIn,
   checkHealth,
   checkHistory,
@@ -27,7 +28,6 @@ import {
   parseBaseUrl,
   readChatSessionId,
   SMOKE_MESSAGES,
-  SMOKE_PROFILE,
   type SmokeResponse,
 } from "./smoke-checks"
 
@@ -109,7 +109,6 @@ async function main(): Promise<void> {
         body: JSON.stringify({
           ...(sessionId === null ? {} : { sessionId }),
           message,
-          profile: SMOKE_PROFILE,
         }),
         timeoutMs: CHAT_TIMEOUT_MS,
       },
@@ -155,6 +154,10 @@ async function main(): Promise<void> {
     {
       title: "Entrar como demo (POST /api/auth/callback/demo) → cookie de sessão",
       run: signInAsDemo,
+    },
+    {
+      title: "GET /api/profile → plano Misto da demo",
+      run: async () => checkDemoProfile(await get("/api/profile", signedIn)),
     },
     {
       title: "POST /api/chat no escopo → answered com fontes",

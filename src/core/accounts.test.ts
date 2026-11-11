@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { config } from "@/config"
-import { createDemoAccount } from "@/core/accounts"
+import { createDemoAccount, DEMO_PROFILE } from "@/core/accounts"
 import type { AccountRecord, RateLimitBucket } from "@/core/types"
 
 const NOW = new Date("2026-11-06T21:30:00.000Z")
@@ -36,7 +36,7 @@ class FakeRateLimits {
   }
 }
 
-function setup() {
+function setup(profile: object = {}) {
   const accounts = new FakeAccounts()
   const rateLimits = new FakeRateLimits()
   const run = (now = NOW, ipHash = IP_HASH) =>
@@ -46,7 +46,7 @@ function setup() {
       accounts,
       rateLimits,
       limits: config.accounts,
-      profile: {},
+      profile,
     })
   return { accounts, rateLimits, run }
 }
@@ -69,6 +69,22 @@ describe("createDemoAccount", () => {
     expect(accounts.created).toEqual([
       { expiresAt: new Date("2026-11-13T21:30:00.000Z"), profile: {} },
     ])
+  })
+
+  it("stores a copy of DEMO_PROFILE, not the frozen object", async () => {
+    const { accounts, run } = setup({ ...DEMO_PROFILE })
+    await run()
+    const stored = accounts.created[0]?.profile as Record<string, string>
+    expect(stored).toEqual(DEMO_PROFILE)
+    expect(stored).not.toBe(DEMO_PROFILE)
+    expect(Object.isFrozen(stored)).toBe(false)
+    stored.name = "Outra"
+    expect(DEMO_PROFILE.name).toBe("Marmitaria Boa Panela")
+  })
+
+  it("DEMO_PROFILE is frozen and has the plan misto", () => {
+    expect(Object.isFrozen(DEMO_PROFILE)).toBe(true)
+    expect(DEMO_PROFILE.plan).toBe("misto")
   })
 
   it("counts in the demo_day bucket, keyed by the IP hash, in the UTC day window", async () => {

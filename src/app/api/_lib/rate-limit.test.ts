@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { checkRateLimit } from "@/app/api/_lib/rate-limit"
+import { checkAccountDailyLimit, checkRateLimit } from "@/app/api/_lib/rate-limit"
 import type { RateLimitBucket, RateLimitRepository } from "@/core/types"
 
 class MemoryRateLimits implements RateLimitRepository {
@@ -78,5 +78,45 @@ describe("checkRateLimit", () => {
     const repo = new MemoryRateLimits()
     await checkRateLimit({ ...base, ipHash: "a", now: new Date(), repo })
     expect(repo.hits).toBe(2)
+  })
+})
+
+describe("checkAccountDailyLimit", () => {
+  const limits = { google: 60, demo: 30 }
+  const now = new Date("2026-11-06T12:00:15.000Z")
+
+  it("allows the 60th Google message and denies the 61st until midnight UTC", async () => {
+    const repo = new MemoryRateLimits()
+    const input = { accountId: "conta-a", kind: "google" as const, now, repo, limits }
+    for (let i = 1; i <= 60; i += 1) {
+      await expect(checkAccountDailyLimit(input)).resolves.toEqual({ allowed: true })
+    }
+    await expect(checkAccountDailyLimit(input)).resolves.toEqual({
+      allowed: false,
+      retryAfterSeconds: 12 * 3600 - 15,
+    })
+  })
+
+  it("allows the 30th demo message and denies the 31st", async () => {
+    const repo = new MemoryRateLimits()
+    const input = { accountId: "conta-d", kind: "demo" as const, now, repo, limits }
+    for (let i = 1; i <= 30; i += 1) {
+      await expect(checkAccountDailyLimit(input)).resolves.toEqual({ allowed: true })
+    }
+    expect((await checkAccountDailyLimit(input)).allowed).toBe(false)
+  })
+
+  it("counts in the account_day bucket keyed by the account id, per UTC day", async () => {
+    const repo = new MemoryRateLimits()
+    await checkAccountDailyLimit({ accountId: "conta-a", kind: "google", now, repo, limits })
+    expect([...repo.counts.keys()]).toEqual(["conta-a|account_day|2026-11-06T00:00:00.000Z"])
+    await checkAccountDailyLimit({
+      accountId: "conta-a",
+      kind: "google",
+      now: new Date("2026-11-07T00:00:00.000Z"),
+      repo,
+      limits,
+    })
+    expect(repo.counts.size).toBe(2)
   })
 })

@@ -7,19 +7,12 @@ import { ConversationList } from "@/components/chat/conversation-list"
 import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog"
 import { ExampleQuestions } from "@/components/chat/example-questions"
 import { MessageList } from "@/components/chat/message-list"
-import { ProfileForm } from "@/components/chat/profile-form"
 import { StatusBanner } from "@/components/chat/status-banner"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { deleteSession, fetchHistory, listSessions, sendMessage } from "@/lib/api-client"
 import { chatReducer, initialChatState } from "@/lib/chat-state"
-import {
-  hasProfileData,
-  PROFILE_STORAGE_KEY,
-  parseStoredProfile,
-  sanitizeProfile,
-} from "@/lib/profile-storage"
-import type { ConversationListItem, RestaurantProfile } from "@/lib/types"
+import type { ConversationListItem } from "@/lib/types"
 
 const MISSING_SESSION_NOTICE = "Esta conversa não existe mais. Começamos uma nova."
 const SIGN_IN_PATH = "/entrar"
@@ -27,24 +20,6 @@ const SIGN_IN_PATH = "/entrar"
 // 401: the account session ended (signed out elsewhere, demo expired, account deleted).
 function isSignedOut(result: { ok: boolean; status?: number }): boolean {
   return !result.ok && result.status === 401
-}
-
-// localStorage can throw (private mode, blocked site data). Without it the profile simply
-// does not survive a reload; the chat keeps working.
-function readStorage(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
-function writeStorage(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    // Ignored on purpose: see readStorage.
-  }
 }
 
 export function ChatApp() {
@@ -57,7 +32,6 @@ export function ChatApp() {
   const [panelOpen, setPanelOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [profile, setProfile] = useState<RestaurantProfile>({})
   const [draft, setDraft] = useState("")
   // Lets async responses notice that the conversation changed while they were in flight.
   const sessionRef = useRef<string | null>(null)
@@ -88,14 +62,8 @@ export function ChatApp() {
   }, [])
 
   useEffect(() => {
-    setProfile(parseStoredProfile(readStorage(PROFILE_STORAGE_KEY)))
     void refreshList()
   }, [refreshList])
-
-  function updateProfile(next: RestaurantProfile): void {
-    setProfile(next)
-    writeStorage(PROFILE_STORAGE_KEY, JSON.stringify(sanitizeProfile(next)))
-  }
 
   const busy = state.sending || loadingHistory || deleting
 
@@ -136,8 +104,6 @@ export function ChatApp() {
     setLoadingHistory(false)
     if (result.ok) {
       dispatch({ type: "history_loaded", messages: result.data.messages })
-      const serverProfile = sanitizeProfile(result.data.profile)
-      if (hasProfileData(serverProfile)) updateProfile(serverProfile)
     } else if (result.status === 404) {
       handleMissingSession(id)
     } else {
@@ -154,11 +120,9 @@ export function ChatApp() {
 
     dispatch({ type: "send_started", text: message, now: new Date().toISOString() })
     setDraft("")
-    const cleanProfile = sanitizeProfile(profile)
     const result = await sendMessage({
       ...(id !== null ? { sessionId: id } : {}),
       message,
-      ...(hasProfileData(cleanProfile) ? { profile: cleanProfile } : {}),
     })
     if (isSignedOut(result)) {
       window.location.assign(SIGN_IN_PATH)
@@ -227,7 +191,6 @@ export function ChatApp() {
             Conversas
           </Button>
         </div>
-        <ProfileForm profile={profile} onChange={updateProfile} />
         <MessageList messages={state.messages} sending={state.sending} loading={loadingHistory} />
         {empty && !loadingHistory && (
           <ExampleQuestions disabled={busy} onPick={(question) => void send(question)} />

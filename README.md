@@ -2,7 +2,7 @@
 
 Restaurantes parceiros da Rango, uma empresa de delivery fictícia, repetem as mesmas dúvidas operacionais, e a resposta está espalhada pela política de parceiros. O Chapa responde com RAG híbrido sobre essa base, cita as fontes e recusa o que está fora do escopo.
 
-**Demo:** https://chapa-mu.vercel.app. Para testar, clique em **"Testar como demo"**: uma conta de demonstração é criada na hora, sem preencher nada, e apagada em 7 dias com as conversas. Quem quiser guardar as conversas entra com Google.
+**Demo:** https://chapa-mu.vercel.app. Para testar, clique em **"Testar como demo"**: uma conta de demonstração é criada na hora, já com um restaurante de exemplo (Marmitaria Boa Panela, Plano Misto), e apagada em 7 dias com as conversas. Para ver a resposta mudar, abra "Editar perfil" e troque o plano. Quem quiser guardar as conversas entra com Google.
 
 > **Restaurante (perfil: Cantina do Beto, Plano Próprio):** Qual é a comissão que eu pago por pedido?
 >
@@ -14,7 +14,7 @@ Restaurantes parceiros da Rango, uma empresa de delivery fictícia, repetem as m
 > **Chapa:** Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Painel Rango.<br>
 > *(nenhum trecho passou do `minScore`, então o modelo de resposta nem foi chamado)*
 
-<sub>Respostas reais das perguntas 122 e 142 da rodada `v3` ([`eval/resultados/v3.json`](eval/resultados/v3.json)). Na 122, o plano vem só do perfil do restaurante.</sub>
+<sub>Respostas reais das perguntas 122 e 142 da rodada `v3` ([`eval/resultados/v3.json`](eval/resultados/v3.json)). Na 122, o plano vem só do perfil do restaurante (na época, digitado no formulário; hoje é escolhido na conta).</sub>
 
 | Métrica (50 perguntas, 36 no escopo) | Meta | v3 |
 |---|---|---|
@@ -55,7 +55,7 @@ Algumas escolhas facilitam o desenvolvimento e mantêm o custo em zero, mas não
 | Decisão | Por que simplifica | Num produto real |
 |---|---|---|
 | Login com Google e uma conta demo por clique ([ADR 0020](docs/adr/0020-login-google-e-conta-demo.md)) | Quem avalia testa a demo sem criar conta; só o `sub` e o e-mail do Google são guardados | Login do parceiro no sistema da empresa, com papéis e várias lojas |
-| Perfil do restaurante preenchido num formulário | Dispensa integração com dados reais | Perfil lido da conta do parceiro |
+| Perfil do restaurante salvo na conta, com o plano em escolha fechada (Próprio, Entrega ou Misto) | Dispensa integração com dados reais e garante que o plano é um dos três nomes oficiais da base | Perfil lido do cadastro do parceiro na empresa |
 | Só parceiros atuais no escopo ([ADR 0011](docs/adr/0011-somente-parceiros-atuais.md)) | Uma base menor e uma avaliação mais focada | Também o público de cadastro, com base e tom próprios |
 | Base fictícia com 11 documentos escritos para o projeto | Conteúdo controlado e revisado, sem copiar páginas | Ingestão automática e atualizada da central de ajuda oficial |
 | Só o Gemini, no plano gratuito ([ADR 0009](docs/adr/0009-somente-gemini.md)) | Custo zero, sem cartão e com um único SDK | Plano pago, com cota e garantias de disponibilidade |
@@ -84,7 +84,7 @@ As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a documentação 
 
 **Problema.** Restaurantes parceiros da Rango, uma empresa de delivery fictícia, têm dúvidas operacionais repetidas: comissão do plano, dia do repasse, prazo para contestar um cancelamento, formato das fotos do cardápio. A resposta existe na política de parceiros, mas espalhada, e um assistente genérico inventa números.
 
-**Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 11 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil do restaurante (nome, plano, cozinha, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
+**Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 11 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil da conta (plano e, se preenchidos, nome, cozinha, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
 
 **Resultados** (rodada `v3`, 10/11/2026, [`v3.md`](eval/resultados/v3.md)):
 
@@ -115,7 +115,7 @@ npm run dev                         # http://localhost:3000
 - Para conversar pelo terminal e ver a busca por dentro (pergunta reescrita, trechos com score semântico e textual, chamadas, tokens e latência):
 
   ```bash
-  npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --debug
+  npm run chat -- --nome "Pizzaria Bella" --plano proprio --debug
   ```
 
 - Testes, lint e tipos rodam sem rede, sem banco e sem chave: `npm test`, `npm run lint` e `npm run typecheck`.
@@ -182,7 +182,7 @@ Conferido em [`src/core/assistant.ts`](src/core/assistant.ts) e [`src/app/api/_l
 
 1. **API.** `POST /api/chat` aceita só JSON de até 4096 bytes e aplica o rate limit por IP (10 por minuto e 100 por dia), guardando só o HMAC do IP.
 2. **Guardrail de entrada.** Mensagem vazia, com mais de 1000 caracteres, com CPF, cartão ou senha, ou pedindo senha recebe uma resposta fixa. Nada vai para o LLM nem para o banco.
-3. **Histórico e resumo.** A sessão é criada ou atualizada com o perfil. As mensagens desde o último resumo vêm do banco. Se passarem de 16, as mais antigas viram resumo (modelo rápido) e as 10 mais recentes seguem inteiras.
+3. **Histórico e resumo.** A conversa é criada ou atualizada (na web, o perfil vem da conta e não é copiado para a conversa). As mensagens desde o último resumo vêm do banco. Se passarem de 16, as mais antigas viram resumo (modelo rápido) e as 10 mais recentes seguem inteiras.
 4. **Reescrita.** Se há histórico ou resumo, o modelo rápido reescreve a pergunta como autossuficiente, com até 6 mensagens recentes. Em erro, saída vazia ou com mais de 300 caracteres, vale a pergunta original.
 5. **Embedding.** A pergunta reescrita vira um vetor de 768 dimensões com `gemini-embedding-001` e a tarefa `RETRIEVAL_QUERY`.
 6. **Busca híbrida.** A função SQL `match_chunks` devolve até 30 candidatos do mesmo modelo de embedding e do mesmo fatiamento, cada um com um score semântico e um textual. Uma função pura em TS combina os dois, filtra por `minScore` e corta em `topK`.
@@ -202,7 +202,7 @@ Uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding.
 | Conversa | O servidor gera o id e liga a conversa à conta. O navegador não o guarda: a lista de conversas da conta (`GET /api/sessions`) reabre uma conversa, e o histórico vem de `GET /api/sessions/[id]/messages` |
 | Mensagens recentes | Até 16 mensagens desde o último resumo vão inteiras para o modelo; acima disso, as 10 mais recentes |
 | Resumo persistido | Fica em `sessions.summary`, com o id da última mensagem resumida. Cada novo resumo parte do anterior |
-| Perfil do restaurante | Formulário com nome, plano, cozinha, cidade e horário, guardado em `sessions.profile` e enviado no prompt de sistema |
+| Perfil do restaurante | Guardado em `accounts.profile` (plano obrigatório e, se quiser, nome, cozinha, cidade e horário), lido a cada mensagem e enviado no prompt de sistema. No CLI e no eval, fica em `sessions.profile` |
 | Autorização | Toda consulta de conversa filtra pela conta dona, e a conversa alheia responde `404`, como a inexistente ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)). A página usa `Referrer-Policy: no-referrer`, e o servidor não loga o id |
 | Expiração | O Vercel Cron diário apaga as conversas web sem mensagem nova há mais de 30 dias e as do CLI e do eval após 7 dias (com as mensagens), as janelas de rate limit com mais de 2 dias, as contas demo vencidas e as contas Google sem acesso há 180 dias |
 
@@ -270,7 +270,7 @@ Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o
 |---|---|---|
 | Factual | 15 | Um fato de um documento, com pelo menos uma pergunta por documento (comissão na retirada, dia do repasse, prazo de contestação) |
 | Paráfrase | 6 | Seis das factuais, com gíria ou de outro jeito ("quanto a Rango morde de comissão…") |
-| Perfil | 5 | A resposta depende do plano informado no perfil (comissão, mensalidade, taxa de entrega, dinheiro na entrega) |
+| Perfil | 5 | A resposta depende do plano do perfil (comissão, mensalidade, taxa de entrega, dinheiro na entrega) |
 | Multi-documento | 5 | A resposta junta dois documentos (cupom e repasse, conta bancária e repasse retido) |
 | Multi-turno | 5 | O segundo turno depende do primeiro ("E se for Pix?", "E se for urgente?") |
 | Fora do escopo | 7 | Cadastro de loja nova, integração, entregadores, Rango Ads, legislação, receita e concorrentes |
@@ -377,7 +377,7 @@ Respostas ruins reais da avaliação, com a causa de cada uma.
 ## Segurança, privacidade e custos
 
 - **Chaves só no servidor.** O navegador fala só com a nossa API, nunca com o Gemini nem com o Supabase. Nenhuma variável secreta usa o prefixo `NEXT_PUBLIC_`.
-- **Login.** O cookie de sessão é `HttpOnly`, `SameSite=Lax` e `Secure` em HTTPS, só com o id e o tipo da conta, e funciona como credencial. Das contas Google, só o `sub` e o e-mail verificado são guardados; demos vencidas e contas Google paradas há 180 dias são apagadas pelo cron.
+- **Login.** O cookie de sessão é `HttpOnly`, `SameSite=Lax` e `Secure` em HTTPS, só com o id e o tipo da conta, e funciona como credencial. Das contas Google, só o `sub` e o e-mail verificado são guardados; demos vencidas e contas Google paradas há 180 dias são apagadas pelo cron, e qualquer conta pode ser excluída na hora, com as conversas, pelo menu. A página `/privacidade` explica o que é guardado e por quanto tempo.
 - **RLS sem policies.** O RLS está ligado nas 5 tabelas, sem nenhuma policy. Só o servidor, pelo driver `postgres`, lê e grava. A função de busca não pode ser executada pelos papéis `anon` e `authenticated`.
 - **IP como HMAC.** O rate limit guarda só o HMAC-SHA256 do IP, com o segredo `IP_HASH_SECRET`.
 - **Logs sem conteúdo.** Uma linha por requisição, com rota, status, latência, `accountId`, chamadas, tokens e o nome do erro. Nunca a mensagem, o perfil, o id da sessão, o IP ou o e-mail da conta. O erro do provedor nunca chega ao navegador: a API responde com textos fixos em português.

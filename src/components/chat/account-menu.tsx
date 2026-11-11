@@ -1,7 +1,9 @@
 "use client"
 
-import { ChevronDownIcon, LogOutIcon } from "lucide-react"
-import { useRef } from "react"
+import { ChevronDownIcon, LogOutIcon, Trash2Icon, UserPenIcon } from "lucide-react"
+import Link from "next/link"
+import { useRef, useState } from "react"
+import { DeleteAccountDialog } from "@/components/chat/delete-account-dialog"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -18,10 +20,16 @@ export function AccountMenu({ label, signOutAction }: AccountMenuProps) {
   // The form lives outside the menu: the menu content unmounts when an item is selected, which
   // would cancel a submit started from inside it.
   const formRef = useRef<HTMLFormElement>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   return (
     <>
       <form ref={formRef} action={signOutAction} hidden />
+      <DeleteAccountDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        signOutAction={signOutAction}
+      />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" aria-label={`Menu da conta: ${label}`}>
@@ -36,9 +44,19 @@ export function AccountMenu({ label, signOutAction }: AccountMenuProps) {
             {label}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/perfil">
+              <UserPenIcon aria-hidden="true" />
+              Editar perfil
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => formRef.current?.requestSubmit()}>
             <LogOutIcon aria-hidden="true" />
             Sair
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+            <Trash2Icon aria-hidden="true" />
+            Excluir minha conta
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

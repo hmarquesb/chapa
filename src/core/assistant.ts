@@ -16,11 +16,13 @@ import type {
   LlmClient,
   RetrievedChunk,
   SessionOwner,
+  SessionRecord,
   SessionRepository,
   StoredMessage,
   Usage,
 } from "@/core/types"
 import { addUsage, emptyUsage } from "@/core/usage"
+import { isPlanId } from "@/lib/plans"
 import { PROFILE_FIELDS, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
 
 export type AssistantDeps = {
@@ -39,7 +41,12 @@ function cleanProfile(profile: RestaurantProfile): RestaurantProfile {
   const clean: RestaurantProfile = {}
   for (const field of PROFILE_FIELDS) {
     const value = profile[field]?.trim()
-    if (value) clean[field] = value
+    if (!value) continue
+    if (field === "plan") {
+      if (isPlanId(value)) clean.plan = value
+    } else {
+      clean[field] = value
+    }
   }
   return clean
 }
@@ -69,6 +76,14 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     if ((channel === "web") !== (input.accountId !== null)) {
       throw new Error("channel and accountId disagree")
     }
+    // Erro de programação: na web o perfil vem da conta; no CLI e no eval, da conversa.
+    if (
+      channel === "web"
+        ? input.accountProfile === undefined || input.profile !== undefined
+        : input.accountProfile !== undefined
+    ) {
+      throw new Error("profile source disagrees with channel")
+    }
     const owner: SessionOwner = { accountId: input.accountId }
 
     // Bloqueio de entrada: nada vai para o LLM nem para o banco (pode conter CPF ou cartão).
@@ -86,14 +101,17 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     }
 
     const usages: Usage[] = []
-    const inputProfile = input.profile === undefined ? undefined : cleanProfile(input.profile)
-    const session = await sessions.touch({
-      id: sessionId,
-      channel,
-      owner,
-      profile: inputProfile,
-    })
-    const profile = inputProfile ?? cleanProfile(session.profile)
+    let session: SessionRecord
+    let profile: RestaurantProfile
+    if (input.accountProfile !== undefined) {
+      // Web: o perfil da conta vai só para o prompt, nunca para a conversa.
+      session = await sessions.touch({ id: sessionId, channel, owner })
+      profile = cleanProfile(input.accountProfile)
+    } else {
+      const inputProfile = input.profile === undefined ? undefined : cleanProfile(input.profile)
+      session = await sessions.touch({ id: sessionId, channel, owner, profile: inputProfile })
+      profile = inputProfile ?? cleanProfile(session.profile)
+    }
 
     // Memória: histórico pendente desde o último resumo, vindo do banco a cada mensagem.
     const pending = await sessions.listMessages(sessionId, owner, {

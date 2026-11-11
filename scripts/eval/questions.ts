@@ -2,6 +2,7 @@
 import { LlmQuotaError } from "@/core/errors"
 import type { Assistant, AssistantReply, Usage } from "@/core/types"
 import { addUsage } from "@/core/usage"
+import { isPlanId } from "@/lib/plans"
 import { PROFILE_FIELDS, type RestaurantProfile } from "@/lib/types"
 import type { QuestionResult } from "./metrics"
 
@@ -172,6 +173,9 @@ function validateItem(item: unknown, index: number, knowledgeFiles: Set<string>)
       for (const [field, value] of Object.entries(item.perfil)) {
         if (!known.has(field)) add(`perfil tem campo desconhecido "${field}".`)
         else if (typeof value !== "string") add(`perfil.${field} precisa ser texto.`)
+        else if (field === "plan" && !isPlanId(value)) {
+          add('perfil.plan precisa ser "proprio", "entrega" ou "misto".')
+        }
       }
     }
   }

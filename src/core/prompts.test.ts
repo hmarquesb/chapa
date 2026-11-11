@@ -73,14 +73,14 @@ describe("formatProfile", () => {
     const text = formatProfile({
       hours: "18h às 23h",
       cuisine: "Pizza",
-      plan: "Plano Básico",
+      plan: "entrega",
       city: "São Paulo",
       name: "Pizzaria Bella",
     })
     expect(text).toBe(
       [
         "Nome: Pizzaria Bella",
-        "Plano: Plano Básico",
+        "Plano: Plano Entrega",
         "Cozinha: Pizza",
         "Cidade: São Paulo",
         "Horário: 18h às 23h",
@@ -91,6 +91,22 @@ describe("formatProfile", () => {
   it("returns an empty string for an empty profile or blank values", () => {
     expect(formatProfile({})).toBe("")
     expect(formatProfile({ name: "   ", city: "" })).toBe("")
+  })
+
+  it("writes the official plan name from the id", () => {
+    expect(formatProfile({ plan: "misto" })).toBe("Plano: Plano Misto")
+  })
+
+  it("keeps the text the model got before the plan became an enum", () => {
+    expect(formatProfile({ name: "Bella", plan: "proprio" })).toBe(
+      "Nome: Bella\nPlano: Plano Próprio",
+    )
+    const text = buildSystemInstruction({ profile: { plan: "proprio" }, summary: null })
+    expect(text).toBe(`${SYSTEM_PROMPT}\n\nPerfil do restaurante:\nPlano: Plano Próprio`)
+  })
+
+  it("drops a plan that is not in the enum", () => {
+    expect(formatProfile({ plan: "premium" as never })).toBe("")
   })
 
   it("trims values", () => {
@@ -106,11 +122,11 @@ describe("buildSystemInstruction", () => {
 
   it("appends the profile and summary blocks", () => {
     const text = buildSystemInstruction({
-      profile: { name: "Pizzaria Bella", plan: "Plano Básico" },
+      profile: { name: "Pizzaria Bella", plan: "misto" },
       summary: "O parceiro perguntou sobre repasse.",
     })
     expect(text.startsWith(SYSTEM_PROMPT)).toBe(true)
-    expect(text).toContain("Perfil do restaurante:\nNome: Pizzaria Bella\nPlano: Plano Básico")
+    expect(text).toContain("Perfil do restaurante:\nNome: Pizzaria Bella\nPlano: Plano Misto")
     expect(text).toContain("Resumo da conversa até aqui:\nO parceiro perguntou sobre repasse.")
     expect(text.indexOf("Perfil do restaurante:")).toBeLessThan(
       text.indexOf("Resumo da conversa até aqui:"),

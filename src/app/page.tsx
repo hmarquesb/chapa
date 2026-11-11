@@ -1,8 +1,10 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { signInWithGoogle, signOutOfAccount } from "@/app/auth-actions"
 import { AccountMenu } from "@/components/chat/account-menu"
 import { ChatApp } from "@/components/chat/chat-app"
 import { DemoBanner } from "@/components/chat/demo-banner"
+import { ProfileSummary } from "@/components/chat/profile-summary"
 import { getAuthenticatedAccount, isGoogleEnabled } from "@/infra/auth"
 import { DEMO_ACCOUNT_LABEL } from "@/lib/sign-in"
 
@@ -15,6 +17,7 @@ export default async function Home({
   if (account === null) redirect("/entrar")
   // Old continuation links (/?sessao=<id>) no longer open anything: drop the parameter.
   if ((await searchParams).sessao !== undefined) redirect("/")
+  if (account.profile.plan === undefined) redirect("/perfil")
 
   const isDemo = account.kind === "demo"
   const label = isDemo ? DEMO_ACCOUNT_LABEL : (account.email ?? DEMO_ACCOUNT_LABEL)
@@ -27,6 +30,7 @@ export default async function Home({
           <p className="text-sm text-muted-foreground">
             Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações.
           </p>
+          <ProfileSummary profile={account.profile} />
         </div>
         <AccountMenu label={label} signOutAction={signOutOfAccount} />
       </header>
@@ -36,7 +40,10 @@ export default async function Home({
       </main>
       <footer className="border-t pt-4 text-xs text-muted-foreground">
         Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery. As conversas
-        são apagadas depois de 30 dias sem uso. Não envie dados pessoais.
+        são apagadas depois de 30 dias sem uso. Não envie dados pessoais.{" "}
+        <Link href="/privacidade" className="underline underline-offset-4">
+          Privacidade
+        </Link>
       </footer>
     </div>
   )

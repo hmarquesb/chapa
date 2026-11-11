@@ -4,13 +4,14 @@
 
 Assistente web para restaurantes que **já são parceiros** da Rango, uma empresa de delivery fictícia. Ele responde dúvidas operacionais com RAG sobre a base em `knowledge-base/`, cita as fontes e encaminha ao suporte quando não sabe a resposta. Cadastro de novos parceiros fica fora do escopo. É um projeto de estudo, não oficial.
 
-O chat na web exige login: com Google ou numa conta de demonstração criada a cada clique ([ADR 0020](adr/0020-login-google-e-conta-demo.md)). O perfil do restaurante (nome, plano, cozinha, cidade, horário) ainda vem de um formulário. O CLI e a avaliação não passam pelo login.
+O chat na web exige login: com Google ou numa conta de demonstração criada a cada clique ([ADR 0020](adr/0020-login-google-e-conta-demo.md)). O perfil do restaurante (plano, e opcionalmente nome, cozinha, cidade e horário) fica na conta e é preenchido no primeiro acesso. O CLI e a avaliação não passam pelo login.
 
 ## Arquitetura do projeto
 
 - Um projeto Next.js só, com front e API juntos, publicado na Vercel.
 - A lógica do assistente fica em `src/core/` e não importa nada do Next. A API, o eval e a CLI chamam o mesmo `handleMessage`.
 - O `core/` recebe o cliente de LLM e os repositórios por parâmetro. Os testes usam fakes e nunca acessam a rede.
+- O perfil vem da conta na web: `createChatHandler` lê a conta a cada pedido e passa `accountProfile` ao assistente, que o usa só no prompt e nunca o grava na conversa. No CLI e no eval, o perfil continua vindo de `--nome`, `--plano` e afins, e é guardado na conversa.
 - Fluxo de uma mensagem: dono da conversa (a conta logada; o servidor gera o id da conversa nova) → guardrail de entrada → histórico + resumo da sessão → reescrita da pergunta → embedding → busca híbrida → geração → guardrail de saída → salvar.
 - Se nenhum trecho passa do `minScore`, a resposta é a mensagem de fallback, sem chamar o LLM.
 - Só a pergunta original e a resposta final são salvas. Os trechos recuperados nunca vão para o banco.
@@ -54,7 +55,8 @@ Stack:
 - Biome
 
 Regras:
-- Uma página só, com o chat, as fontes em `Badge` embaixo de cada resposta, 3 perguntas de exemplo, o formulário de perfil do restaurante e um rodapé com o aviso de projeto não oficial.
+- A página `/` tem o chat, as fontes em `Badge` embaixo de cada resposta, 3 perguntas de exemplo, o resumo do perfil com o link "Editar perfil" e um rodapé com o aviso de projeto não oficial e o link "Privacidade".
+- `/perfil` tem o formulário do perfil (o plano é um `RadioGroup` obrigatório). Quem entra sem plano salvo é levado para lá antes do chat. `/privacidade` é pública e mostra o que a conta guarda, a retenção e como excluir a conta. O menu da conta tem "Editar perfil" e "Excluir minha conta".
 - O id da conversa é gerado no servidor: o primeiro `POST /api/chat` vai sem `sessionId` e a resposta o devolve. O navegador o guarda só em memória, não no `localStorage` nem na URL. Recarregar a página abre uma conversa nova.
 - A lista de conversas da conta (um painel lateral em telas pequenas) vem de `GET /api/sessions`, com o título cortado da primeira pergunta, e é atualizada depois de cada resposta. Clicar numa conversa carrega o histórico por `GET /api/sessions/[id]/messages`; apagar pede confirmação e usa `DELETE /api/sessions/[id]`.
 - Botão "Nova conversa": limpa a tela e esquece o id, e o servidor gera outro no próximo chat.
@@ -72,6 +74,8 @@ Stack:
 
 Rotas:
 - `POST /api/chat`
+- `GET /api/profile` e `PUT /api/profile`, o perfil da conta (o `PUT` exige o plano)
+- `DELETE /api/account`, que exclui a conta logada e as conversas dela (`204`)
 - `GET /api/sessions`, com as conversas da conta, da mais recente para a mais antiga
 - `GET /api/sessions/[id]/messages`
 - `DELETE /api/sessions/[id]`
@@ -89,7 +93,7 @@ Scripts locais (rodam com `tsx`, fora da Vercel): `ingest`, `chat`, `eval` e `sm
 
 Supabase: PostgreSQL com `pgvector` e busca textual com o dicionário `portuguese`.
 
-- Tabelas: `accounts` (tipo `google` ou `demo`, `google_sub`, e-mail, `last_seen_at`, `expires_at`), `sessions` (perfil, resumo, canal e `account_id`, nulo só no CLI e no eval), `messages`, `document_chunks` e `rate_limits` (buckets `minute`, `day`, `demo_day` e `account_day`).
+- Tabelas: `accounts` (tipo `google` ou `demo`, `google_sub`, e-mail, `profile`, `last_seen_at`, `expires_at`), `sessions` (perfil só nas conversas do CLI e do eval, resumo, canal e `account_id`, que uma restrição do banco exige na web e proíbe no CLI e no eval), `messages`, `document_chunks` e `rate_limits` (buckets `minute`, `day`, `demo_day` e `account_day`). O `account_day` limita as mensagens por conta e por dia, com o limite de cada tipo de conta em `src/config.ts`.
 - `document_chunks` tem `embedding_model` e `chunk_config`, e toda busca filtra pelos dois. Nunca compare vetores de modelos ou de fatiamentos diferentes.
 - Busca híbrida: o SQL devolve `semantic` e `keyword` por trecho, e uma função pura em TS combina os dois com `alpha`, filtra por `minScore` e corta em `topK`.
 - As mensagens são ordenadas por `id`, não por `created_at`.

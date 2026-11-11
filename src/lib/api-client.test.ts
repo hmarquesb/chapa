@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest"
 import {
+  deleteAccount,
   deleteSession,
   fetchHistory,
   listSessions,
   NETWORK_ERROR_MESSAGE,
+  saveProfile,
   sendMessage,
 } from "@/lib/api-client"
 import type { ChatResponse, SessionHistoryResponse, SessionListResponse } from "@/lib/types"
@@ -39,10 +41,7 @@ describe("sendMessage", () => {
 
   it("posts JSON to /api/chat and returns the reply", async () => {
     const { fn, calls } = fakeFetch(json(reply))
-    const result = await sendMessage(
-      { sessionId: ID, message: "O repasse cai via Pix?", profile: { name: "Bella" } },
-      fn,
-    )
+    const result = await sendMessage({ sessionId: ID, message: "O repasse cai via Pix?" }, fn)
     expect(result).toEqual({ ok: true, data: reply })
     expect(calls).toHaveLength(1)
     expect(calls[0]?.url).toBe("/api/chat")
@@ -51,7 +50,6 @@ describe("sendMessage", () => {
     expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
       sessionId: ID,
       message: "O repasse cai via Pix?",
-      profile: { name: "Bella" },
     })
   })
 
@@ -94,7 +92,6 @@ describe("sendMessage", () => {
 describe("fetchHistory", () => {
   const history: SessionHistoryResponse = {
     sessionId: ID,
-    profile: { name: "Bella" },
     messages: [
       {
         id: 1,
@@ -228,5 +225,66 @@ describe("deleteSession", () => {
       status: 0,
       error: NETWORK_ERROR_MESSAGE,
     })
+  })
+})
+
+describe("saveProfile", () => {
+  const profile = { name: "Bella", plan: "misto" as const }
+
+  it("puts JSON to /api/profile and returns the saved profile", async () => {
+    const { fn, calls } = fakeFetch(json({ profile }))
+    expect(await saveProfile(profile, fn)).toEqual({ ok: true, data: { profile } })
+    expect(calls[0]?.url).toBe("/api/profile")
+    expect(calls[0]?.init?.method).toBe("PUT")
+    expect(new Headers(calls[0]?.init?.headers).get("Content-Type")).toBe("application/json")
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual(profile)
+  })
+
+  it("returns the API error message and status", async () => {
+    const { fn } = fakeFetch(json({ error: "Escolha um plano." }, 400))
+    expect(await saveProfile(profile, fn)).toEqual({
+      ok: false,
+      status: 400,
+      error: "Escolha um plano.",
+    })
+  })
+
+  it("rejects a reply without a profile object", async () => {
+    const { fn } = fakeFetch(json({ ok: true }))
+    const result = await saveProfile(profile, fn)
+    expect(result.ok).toBe(false)
+  })
+
+  it("reports a network failure with status 0", async () => {
+    const { fn } = fakeFetch(new Error("offline"))
+    expect(await saveProfile(profile, fn)).toEqual({
+      ok: false,
+      status: 0,
+      error: NETWORK_ERROR_MESSAGE,
+    })
+  })
+})
+
+describe("deleteAccount", () => {
+  it("treats 204 as success", async () => {
+    const { fn, calls } = fakeFetch(new Response(null, { status: 204 }))
+    expect(await deleteAccount(fn)).toEqual({ ok: true, data: null })
+    expect(calls[0]?.url).toBe("/api/account")
+    expect(calls[0]?.init?.method).toBe("DELETE")
+  })
+
+  it("returns the status and message on error", async () => {
+    const { fn } = fakeFetch(json({ error: "Faça login." }, 401))
+    expect(await deleteAccount(fn)).toEqual({ ok: false, status: 401, error: "Faça login." })
+  })
+
+  it("treats another 2xx as unexpected", async () => {
+    const { fn } = fakeFetch(json({}, 200))
+    expect((await deleteAccount(fn)).ok).toBe(false)
+  })
+
+  it("reports a network failure with status 0", async () => {
+    const { fn } = fakeFetch(new Error("offline"))
+    expect(await deleteAccount(fn)).toEqual({ ok: false, status: 0, error: NETWORK_ERROR_MESSAGE })
   })
 })

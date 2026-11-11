@@ -7,6 +7,7 @@ import type {
   SessionRecord,
   StoredMessage,
 } from "@/core/types"
+import { isPlanId } from "@/lib/plans"
 import { type Channel, PROFILE_FIELDS, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
 
 // Pure conversions between database rows and the core types. The driver returns
@@ -68,14 +69,16 @@ function toDate(value: Timestamp): Date {
   return value instanceof Date ? value : new Date(value)
 }
 
-// Keeps only the PROFILE_FIELDS keys whose value is a string.
+// Keeps only the PROFILE_FIELDS keys whose value is a string (plan: only a valid PlanId).
 export function toProfile(value: unknown): RestaurantProfile {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return {}
   const source = value as Record<string, unknown>
   const profile: RestaurantProfile = {}
   for (const field of PROFILE_FIELDS) {
     const fieldValue = source[field]
-    if (typeof fieldValue === "string") profile[field] = fieldValue
+    if (field === "plan") {
+      if (isPlanId(fieldValue)) profile.plan = fieldValue
+    } else if (typeof fieldValue === "string") profile[field] = fieldValue
   }
   return profile
 }

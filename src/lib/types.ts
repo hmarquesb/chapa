@@ -2,9 +2,18 @@ export type ReplyStatus = "answered" | "fallback" | "blocked_input" | "blocked_o
 
 export type Channel = "web" | "cli" | "eval"
 
+export const PLAN_IDS = ["proprio", "entrega", "misto"] as const
+export type PlanId = (typeof PLAN_IDS)[number]
+// Nomes de knowledge-base/regras.yaml (nomes.plano_*). Conferidos por src/lib/plans.test.ts.
+export const PLAN_LABELS: Readonly<Record<PlanId, string>> = {
+  proprio: "Plano Próprio",
+  entrega: "Plano Entrega",
+  misto: "Plano Misto",
+}
+
 export type RestaurantProfile = {
   name?: string
-  plan?: string
+  plan?: PlanId
   cuisine?: string
   city?: string
   hours?: string
@@ -13,11 +22,14 @@ export type RestaurantProfile = {
 export const PROFILE_FIELDS = ["name", "plan", "cuisine", "city", "hours"] as const
 export const PROFILE_FIELD_MAX_CHARS = 60
 
+// GET e PUT /api/profile
+export type ProfileResponse = { profile: RestaurantProfile }
+export type ProfileUpdateRequest = Omit<RestaurantProfile, "plan"> & { plan: PlanId }
+
 // POST /api/chat
 export type ChatRequest = {
   sessionId?: string // absent: new conversation
   message: string
-  profile?: RestaurantProfile
 }
 
 export type ChatResponse = {
@@ -48,7 +60,6 @@ export type HistoryMessage = {
 
 export type SessionHistoryResponse = {
   sessionId: string
-  profile: RestaurantProfile
   messages: HistoryMessage[]
 }
 

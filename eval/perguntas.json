@@ -194,7 +194,7 @@
     "pergunta": "Qual é a comissão que eu pago por pedido?",
     "perfil": {
       "name": "Cantina do Beto",
-      "plan": "Plano Próprio",
+      "plan": "proprio",
       "city": "Campinas"
     },
     "fonte_esperada": ["01-planos-e-taxas.md"],
@@ -209,7 +209,7 @@
     "pergunta": "Quanto eu pago de mensalidade por mês?",
     "perfil": {
       "name": "Sushi Kenzo",
-      "plan": "Plano Entrega",
+      "plan": "entrega",
       "cuisine": "Japonesa"
     },
     "fonte_esperada": ["01-planos-e-taxas.md"],
@@ -224,7 +224,7 @@
     "pergunta": "Qual comissão eu pago nos pedidos de clientes que ficam fora da minha área de entrega?",
     "perfil": {
       "name": "Pastelaria Dona Lu",
-      "plan": "Plano Misto",
+      "plan": "misto",
       "city": "Belo Horizonte"
     },
     "fonte_esperada": ["01-planos-e-taxas.md"],
@@ -238,7 +238,7 @@
     "pergunta": "Até quanto eu posso cobrar de taxa de entrega dos meus clientes?",
     "perfil": {
       "name": "Hamburgueria Brasa",
-      "plan": "Plano Próprio"
+      "plan": "proprio"
     },
     "fonte_esperada": ["01-planos-e-taxas.md"],
     "deve_conter": ["R$ 30"],
@@ -251,7 +251,7 @@
     "pergunta": "Posso aceitar pagamento em dinheiro na entrega?",
     "perfil": {
       "name": "Marmitaria Sabor Caseiro",
-      "plan": "Plano Entrega"
+      "plan": "entrega"
     },
     "fonte_esperada": ["11-pagamentos-e-fiscal.md", "01-planos-e-taxas.md"],
     "deve_conter": ["online"],

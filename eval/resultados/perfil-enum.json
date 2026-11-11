@@ -1,0 +1,516 @@
+{
+  "label": "perfil-enum",
+  "preset": "padrao",
+  "date": "2026-11-11T14:55:04.400Z",
+  "commit": "e8db0c4",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.55,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": true
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 122,
+        "tipo": "perfil",
+        "pergunta": "Qual é a comissão que eu pago por pedido?",
+        "perfil": {
+          "name": "Cantina do Beto",
+          "plan": "proprio",
+          "city": "Campinas"
+        },
+        "fonte_esperada": [
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "11%"
+        ],
+        "nao_deve_conter": [
+          "22%"
+        ],
+        "esperado": "resposta",
+        "nota": "Comissão do Plano Próprio (11%) com o plano vindo só do perfil; a resposta não pode trazer a comissão do Plano Entrega."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Fala, Beto! Como você está no Plano Próprio, a sua comissão é de 11% sobre o valor dos itens de cada pedido.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "02-repasse-financeiro.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão por plano",
+            "score": 0.8409487279815611,
+            "semantic": 0.7727838971165157,
+            "keyword": 1,
+            "content": "Planos e taxas — Comissão por plano\n\nA comissão é a parte de cada pedido que fica com a Rango. O percentual depende do plano:\n\n- Plano Próprio: comiss"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Exemplo de conta de um pedido",
+            "score": 0.8369363184947954,
+            "semantic": 0.7670518835639935,
+            "keyword": 1,
+            "content": "Planos e taxas — Exemplo de conta de um pedido\n\nExemplo: no Plano Próprio, um cliente faz um pedido com R$ 80,00 em itens, escolhe uma taxa de entrega"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos do repasse",
+            "score": 0.812688637941698,
+            "semantic": 0.7324123399167114,
+            "keyword": 1,
+            "content": "Repasse financeiro — Descontos do repasse\n\nO repasse chega líquido. Do valor das vendas pagas pelo app, a Rango desconta:\n\n- A comissão do plano, calc"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Dinheiro na entrega",
+            "score": 0.8083936778068778,
+            "semantic": 0.726276682581254,
+            "keyword": 1,
+            "content": "Planos e taxas — Dinheiro na entrega\n\nO pagamento em dinheiro na entrega não tem taxa de pagamento. Ele só existe no Plano Próprio e na área própria d"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Os três planos",
+            "score": 0.7964896222904496,
+            "semantic": 0.7092708889863565,
+            "keyword": 1,
+            "content": "Planos e taxas — Os três planos\n\nA Rango oferece três planos para lojas parceiras. A diferença entre eles é quem faz a entrega e, por isso, quanto a l"
+          }
+        ],
+        "searchQuery": "Qual é a comissão que eu pago por pedido?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1580,
+          "outputTokens": 33
+        },
+        "latencyMs": 2194
+      },
+      "latencyMs": 2194,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1580,
+        "outputTokens": 33
+      }
+    },
+    {
+      "question": {
+        "id": 123,
+        "tipo": "perfil",
+        "pergunta": "Quanto eu pago de mensalidade por mês?",
+        "perfil": {
+          "name": "Sushi Kenzo",
+          "plan": "entrega",
+          "cuisine": "Japonesa"
+        },
+        "fonte_esperada": [
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "139"
+        ],
+        "nao_deve_conter": [
+          "R$ 99"
+        ],
+        "esperado": "resposta",
+        "nota": "Mensalidade do Plano Entrega (R$ 139,00) com o plano vindo só do perfil; a resposta não pode trazer a mensalidade do Plano Próprio."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Olá, Sushi Kenzo! No seu Plano Entrega, a mensalidade é de R$ 139,00 por mês. \n\nEla é descontada no primeiro repasse do mês, mas lembre-se de que a loja fica isenta da mensalidade se o faturamento na Rango no mês anterior tiver ficado abaixo de R$ 2.000,00.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "02-repasse-financeiro.md",
+          "11-pagamentos-e-fiscal.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Os três planos",
+            "score": 0.6868372021844507,
+            "semantic": 0.6597674316920723,
+            "keyword": 0.75,
+            "content": "Planos e taxas — Os três planos\n\nA Rango oferece três planos para lojas parceiras. A diferença entre eles é quem faz a entrega e, por isso, quanto a l"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos do repasse",
+            "score": 0.683708142509676,
+            "semantic": 0.6552973464423945,
+            "keyword": 0.75,
+            "content": "Repasse financeiro — Descontos do repasse\n\nO repasse chega líquido. Do valor das vendas pagas pelo app, a Rango desconta:\n\n- A comissão do plano, calc"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade e isenção",
+            "score": 0.6813278378404051,
+            "semantic": 0.7590397683434359,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Mensalidade e isenção\n\nAlém da comissão, cada plano tem uma mensalidade:\n\n- Plano Próprio: R$ 99,00 por mês.\n- Plano Entrega: R$ 139,"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Exemplo de repasse da semana",
+            "score": 0.6276104960557721,
+            "semantic": 0.682300708651103,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Exemplo de repasse da semana\n\nExemplo: uma loja do Plano Próprio vendeu, de segunda-feira a domingo, 50 pedidos iguais ao do exem"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Nota fiscal da Rango (NFS-e)",
+            "score": 0.6122583148367445,
+            "semantic": 0.6603690211953493,
+            "keyword": 0.5,
+            "content": "Pagamentos e fiscal — Nota fiscal da Rango (NFS-e)\n\nA Rango emite para a loja uma nota fiscal de serviço eletrônica, a NFS-e, com os valores que cobro"
+          }
+        ],
+        "searchQuery": "Quanto eu pago de mensalidade por mês?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1672,
+          "outputTokens": 84
+        },
+        "latencyMs": 1667
+      },
+      "latencyMs": 1667,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1672,
+        "outputTokens": 84
+      }
+    },
+    {
+      "question": {
+        "id": 124,
+        "tipo": "perfil",
+        "pergunta": "Qual comissão eu pago nos pedidos de clientes que ficam fora da minha área de entrega?",
+        "perfil": {
+          "name": "Pastelaria Dona Lu",
+          "plan": "misto",
+          "city": "Belo Horizonte"
+        },
+        "fonte_esperada": [
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "22%"
+        ],
+        "esperado": "resposta",
+        "nota": "Comissão do Plano Misto fora da área própria (22%), com o plano vindo só do perfil."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "No seu plano (Plano Misto), a comissão é de 22% nos pedidos entregues pela Rango para clientes que estão fora da sua área própria.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "11-pagamentos-e-fiscal.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Dinheiro na entrega",
+            "score": 0.7681670741380935,
+            "semantic": 0.6688101059115622,
+            "keyword": 1,
+            "content": "Planos e taxas — Dinheiro na entrega\n\nO pagamento em dinheiro na entrega não tem taxa de pagamento. Ele só existe no Plano Próprio e na área própria d"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Área própria e raio do Plano Misto",
+            "score": 0.7597224618541489,
+            "semantic": 0.717970863873274,
+            "keyword": 0.8571428571428571,
+            "content": "Planos e taxas — Área própria e raio do Plano Misto\n\nNo Plano Misto, a área própria é a região em que a loja faz as entregas com a equipe dela. O raio"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão por plano",
+            "score": 0.7473133440870721,
+            "semantic": 0.7002435527774499,
+            "keyword": 0.8571428571428571,
+            "content": "Planos e taxas — Comissão por plano\n\nA comissão é a parte de cada pedido que fica com a Rango. O percentual depende do plano:\n\n- Plano Próprio: comiss"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Exemplo de conta de um pedido",
+            "score": 0.7427531085323962,
+            "semantic": 0.6937289305564843,
+            "keyword": 0.8571428571428571,
+            "content": "Planos e taxas — Exemplo de conta de um pedido\n\nExemplo: no Plano Próprio, um cliente faz um pedido com R$ 80,00 em itens, escolhe uma taxa de entrega"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Restrições de cada forma",
+            "score": 0.7347666280084223,
+            "semantic": 0.6210951828691746,
+            "keyword": 1,
+            "content": "Pagamentos e fiscal — Restrições de cada forma\n\n- **Dinheiro na entrega:** só existe no Plano Próprio e na área própria do Plano Misto, porque é a equ"
+          }
+        ],
+        "searchQuery": "Qual comissão eu pago nos pedidos de clientes que ficam fora da minha área de entrega?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1472,
+          "outputTokens": 35
+        },
+        "latencyMs": 7120
+      },
+      "latencyMs": 7120,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1472,
+        "outputTokens": 35
+      }
+    },
+    {
+      "question": {
+        "id": 125,
+        "tipo": "perfil",
+        "pergunta": "Até quanto eu posso cobrar de taxa de entrega dos meus clientes?",
+        "perfil": {
+          "name": "Hamburgueria Brasa",
+          "plan": "proprio"
+        },
+        "fonte_esperada": [
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "R$ 30"
+        ],
+        "esperado": "resposta",
+        "nota": "Teto da taxa de entrega por faixa no Plano Próprio (R$ 30,00), com o plano vindo só do perfil."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Fala, parceiro da Hamburgueria Brasa! Como você está no Plano Próprio, siga estes passos para definir a taxa de entrega:\n\n1. Acesse o Painel Rango e vá em Configurações > Plano.\n2. Defina a taxa de entrega em até 5 faixas de distância.\n\nCada faixa de taxa pode ir até R$ 30,00.",
+        "sources": [
+          "01-planos-e-taxas.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Rango Chama",
+            "score": 0.7203478085090586,
+            "semantic": 0.7229458488904918,
+            "keyword": 0.7142857142857143,
+            "content": "Planos e taxas — Rango Chama\n\nO Rango Chama é o entregador avulso da Rango, para lojas que fazem entrega própria (Plano Próprio e área própria do Plan"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de entrega por plano",
+            "score": 0.7131506857912902,
+            "semantic": 0.7738887348038839,
+            "keyword": 0.5714285714285714,
+            "content": "Planos e taxas — Taxa de entrega por plano\n\n- **Plano Próprio:** a loja define a taxa de entrega, em até 5 faixas de distância, na tela Configurações "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Os três planos",
+            "score": 0.7005882529279093,
+            "semantic": 0.6947179123459928,
+            "keyword": 0.7142857142857143,
+            "content": "Planos e taxas — Os três planos\n\nA Rango oferece três planos para lojas parceiras. A diferença entre eles é quem faz a entrega e, por isso, quanto a l"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Base da comissão",
+            "score": 0.6862209790123813,
+            "semantic": 0.7354177251197284,
+            "keyword": 0.5714285714285714,
+            "content": "Planos e taxas — Base da comissão\n\nA comissão é calculada sobre o valor dos itens do pedido, sem a taxa de entrega. Complementos e adicionais escolhid"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Retirada no balcão",
+            "score": 0.682549608077039,
+            "semantic": 0.7301729094978108,
+            "keyword": 0.5714285714285714,
+            "content": "Planos e taxas — Retirada no balcão\n\nEm qualquer plano, o cliente pode escolher retirar o pedido na loja. Nos pedidos de retirada, a comissão é de 6% "
+          }
+        ],
+        "searchQuery": "Até quanto eu posso cobrar de taxa de entrega dos meus clientes?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1404,
+          "outputTokens": 84
+        },
+        "latencyMs": 2053
+      },
+      "latencyMs": 2053,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1404,
+        "outputTokens": 84
+      }
+    },
+    {
+      "question": {
+        "id": 126,
+        "tipo": "perfil",
+        "pergunta": "Posso aceitar pagamento em dinheiro na entrega?",
+        "perfil": {
+          "name": "Marmitaria Sabor Caseiro",
+          "plan": "entrega"
+        },
+        "fonte_esperada": [
+          "11-pagamentos-e-fiscal.md",
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "online"
+        ],
+        "esperado": "resposta",
+        "nota": "Dinheiro na entrega no Plano Entrega: não é aceito, o pagamento é sempre online; o plano vem só do perfil."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Painel Rango.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Restrições de cada forma",
+            "score": 0.7171697436529919,
+            "semantic": 0.7673853480757027,
+            "keyword": 0.6,
+            "content": "Pagamentos e fiscal — Restrições de cada forma\n\n- **Dinheiro na entrega:** só existe no Plano Próprio e na área própria do Plano Misto, porque é a equ"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Dinheiro na entrega",
+            "score": 0.7106590242855767,
+            "semantic": 0.7580843204079667,
+            "keyword": 0.6,
+            "content": "Planos e taxas — Dinheiro na entrega\n\nO pagamento em dinheiro na entrega não tem taxa de pagamento. Ele só existe no Plano Próprio e na área própria d"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Formas de pagamento",
+            "score": 0.6658838963669969,
+            "semantic": 0.6941198519528526,
+            "keyword": 0.6,
+            "content": "Pagamentos e fiscal — Formas de pagamento\n\nO cliente pode pagar um pedido na Rango de seis formas:\n\n- Cartão de crédito.\n- Cartão de débito.\n- Pix.\n- "
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "O que é o repasse",
+            "score": 0.6480500054902647,
+            "semantic": 0.6686428649860925,
+            "keyword": 0.6,
+            "content": "Repasse financeiro — O que é o repasse\n\nO repasse é a transferência que a Rango faz para a conta bancária da loja com o dinheiro das vendas pagas pelo"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Taxas de pagamento online",
+            "score": 0.6393249737150827,
+            "semantic": 0.6561785338786896,
+            "keyword": 0.6,
+            "content": "Pagamentos e fiscal — Taxas de pagamento online\n\nCada pagamento online tem uma taxa, cobrada da loja e descontada do repasse:\n\n- Cartão de crédito, ca"
+          }
+        ],
+        "searchQuery": "Posso aceitar pagamento em dinheiro na entrega?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1319,
+          "outputTokens": 22
+        },
+        "latencyMs": 2088
+      },
+      "latencyMs": 2088,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1319,
+        "outputTokens": 22
+      }
+    }
+  ],
+  "scores": [
+    {
+      "id": 122,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": []
+    },
+    {
+      "id": 123,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": []
+    },
+    {
+      "id": 124,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": []
+    },
+    {
+      "id": 125,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": []
+    },
+    {
+      "id": 126,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": false,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": true,
+      "forbiddenFound": []
+    }
+  ],
+  "metrics": {
+    "total": 5,
+    "inScope": 5,
+    "hitAtK": 1,
+    "accuracy": 0.8,
+    "correctRefusal": 0,
+    "falseRefusal": 0.2,
+    "latencyP50Ms": 2088,
+    "latencyP95Ms": 7120,
+    "errors": 0,
+    "usage": {
+      "calls": 10,
+      "inputTokens": 7447,
+      "outputTokens": 258
+    }
+  }
+}

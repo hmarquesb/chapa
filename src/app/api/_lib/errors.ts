@@ -11,6 +11,9 @@ export const ERROR_MESSAGES = {
   sessionNotFound: "Esta conversa não existe mais. Começamos uma nova.",
   invalidSessionId: "O identificador da conversa é inválido.",
   unauthorized: "Acesso não autorizado.",
+  accountDailyLimit: "Você chegou ao limite de mensagens de hoje nesta conta. Volte amanhã.",
+  demoDailyLimit:
+    "A conta de demonstração chegou ao limite de mensagens de hoje. Entre com Google para continuar.",
   unauthenticated: "Sua sessão terminou. Entre de novo para continuar.",
 } as const
 
@@ -21,4 +24,6 @@ export const VALIDATION_MESSAGES = {
   sessionId: "O identificador da conversa é inválido.",
   message: "A mensagem precisa ser um texto.",
   profile: "O perfil do restaurante é inválido.",
+  profileInAccount: "O perfil agora fica salvo na conta. Recarregue a página.",
+  plan: "Escolha o plano: Próprio, Entrega ou Misto.",
 } as const

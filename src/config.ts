@@ -31,6 +31,7 @@ export type AppConfig = {
     maxBodyBytes: number
     rateLimitPerMinute: number
     rateLimitPerDay: number
+    messagesPerAccountPerDay: { google: number; demo: number } // por conta, dia UTC
   }
   sessionTtlDays: number // vale só para conversas do cli e do eval
   conversations: {
@@ -131,6 +132,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       maxBodyBytes: 4096,
       rateLimitPerMinute: 10,
       rateLimitPerDay: 100,
+      messagesPerAccountPerDay: { google: 60, demo: 30 },
     },
     sessionTtlDays: 7,
     conversations: {
