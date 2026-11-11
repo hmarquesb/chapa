@@ -51,6 +51,7 @@ npm test                 # vitest run, sem rede, sem banco e sem chave
 npm run ingest           # ⚠️ chama a API de embeddings e grava no banco (padrão: preset padrao)
 npm run chat -- --nome "Pizzaria Bella" --debug        # ⚠️ chama a API
 npm run eval -- --label v2 --preset padrao             # ⚠️ chama a API (60 a 90 chamadas)
+npm run screenshots -- --url http://localhost:3000   # ⚠️ usa o `dev` e cria 1 conta demo (precisa de `npx playwright install chromium`)
 npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada e cria 1 conta demo (5 por IP por dia)
 npm run authz-check                                    # ⚠️ grava no banco `dev` (Neon): verifica o dono das conversas
 npm run db -- db push --remote   # Supabase CLI, no `prod` (único projeto linkado, só no checkpoint)
@@ -82,7 +83,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 | Validação, rate limit, logs da API | `src/app/api/_lib/` (`validate.ts`, `rate-limit.ts`, `log.ts`) | Corpo máximo de 4 KB. Mensagens de erro em PT-BR |
 | Campo novo no perfil | `src/lib/types.ts` (`PROFILE_FIELDS`, `PLAN_IDS`), `src/lib/plans.ts`, `src/app/api/_lib/validate.ts` (`parseProfileUpdate`), `src/core/prompts.ts`, `src/components/chat/profile-form.tsx` | O perfil é dado do usuário: não logue. O plano é uma escolha fechada e o nome oficial vem do `regras.yaml` (`src/lib/plans.test.ts` confere) |
 | Cores, fontes, raio, sombra, movimento e tema | `src/app/globals.css`, `src/lib/palette.ts`, `src/lib/theme.ts` | Mudou um tom: o mesmo valor nos dois arquivos; `npm test` diz se passa no AA. Sem cor fixa em componentes |
-| Interface | `src/components/chat/` (entrada em `chat-app.tsx`), `src/app/page.tsx`, `src/lib/` (`chat-state`, `api-client`, `format`) | Componentes só importam `src/lib/` |
+| Interface | `src/components/chat/` (entrada em `chat-app.tsx`), `src/components/brand/`, `src/app/page.tsx`, `src/lib/` (`chat-state`, `api-client`, `format`) | Componentes só importam `src/lib/` |
 | Schema do banco | Nova migração em `supabase/migrations/` (`npm run db -- migration new <nome>`) | Nunca edite uma migração já aplicada. RLS ligado e sem policies. Aplicar no banco é checkpoint humano |
 | Base de conhecimento | `knowledge-base/NN-*.md` e `knowledge-base/regras.yaml` | Número novo entra primeiro no `regras.yaml`; rode `npm test`. Depois do merge, reingerir no `dev` e no `prod` |
 | Avaliação | `scripts/eval.ts`, `scripts/eval/`, `eval/perguntas.json` | Ids estáveis: não renumere as perguntas existentes |

@@ -41,6 +41,11 @@ npm run chat -- --sessao <uuid> --debug                              # retoma um
 - `npm run chat` e `npm run eval` não passam pelo login: as conversas deles não têm conta, e a web não as enxerga (e o CLI não abre conversas da web).
 - **Mudou uma consulta de conversa** (`src/infra/db/session-repository.ts`)? Rode `npm run authz-check` no `dev` (⚠️ grava no banco, só com autorização; recusa hosts que não sejam do Neon). Ele cria duas contas demo e uma conversa, confere o dono em cada consulta e apaga tudo.
 - Na interface, confira pelo menos: uma pergunta respondida com fontes, uma fora do escopo (fallback), uma com CPF fictício (bloqueio), a lista de conversas (a conversa aparece ao responder, abre o histórico ao clicar e some depois de apagada) e o botão "Nova conversa". Recarregar a página abre uma conversa nova. Com duas demos em navegadores diferentes, uma não vê a conversa da outra, e `/?sessao=<id>` não abre nada.
+- **Screenshots e originalidade:** com o `npm run dev`, rode `npm run screenshots -- --url http://localhost:3000` (⚠️ cria 1 conta demo) e revise as imagens nos dois temas e tamanhos. Checklist de originalidade, a preencher no PR:
+  - [ ] A paleta não usa vermelho, laranja vivo, amarelo ou verde-vivo como cor principal.
+  - [ ] O logo e o ícone não lembram nenhuma empresa real de delivery.
+  - [ ] Nenhum nome, ícone ou ilustração de empresa real.
+  - [ ] Revisado lado a lado com as marcas de delivery mais conhecidas no Brasil.
 - O `dev` roda no Neon, que suspende a computação depois de 5 min ocioso: a primeira requisição depois disso pode demorar alguns segundos.
 - Fora da Vercel não há cabeçalho de IP, então todas as requisições locais caem no mesmo balde do rate limit.
 

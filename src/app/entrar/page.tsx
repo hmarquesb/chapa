@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { signInAsDemo, signInWithGoogle } from "@/app/auth-actions"
 import { SignInPanel } from "@/components/auth/sign-in-panel"
+import { RangoLogo } from "@/components/brand/rango-logo"
+import { SiteFooter } from "@/components/brand/site-footer"
 import { ThemeToggle } from "@/components/brand/theme-toggle"
 import { getAuthenticatedAccount, isGoogleEnabled } from "@/infra/auth"
 import { signInErrorMessage } from "@/lib/sign-in"
@@ -30,7 +32,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
         <ThemeToggle />
       </div>
       <header className="flex flex-col gap-1">
-        <h1 className="font-heading text-3xl font-semibold tracking-tight">Chapa</h1>
+        <RangoLogo size="lg" />
+        <h1 className="font-heading text-3xl font-extrabold tracking-tight">Chapa</h1>
         <p className="text-sm font-medium">Assistente de parceiros da Rango</p>
         <p className="text-sm text-muted-foreground">
           Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações.
@@ -42,6 +45,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
         demoAction={signInAsDemo}
         googleAction={signInWithGoogle}
       />
+      <SiteFooter />
     </main>
   )
 }

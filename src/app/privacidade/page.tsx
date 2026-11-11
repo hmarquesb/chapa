@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { RangoLogo } from "@/components/brand/rango-logo"
+import { SiteFooter } from "@/components/brand/site-footer"
 import { config } from "@/config"
 import { PRIVACY_NOTICE } from "@/lib/sign-in"
 
@@ -45,6 +47,12 @@ export default function PrivacyPage() {
   return (
     <main className="mx-auto flex w-full max-w-[45rem] flex-1 flex-col gap-8 px-4 py-10">
       <header className="flex flex-col gap-2">
+        <Link
+          href="/"
+          className="self-start rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <RangoLogo size="sm" />
+        </Link>
         <h1 className="font-heading text-2xl font-semibold tracking-tight">Privacidade</h1>
         <p className="text-sm">{PRIVACY_NOTICE}</p>
       </header>
@@ -108,6 +116,7 @@ export default function PrivacyPage() {
           Voltar ao chat
         </Link>
       </p>
+      <SiteFooter />
     </main>
   )
 }

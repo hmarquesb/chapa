@@ -47,9 +47,9 @@ export function DeleteAccountDialog({
         onOpenChange(next)
       }}
     >
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="rounded-3xl shadow-raised">
         <DialogHeader>
-          <DialogTitle>Excluir minha conta</DialogTitle>
+          <DialogTitle className="font-heading font-semibold">Excluir minha conta</DialogTitle>
           <DialogDescription>
             Excluir sua conta? A conta, o perfil e todas as conversas são apagados na hora e não
             podem ser recuperados.

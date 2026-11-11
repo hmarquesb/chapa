@@ -22,7 +22,7 @@ export function ExampleQuestions({ disabled, onPick }: ExampleQuestionsProps) {
           <li key={question}>
             <Button
               variant="outline"
-              className="h-auto w-full justify-start py-2 text-left whitespace-normal sm:w-auto"
+              className="h-auto w-full justify-start rounded-full px-4 py-2 text-left whitespace-normal sm:w-auto"
               disabled={disabled}
               onClick={() => onPick(question)}
             >

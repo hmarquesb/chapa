@@ -25,9 +25,9 @@ export function DeleteConversationDialog({
 }: DeleteConversationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !busy && onCancel()}>
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="rounded-3xl shadow-raised">
         <DialogHeader>
-          <DialogTitle>Apagar conversa</DialogTitle>
+          <DialogTitle className="font-heading font-semibold">Apagar conversa</DialogTitle>
           <DialogDescription>
             Apagar esta conversa? Ela some da lista e não pode ser recuperada.
           </DialogDescription>

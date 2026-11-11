@@ -33,14 +33,19 @@ export function AccountMenu({ label, signOutAction }: AccountMenuProps) {
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" aria-label={`Menu da conta: ${label}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            aria-label={`Menu da conta: ${label}`}
+          >
             <span translate="no" className="max-w-[16ch] truncate sm:max-w-[28ch]">
               {label}
             </span>
             <ChevronDownIcon aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-48">
+        <DropdownMenuContent align="end" className="min-w-48 rounded-2xl shadow-raised">
           <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
             {label}
           </DropdownMenuLabel>
