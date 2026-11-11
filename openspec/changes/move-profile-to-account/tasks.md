@@ -50,7 +50,7 @@ Esta change só começa depois que a `scope-conversations-to-accounts` estiver m
 
 ## 9. Produção
 
-- [ ] 9.1 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Antes, contar com `db query --read-only` as conversas `web` sem conta, e registrar o número no relatório.
+- [x] 9.1 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Antes, contar com `db query --read-only` as conversas `web` sem conta, e registrar o número no relatório.
 - [ ] 9.2 **(pessoa)** Depois do merge, testar em produção o primeiro acesso com Google, a demo com o perfil de exemplo e "Excluir minha conta", e rodar o smoke (ou autorizar o orquestrador).
 
 ## 10. Verificação final
