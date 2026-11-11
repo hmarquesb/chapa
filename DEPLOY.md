@@ -8,7 +8,8 @@ Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Su
 
 - Nenhum valor de segredo entra em arquivo versionado, log, print ou mensagem. As variáveis ficam no `.env.local` (`dev`), no `.env.prod.local` (`prod`, só na raiz do checkout principal) e na Vercel.
 - Local e preview usam o `dev` no Neon (ver "Banco `dev` no Neon"). Só a produção da Vercel e os passos 3 e 4 tocam o `prod`.
-- Os comandos `npx supabase ...` e `npm run ...` rodam na raiz do repositório (ou no worktree da S09).
+- Os comandos `./node_modules/.bin/supabase ...` e `npm run ...` rodam na raiz do repositório (ou no worktree da S09).
+- A Supabase CLI é chamada pelo binário local, nunca por `npx supabase` nem `npm run db`, nos comandos que passam a URL: o `npx` pode ecoar a linha de comando inteira (com o `--remote="$U"` expandido, senha incluída) num aviso do npm.
 
 ## Resumo
 
@@ -113,16 +114,16 @@ Cotas por modelo no painel de cotas do AI Studio, informadas pela pessoa em 06/1
 **Quem:** orquestrador, com a autorização do H5. Se a CLI pedir senha ou outra entrada interativa, parar e chamar a pessoa.
 
 ```bash
-npx supabase projects list                    # o REFERENCE ID do projeto prod
-npx supabase link --project-ref <ref-do-prod>
-npx supabase db push --remote --yes           # --yes só em modo agente
+./node_modules/.bin/supabase projects list                    # o REFERENCE ID do projeto prod
+./node_modules/.bin/supabase link --project-ref <ref-do-prod>
+./node_modules/.bin/supabase db push --remote --yes           # --yes só em modo agente
 ```
 
 **Verificação:** o `db push` aplica a migração sem erro, e as consultas abaixo (somente leitura) mostram o RLS ligado nas 4 tabelas e nenhuma policy:
 
 ```bash
-npx supabase db query --remote --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname"
-npx supabase db query --remote --read-only "select count(*) as policies from pg_policies where schemaname = 'public'"
+./node_modules/.bin/supabase db query --remote --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname"
+./node_modules/.bin/supabase db query --remote --read-only "select count(*) as policies from pg_policies where schemaname = 'public'"
 ```
 
 Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`.
@@ -130,7 +131,7 @@ Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`.
 **Atenção:** o link fica gravado em `supabase/.temp/` do diretório onde o comando rodou. Enquanto ele existir, qualquer `db push --remote` sem URL naquele diretório vai para o `prod`. Ao final deste passo, desfaça o link:
 
 ```bash
-npx supabase unlink
+./node_modules/.bin/supabase unlink
 ```
 
 O `dev` não usa link: os comandos dele sempre passam a URL com `--remote="$U"` (ver "Banco `dev` no Neon").
@@ -288,17 +289,17 @@ Desde o [ADR 0017](docs/adr/0017-neon-como-banco-dev.md), o `dev` (local, `chat`
 
    ```bash
    # na raiz do checkout principal (ou no worktree com o link .env.local)
-   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --yes -f supabase/dev-bootstrap.sql )
-   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --dry-run )
-   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --yes )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --yes -f supabase/dev-bootstrap.sql )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db push --remote="$U" --dry-run )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db push --remote="$U" --yes )
    ```
 
    Nunca rode `db push` no `dev` sem `--remote=` explícito: sem URL, ele vai para o projeto linkado. Nunca rode estes comandos com o `.env.prod.local` carregado.
 4. **Verificação (orquestrador).** As mesmas consultas do passo 3, somente leitura, no `dev`:
 
    ```bash
-   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname" )
-   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --read-only "select count(*) as policies from pg_policies where schemaname = 'public'" )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname" )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --read-only "select count(*) as policies from pg_policies where schemaname = 'public'" )
    ```
 
    Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`. O `--dry-run` de novo responde `Remote database is up to date`.

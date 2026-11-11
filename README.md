@@ -106,9 +106,9 @@ Pré-requisitos: Node 24, uma chave do Gemini (Google AI Studio, plano gratuito,
 npm install
 cp .env.example .env.local          # preencha as variáveis (ver abaixo)
 # prepara o banco e aplica as migrações (tabelas, extensões e a função de busca)
-( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db query --remote="$U" --yes -f supabase/dev-bootstrap.sql )
-( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --dry-run )
-( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; npx supabase db push --remote="$U" --yes )
+( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --yes -f supabase/dev-bootstrap.sql )
+( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db push --remote="$U" --dry-run )
+( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db push --remote="$U" --yes )
 npm run ingest                      # ⚠️ chama a API de embeddings e grava os trechos
 npm run dev                         # http://localhost:3000
 ```
