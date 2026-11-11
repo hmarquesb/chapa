@@ -2,6 +2,7 @@ import "server-only"
 import { FALLBACK_MESSAGE } from "@/core/messages"
 import type { ChatMessage, RetrievedChunk } from "@/core/types"
 import { cuisineLabel } from "@/lib/profile/cuisines"
+import { formatWeekHours } from "@/lib/profile/hours"
 import { STATES } from "@/lib/profile/states"
 import { PLAN_LABELS, PROFILE_FIELDS, type RestaurantProfile } from "@/lib/types"
 
@@ -45,7 +46,8 @@ export function formatProfile(profile: RestaurantProfile, cityName: string | nul
     else if (field === "cuisine") value = profile.cuisine && cuisineLabel(profile.cuisine).trim()
     else if (field === "location") {
       value = profile.location && locationLabel(profile.location, cityName)
-    } else value = profile[field]?.trim()
+    } else if (field === "hours") value = profile.hours && formatWeekHours(profile.hours)
+    else value = profile[field]?.trim()
     if (value) lines.push(`${PROFILE_LABELS[field]}: ${value}`)
   }
   return lines.join("\n")

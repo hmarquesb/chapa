@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { config } from "@/config"
 import { createDemoAccount, DEMO_PROFILE } from "@/core/accounts"
+import { buildSystemInstruction } from "@/core/prompts"
 import type { AccountRecord, RateLimitBucket } from "@/core/types"
 import { findCity } from "@/lib/profile/cities"
 import { parseProfileInput } from "@/lib/profile/parse"
@@ -99,6 +100,11 @@ describe("createDemoAccount", () => {
     expect(DEMO_PROFILE.cuisine).toEqual({ id: "marmita" })
     expect(DEMO_PROFILE.location).toEqual({ uf: "RJ", cityCode: 3304557 })
     expect((await findCity("RJ", 3304557))?.name).toBe("Rio de Janeiro")
+  })
+
+  it("writes the demo hours grouped in the prompt", () => {
+    const system = buildSystemInstruction({ profile: DEMO_PROFILE, cityName: null, summary: null })
+    expect(system).toContain("Horário: seg a sáb, 11h às 15h e 18h às 23h; dom, fechado")
   })
 
   it("counts in the demo_day bucket, keyed by the IP hash, in the UTC day window", async () => {

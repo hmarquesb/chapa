@@ -481,7 +481,6 @@ describe("createAssistant().handleMessage", () => {
       version: 2,
       name: "  Pizzaria Bella ",
       plan: "misto",
-      hours: " ",
     })
 
     expect(sessions.touchInputs[0]).toEqual({
@@ -541,7 +540,7 @@ describe("createAssistant().handleMessage", () => {
     const { llm, sessions, sendRaw } = setup()
     await sendRaw({
       channel: "web",
-      accountProfile: { version: 2, name: " Marmitaria Boa Panela ", plan: "misto", hours: " " },
+      accountProfile: { version: 2, name: " Marmitaria Boa Panela ", plan: "misto" },
     })
 
     expect(sessions.touchInputs[0]).toEqual({

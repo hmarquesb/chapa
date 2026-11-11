@@ -54,8 +54,7 @@ function cleanProfile(profile: RestaurantProfile): RestaurantProfile {
     }
   }
   if (profile.location) clean.location = profile.location
-  const hours = profile.hours?.trim()
-  if (hours) clean.hours = hours
+  if (profile.hours) clean.hours = profile.hours
   return clean
 }
 

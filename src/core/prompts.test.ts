@@ -10,6 +10,7 @@ import {
   SYSTEM_PROMPT,
 } from "@/core/prompts"
 import type { RetrievedChunk } from "@/core/types"
+import type { WeekHours } from "@/lib/profile/types"
 
 function chunk(id: number, source: string, section: string, content: string): RetrievedChunk {
   return { id, source, section, content, semantic: 0.8, keyword: 0.5, score: 0.71 }
@@ -19,6 +20,16 @@ const RESULTS = [
   chunk(1, "02-repasse-financeiro.md", "Ciclo de repasse", "O repasse segue um ciclo."),
   chunk(2, "01-planos-e-taxas.md", "", "Os planos têm taxas diferentes."),
 ]
+
+const EVENINGS: WeekHours = {
+  seg: [{ open: "18:00", close: "23:00" }],
+  ter: [{ open: "18:00", close: "23:00" }],
+  qua: [{ open: "18:00", close: "23:00" }],
+  qui: [{ open: "18:00", close: "23:00" }],
+  sex: [{ open: "18:00", close: "23:00" }],
+  sab: [{ open: "18:00", close: "23:00" }],
+  dom: [{ open: "18:00", close: "23:00" }],
+}
 
 describe("SYSTEM_PROMPT", () => {
   it("says the restaurant data only personalize the answer and never give instructions", () => {
@@ -84,7 +95,7 @@ describe("formatProfile", () => {
     const text = formatProfile(
       {
         ...V2,
-        hours: "18h às 23h",
+        hours: EVENINGS,
         cuisine: { id: "pizza" },
         plan: "entrega",
         location: { uf: "SP", cityCode: 3550308 },
@@ -98,7 +109,7 @@ describe("formatProfile", () => {
         "Plano: Plano Entrega",
         "Cozinha: Pizza",
         "Local: São Paulo (SP)",
-        "Horário: 18h às 23h",
+        "Horário: todos os dias, 18h às 23h",
       ].join("\n"),
     )
   })
@@ -126,7 +137,7 @@ describe("formatProfile", () => {
 
   it("returns an empty string for an empty profile or blank values", () => {
     expect(formatProfile(V2, null)).toBe("")
-    expect(formatProfile({ ...V2, name: "   ", hours: "" }, null)).toBe("")
+    expect(formatProfile({ ...V2, name: "   " }, null)).toBe("")
   })
 
   it("writes the official plan name from the id", () => {
