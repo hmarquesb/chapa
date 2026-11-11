@@ -27,6 +27,15 @@ export function createAccountRepository(sql: Sql): AccountRepository {
       return toAccountRecord(row)
     },
 
+    async updateProfile(id, profile) {
+      const [row] = await sql<[{ profile: unknown }]>`
+        update public.accounts set profile = ${sql.json(toProfile(profile))}
+        where id = ${id}
+        returning profile
+      `
+      return toProfile(row.profile)
+    },
+
     async findActive(id, now) {
       const [row] = await sql<[AccountRow?]>`
         select id, kind, email, profile, created_at, last_seen_at, expires_at

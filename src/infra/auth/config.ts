@@ -3,7 +3,7 @@ import { CredentialsSignin, type NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 import { config } from "@/config"
-import { createDemoAccount } from "@/core/accounts"
+import { createDemoAccount, DEMO_PROFILE } from "@/core/accounts"
 import { getClientIp, hashIp } from "@/core/request-limits"
 import { googleIdentity, readClaims, sessionToken } from "@/infra/auth/callbacks"
 import { readGoogleCredentials } from "@/infra/auth/env"
@@ -42,7 +42,7 @@ export function buildAuthConfig(): NextAuthConfig {
             accounts,
             rateLimits,
             limits: config.accounts,
-            profile: {},
+            profile: { ...DEMO_PROFILE },
           })
           if (!result.ok) throw new DemoLimitError()
           return { id: result.account.id }

@@ -143,6 +143,8 @@ export type AccountRecord = {
 export interface AccountRepository {
   // Cria a conta ou, se o sub já existe, atualiza o e-mail e o last_seen_at.
   upsertGoogle(input: { googleSub: string; email: string }): Promise<AccountRecord>
+  // Substitui o perfil da conta e devolve o salvo. O id existe: quem chama já autenticou a conta.
+  updateProfile(id: string, profile: RestaurantProfile): Promise<RestaurantProfile>
   createDemo(input: { expiresAt: Date; profile: RestaurantProfile }): Promise<AccountRecord>
   // null se a conta não existe ou se expires_at <= now.
   findActive(id: string, now: Date): Promise<AccountRecord | null>

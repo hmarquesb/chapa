@@ -4,6 +4,15 @@ import { windowStarts } from "@/core/request-limits"
 import type { AccountRecord, AccountRepository, RateLimitRepository } from "@/core/types"
 import type { RestaurantProfile } from "@/lib/types"
 
+// Perfil de exemplo de toda conta demo. Cada demo recebe uma cópia (`{ ...DEMO_PROFILE }`).
+export const DEMO_PROFILE: Readonly<Required<RestaurantProfile>> = Object.freeze({
+  name: "Marmitaria Boa Panela",
+  plan: "misto",
+  cuisine: "Brasileira caseira",
+  city: "Rio de Janeiro",
+  hours: "11h às 15h e 18h às 23h",
+})
+
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export type DemoAccountResult =
@@ -19,7 +28,7 @@ export async function createDemoAccount(input: {
   accounts: Pick<AccountRepository, "createDemo">
   rateLimits: Pick<RateLimitRepository, "hit">
   limits: AppConfig["accounts"]
-  profile: RestaurantProfile // {} nesta change; o perfil de exemplo entra na change 3
+  profile: RestaurantProfile
 }): Promise<DemoAccountResult> {
   const { day } = windowStarts(input.now)
   const count = await input.rateLimits.hit({
