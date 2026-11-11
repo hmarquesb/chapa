@@ -46,7 +46,7 @@ function validSet(): EvalQuestion[] {
   }
   for (let i = 0; i < 6; i++) items.push(q({ id: id++, tipo: "parafrase" }))
   for (let i = 0; i < 5; i++) {
-    items.push(q({ id: id++, tipo: "perfil", perfil: { plan: "Plano Próprio" } }))
+    items.push(q({ id: id++, tipo: "perfil", perfil: { plan: "proprio" } }))
   }
   for (let i = 0; i < 5; i++) {
     items.push(q({ id: id++, tipo: "multi_doc", fonte_esperada: ["01-a.md", "02-b.md"] }))
@@ -355,6 +355,14 @@ describe("validateQuestions", () => {
     expect(errorsOf(items)).toContain("Pergunta 1: falta a nota.")
   })
 
+  it("rejects a perfil.plan outside the list", () => {
+    const items: unknown[] = validSet()
+    replace(items, 0, { perfil: { plan: "Plano Próprio" } })
+    expect(errorsOf(items)).toContain(
+      'Pergunta 1: perfil.plan precisa ser "proprio", "entrega" ou "misto".',
+    )
+  })
+
   it("rejects an invalid perfil", () => {
     const items: unknown[] = validSet()
     replace(items, 0, { perfil: { name: 3, idade: "x" } })
@@ -414,7 +422,7 @@ function baseOptions(assistant: Assistant) {
 }
 
 describe("runQuestions", () => {
-  const single = q({ id: 1, pergunta: "Qual a comissão?", perfil: { plan: "Plano Básico" } })
+  const single = q({ id: 1, pergunta: "Qual a comissão?", perfil: { plan: "misto" } })
   const multi = q({
     id: 2,
     tipo: "multi_turno",
@@ -435,7 +443,7 @@ describe("runQuestions", () => {
         message: "Qual a comissão?",
         channel: "eval",
         accountId: null,
-        profile: { plan: "Plano Básico" },
+        profile: { plan: "misto" },
       },
       {
         sessionId: "sessao-2",
