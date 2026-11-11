@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Chapa",
   description:
     "Assistente para restaurantes parceiros de apps de delivery tirarem dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações. Projeto de estudo, não oficial.",
-  // The continuation link (/?sessao=<id>) is a credential: never leak it in a Referer header.
+  // No page leaks its address (and any query string) in a Referer header.
   referrer: "no-referrer",
 }
 

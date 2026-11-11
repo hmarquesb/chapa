@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // `next dev` would otherwise inject a managed block into our hand-written AGENTS.md.
   agentRules: false,
   poweredByHeader: false,
-  // The continue link (/?sessao=<id>) works as a credential, so no page leaks it as a referrer.
+  // No page leaks its address (and any query string) as a referrer.
   async headers() {
     return [
       {
