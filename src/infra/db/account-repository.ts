@@ -48,5 +48,11 @@ export function createAccountRepository(sql: Sql): AccountRepository {
       `
       return result.count
     },
+
+    async delete(id) {
+      // The conversations go with the account (on delete cascade).
+      const result = await sql`delete from public.accounts where id = ${id}`
+      return result.count > 0
+    },
   }
 }
