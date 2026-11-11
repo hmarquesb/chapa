@@ -17,6 +17,7 @@
     "ingest": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/ingest.ts",
     "chat": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/chat.ts",
     "eval": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/eval.ts",
+    "authz-check": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/authz-check.ts",
     "smoke": "node --env-file-if-exists=.env.local --import tsx scripts/smoke.ts",
     "db": "supabase",
     "spec": "openspec",
