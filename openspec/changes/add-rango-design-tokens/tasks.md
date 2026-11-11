@@ -30,8 +30,8 @@ Change 1 de 3 da identidade visual da Rango. As changes `apply-rango-brand-to-sc
 
 ## 6. Verificação manual (orquestrador)
 
-- [ ] 6.1 **(orquestrador)** No `npm run dev` com o `dev`: em `/entrar`, trocar entre Claro, Escuro e Sistema e recarregar em cada um, sem piscar (conferir também com a CPU 6× mais lenta nas ferramentas do navegador); com "Sistema", trocar o tema do sistema operacional com a página aberta; entrar como demo e trocar pelo menu da conta; abrir um diálogo de exclusão nos dois temas; com movimento reduzido ligado no sistema, a troca de tema é instantânea. Registrar no relatório, com prints dos dois temas de `/entrar` e do chat.
-- [ ] 6.2 **(orquestrador)** Navegar pela `/entrar`, pelo chat, pelo perfil e pela `/privacidade` com a skill `web-design-guidelines` nos dois temas, com foco no contraste e no foco visível. Registrar cada apontamento como corrigido aqui ou deixado para a change 2 (a retematização).
+- [x] 6.1 **(orquestrador)** No `npm run dev` com o `dev`: em `/entrar`, trocar entre Claro, Escuro e Sistema e recarregar em cada um, sem piscar (conferir também com a CPU 6× mais lenta nas ferramentas do navegador); com "Sistema", trocar o tema do sistema operacional com a página aberta; entrar como demo e trocar pelo menu da conta; abrir um diálogo de exclusão nos dois temas; com movimento reduzido ligado no sistema, a troca de tema é instantânea. Registrar no relatório, com prints dos dois temas de `/entrar` e do chat.
+- [x] 6.2 **(orquestrador)** Navegar pela `/entrar`, pelo chat, pelo perfil e pela `/privacidade` com a skill `web-design-guidelines` nos dois temas, com foco no contraste e no foco visível. Registrar cada apontamento como corrigido aqui ou deixado para a change 2 (a retematização).
 
 ## 7. Verificação final
 
