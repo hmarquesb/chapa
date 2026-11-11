@@ -22,6 +22,7 @@ import type {
   Usage,
 } from "@/core/types"
 import { addUsage, emptyUsage } from "@/core/usage"
+import { checkProfileText } from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
 import { PROFILE_FIELDS, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
 
@@ -36,7 +37,8 @@ export type AssistantDeps = {
 const ANSWER_TEMPERATURE = 0.2
 const ANSWER_MAX_OUTPUT_TOKENS = 800
 
-// Valores aparados e campos vazios descartados.
+// Valores aparados e campos vazios descartados. Nome e cozinha que o filtro recusa (inclusive
+// os salvos antes do filtro existir) ficam fora do prompt.
 function cleanProfile(profile: RestaurantProfile): RestaurantProfile {
   const clean: RestaurantProfile = {}
   for (const field of PROFILE_FIELDS) {
@@ -44,7 +46,7 @@ function cleanProfile(profile: RestaurantProfile): RestaurantProfile {
     if (!value) continue
     if (field === "plan") {
       if (isPlanId(value)) clean.plan = value
-    } else {
+    } else if ((field !== "name" && field !== "cuisine") || checkProfileText(field, value).ok) {
       clean[field] = value
     }
   }

@@ -14,6 +14,7 @@ import {
 import type { AssistantReply, RetrievedChunk } from "@/core/types"
 import { getContainer } from "@/infra/container"
 import { closeSql } from "@/infra/db"
+import { checkProfileText, profileTextMessage } from "@/lib/moderation/profile-text"
 import { parsePlanId } from "@/lib/plans"
 import { isUuid } from "@/lib/session-id"
 import type { RestaurantProfile } from "@/lib/types"
@@ -30,7 +31,8 @@ const PROFILE_FLAGS: Record<string, keyof RestaurantProfile> = {
 const EXIT_COMMAND = "sair"
 
 // Perfil só com as flags informadas. Sem nenhuma, devolve undefined para manter o da sessão.
-// Um --plano inválido vira erro: devolve a mensagem em vez do perfil.
+// Um --plano inválido, ou um --nome e --cozinha que o filtro recusa, viram erro: devolve a
+// mensagem em vez do perfil.
 const INVALID_PLAN_MESSAGE = "--plano precisa ser proprio, entrega ou misto (ou o nome do plano)."
 
 function profileFromFlags(
@@ -45,7 +47,12 @@ function profileFromFlags(
       if (plan === null) return { error: INVALID_PLAN_MESSAGE }
       profile.plan = plan
     } else {
-      profile[field] = value.trim()
+      const text = value.trim()
+      if (field === "name" || field === "cuisine") {
+        const check = checkProfileText(field, text)
+        if (!check.ok) return { error: profileTextMessage(field, check.reason) }
+      }
+      profile[field] = text
     }
   }
   return Object.keys(profile).length > 0 ? profile : undefined
