@@ -77,7 +77,7 @@ function isSessionHistory(value: unknown): value is SessionHistoryResponse {
 }
 
 function isProfileResponse(value: unknown): value is ProfileResponse {
-  return isRecord(value) && isRecord(value.profile)
+  return isRecord(value) && isRecord(value.profile) && typeof value.needsReview === "boolean"
 }
 
 function isConversationListItem(value: unknown): value is ConversationListItem {
