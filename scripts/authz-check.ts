@@ -43,6 +43,7 @@ async function main(): Promise<number> {
   const results: Array<{ name: string; ok: boolean }> = []
   const check = (name: string, ok: boolean) => results.push({ name, ok })
   const createdAccounts: string[] = []
+  let cleanupFailed = false
 
   try {
     const expiresAt = new Date(Date.now() + DEMO_TTL_MS)
@@ -95,19 +96,29 @@ async function main(): Promise<number> {
       appendRefused && (await sessions.listMessages(idB, ownerB)).length === 2,
     )
 
+    // Cases 5 to 7 also check the owner's own call, so a query that never matches can't pass.
     await sessions.saveSummary(idB, ownerA, "resumo do intruso", 1)
     const afterSummary = await sessions.get(idB, ownerB)
+    await sessions.saveSummary(idB, ownerB, "resumo de B", 1)
+    const ownSummary = await sessions.get(idB, ownerB)
     check(
-      "5. saveSummary(conversa de B, A) não grava resumo",
-      afterSummary !== null && afterSummary.summary === null,
+      "5. saveSummary(conversa de B, A) não grava resumo (e o de B grava)",
+      afterSummary !== null &&
+        afterSummary.summary === null &&
+        ownSummary?.summary === "resumo de B",
     )
 
     const listA = await sessions.listForAccount(a.id, 50)
-    check("6. listForAccount(A) não traz a conversa de B", !listA.some((item) => item.id === idB))
+    const listB = await sessions.listForAccount(b.id, 50)
+    check(
+      "6. listForAccount(A) não traz a conversa de B (e a de B traz)",
+      !listA.some((item) => item.id === idB) && listB.some((item) => item.id === idB),
+    )
 
     check(
-      "7. deleteForAccount(conversa de B, A) devolve false",
-      (await sessions.deleteForAccount(idB, a.id)) === false,
+      "7. deleteForAccount(conversa de B, A) devolve false e a conversa continua",
+      (await sessions.deleteForAccount(idB, a.id)) === false &&
+        (await sessions.get(idB, ownerB)) !== null,
     )
     check(
       "8. get(conversa de B, sem conta) devolve null",
@@ -121,14 +132,15 @@ async function main(): Promise<number> {
       try {
         await accounts.delete(id)
       } catch {
-        console.error("Aviso: não consegui apagar uma conta de teste.")
+        cleanupFailed = true
+        console.error("Erro: não consegui apagar uma conta de teste (ela vence em 1 hora).")
       }
     }
   }
 
   for (const { name, ok } of results) console.log(`${ok ? "✅" : "❌"} ${name}`)
   const failed = results.filter((r) => !r.ok).length
-  if (results.length !== 9) return 1
+  if (results.length !== 9 || cleanupFailed) return 1
   return failed === 0 ? 0 : 1
 }
 
