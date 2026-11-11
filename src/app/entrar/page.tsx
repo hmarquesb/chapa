@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { signInAsDemo, signInWithGoogle } from "@/app/auth-actions"
 import { SignInPanel } from "@/components/auth/sign-in-panel"
+import { ThemeToggle } from "@/components/brand/theme-toggle"
 import { getAuthenticatedAccount, isGoogleEnabled } from "@/infra/auth"
 import { signInErrorMessage } from "@/lib/sign-in"
 
@@ -24,7 +25,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
   })
 
   return (
-    <main className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center gap-6 px-4 py-10">
+    <main className="relative mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center gap-6 px-4 py-10">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <header className="flex flex-col gap-1">
         <h1 className="font-heading text-3xl font-semibold tracking-tight">Chapa</h1>
         <p className="text-sm font-medium">Assistente de parceiros da Rango</p>
