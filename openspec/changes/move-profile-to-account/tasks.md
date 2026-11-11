@@ -4,15 +4,15 @@ Esta change só começa depois que a `scope-conversations-to-accounts` estiver m
 
 ## 1. Plano em escolha fechada
 
-- [ ] 1.1 Escrever os testes de `src/lib/plans.ts`: `isPlanId`; `parsePlanId` com id, nome, maiúsculas, sem acento, sem "Plano " e um texto inválido; `profileSummary` com nome e plano, só plano, só nome e vazio; e `PLAN_LABELS` igual a `nomes.plano_*` do `regras.yaml`. Depois, implementar `PLAN_IDS`, `PlanId`, `PLAN_LABELS` e os tipos da decisão 1 em `src/lib/types.ts`, e as funções em `src/lib/plans.ts`. Verificar com `npm test -- plans`.
-- [ ] 1.2 Escrever os testes de `formatProfile` e `buildSystemInstruction` (o plano `misto` vira "Plano: Plano Misto"; um perfil com `plan: "proprio"` gera exatamente o mesmo texto que o perfil antigo `"Plano Próprio"` gerava) e de `toProfile` (plano fora do enum é descartado). Depois, ajustar `prompts.ts` e `mappers.ts`. Verificar com `npm test -- prompts mappers`.
-- [ ] 1.3 Trocar os 5 valores de `plan` em `eval/perguntas.json` e validar o plano em `scripts/eval/questions.ts`, com o teste do cenário "Plano fora da lista". Verificar com `npm test -- questions` e com `git diff eval/perguntas.json`, que deve mostrar só 5 linhas mudadas.
+- [x] 1.1 Escrever os testes de `src/lib/plans.ts`: `isPlanId`; `parsePlanId` com id, nome, maiúsculas, sem acento, sem "Plano " e um texto inválido; `profileSummary` com nome e plano, só plano, só nome e vazio; e `PLAN_LABELS` igual a `nomes.plano_*` do `regras.yaml`. Depois, implementar `PLAN_IDS`, `PlanId`, `PLAN_LABELS` e os tipos da decisão 1 em `src/lib/types.ts`, e as funções em `src/lib/plans.ts`. Verificar com `npm test -- plans`.
+- [x] 1.2 Escrever os testes de `formatProfile` e `buildSystemInstruction` (o plano `misto` vira "Plano: Plano Misto"; um perfil com `plan: "proprio"` gera exatamente o mesmo texto que o perfil antigo `"Plano Próprio"` gerava) e de `toProfile` (plano fora do enum é descartado). Depois, ajustar `prompts.ts` e `mappers.ts`. Verificar com `npm test -- prompts mappers`.
+- [x] 1.3 Trocar os 5 valores de `plan` em `eval/perguntas.json` e validar o plano em `scripts/eval/questions.ts`, com o teste do cenário "Plano fora da lista". Verificar com `npm test -- questions` e com `git diff eval/perguntas.json`, que deve mostrar só 5 linhas mudadas.
 
 ## 2. Banco
 
-- [ ] 2.1 Criar a migração com `npm run db -- migration new sessions_account_by_channel` e o SQL da decisão 8. Verificar que o arquivo novo é o único em `supabase/migrations/` que aparece no `git status`.
+- [x] 2.1 Criar a migração com `npm run db -- migration new sessions_account_by_channel` e o SQL da decisão 8. Verificar que o arquivo novo é o único em `supabase/migrations/` que aparece no `git status`.
 - [ ] 2.2 **(autorização)** Antes de aplicar no `dev`, contar com `db query --read-only` as conversas `web` sem conta. Depois, aplicar com o `db push --remote="$U"` do `DEPLOY.md`. Verificar que a migração aplica sem erro e que um `insert` de teste de uma conversa `web` sem conta, numa transação desfeita com `rollback`, é recusado pelo check.
-- [ ] 2.3 Acrescentar `updateProfile` ao `AccountRepository` e ao `account-repository.ts`, e o `DEMO_PROFILE` ao `src/core/accounts.ts`, com o teste de que `createDemoAccount` recebe uma cópia e não o objeto congelado. Passar o perfil no `authorize` (`src/infra/auth/config.ts`). Verificar com `npm test -- accounts` e `npm run typecheck`.
+- [x] 2.3 Acrescentar `updateProfile` ao `AccountRepository` e ao `account-repository.ts`, e o `DEMO_PROFILE` ao `src/core/accounts.ts`, com o teste de que `createDemoAccount` recebe uma cópia e não o objeto congelado. Passar o perfil no `authorize` (`src/infra/auth/config.ts`). Verificar com `npm test -- accounts` e `npm run typecheck`.
 
 ## 3. Assistente
 
