@@ -4,19 +4,19 @@ Esta change só começa depois que a `add-google-and-demo-login` estiver mergead
 
 ## 1. Banco
 
-- [ ] 1.1 Criar a migração com `npm run db -- migration new sessions_account_id` e o SQL da decisão 1. Verificar que o arquivo novo é o único em `supabase/migrations/` que aparece no `git status`.
+- [x] 1.1 Criar a migração com `npm run db -- migration new sessions_account_id` e o SQL da decisão 1. Verificar que o arquivo novo é o único em `supabase/migrations/` que aparece no `git status`.
 - [ ] 1.2 **(autorização)** Aplicar no `dev` com o `db push --remote="$U"` do `DEPLOY.md`. Verificar que a coluna aceita nulo, que a FK tem `on delete cascade` (`db query --read-only` em `information_schema.referential_constraints`) e que o `--dry-run` seguinte não lista nada pendente.
 
 ## 2. Núcleo
 
-- [ ] 2.1 Escrever os testes de `conversationTitle` (texto curto intacto, espaços juntados, 80 caracteres cortados em 60 com "…" e sem espaço antes dele, vazio vira "Conversa sem título") e de `sessionCleanupCutoffs` (30 e 7 dias), e depois implementar `src/core/conversations.ts`. Acrescentar o bloco `conversations` ao `src/config.ts` com o teste em `src/config.test.ts`. Verificar com `npm test -- conversations config`.
-- [ ] 2.2 Acrescentar `SessionOwner`, `ConversationSummaryRecord`, `SessionRecord.accountId`, as portas novas, `HandleMessageInput.accountId`, `AccountRepository.delete` e `SessionNotFoundError` (decisão 2). Verificar com `npm run typecheck`, que deve apontar todos os chamadores a corrigir nas tarefas seguintes.
-- [ ] 2.3 Escrever os testes do assistente com um `FakeSessions` que respeita o dono: o dono chega a `touch`, `listMessages`, `saveSummary` e `appendTurn`; `channel: "web"` com `accountId: null` lança erro; `channel: "cli"` com uma conta lança erro; `blocked_input` não chama `touch`. Depois, ajustar `src/core/assistant.ts`. Verificar com `npm test -- assistant`.
+- [x] 2.1 Escrever os testes de `conversationTitle` (texto curto intacto, espaços juntados, 80 caracteres cortados em 60 com "…" e sem espaço antes dele, vazio vira "Conversa sem título") e de `sessionCleanupCutoffs` (30 e 7 dias), e depois implementar `src/core/conversations.ts`. Acrescentar o bloco `conversations` ao `src/config.ts` com o teste em `src/config.test.ts`. Verificar com `npm test -- conversations config`.
+- [x] 2.2 Acrescentar `SessionOwner`, `ConversationSummaryRecord`, `SessionRecord.accountId`, as portas novas, `HandleMessageInput.accountId`, `AccountRepository.delete` e `SessionNotFoundError` (decisão 2). Verificar com `npm run typecheck`, que deve apontar todos os chamadores a corrigir nas tarefas seguintes.
+- [x] 2.3 Escrever os testes do assistente com um `FakeSessions` que respeita o dono: o dono chega a `touch`, `listMessages`, `saveSummary` e `appendTurn`; `channel: "web"` com `accountId: null` lança erro; `channel: "cli"` com uma conta lança erro; `blocked_input` não chama `touch`. Depois, ajustar `src/core/assistant.ts`. Verificar com `npm test -- assistant`.
 
 ## 3. Repositórios
 
-- [ ] 3.1 Escrever o teste de `toSessionRecord` com `account_id` (nulo e preenchido) e de `toConversationSummaryRecord`, e depois ajustar `mappers.ts`. Verificar com `npm test -- mappers`.
-- [ ] 3.2 Reescrever `src/infra/db/session-repository.ts` com o dono em toda consulta (decisões 2 e 6) e acrescentar `delete` ao `account-repository.ts`. Verificar com `npm run typecheck` e com `git grep -n "from public.sessions\|public.messages" src/infra/db/session-repository.ts`: cada consulta tem o filtro do dono ou é o `deleteInactive`.
+- [x] 3.1 Escrever o teste de `toSessionRecord` com `account_id` (nulo e preenchido) e de `toConversationSummaryRecord`, e depois ajustar `mappers.ts`. Verificar com `npm test -- mappers`.
+- [x] 3.2 Reescrever `src/infra/db/session-repository.ts` com o dono em toda consulta (decisões 2 e 6) e acrescentar `delete` ao `account-repository.ts`. Verificar com `npm run typecheck` e com `git grep -n "from public.sessions\|public.messages" src/infra/db/session-repository.ts`: cada consulta tem o filtro do dono ou é o `deleteInactive`.
 
 ## 4. Autorização contra o banco
 
