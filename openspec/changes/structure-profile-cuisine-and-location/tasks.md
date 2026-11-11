@@ -43,8 +43,8 @@ Esta change é a 2 de 3 do PRD `prd-chapa-perfil-estruturado.md`. Ela só começ
 
 ## 7. Verificação manual (orquestrador)
 
-- [ ] 7.1 **(autorização)** Com `npm run dev` contra o `dev`, percorrer o fluxo "Primeiro acesso" do PRD (§6) numa demo: buscar "pizza", escolher RJ e "Niterói", salvar e ver "Local: Niterói (RJ)" no prompt com `--debug` ou no log local. Repetir só pelo teclado e com 390 px de largura. Registrar no `docs/qa.md` e no relatório.
-- [ ] 7.2 **(autorização)** No `dev`, gravar numa conta de teste o perfil antigo `{ "plan": "misto", "city": "Bom Jesus" }`, abrir o chat e ver a faixa; salvar o perfil e ver que a faixa some. Registrar no relatório.
+- [x] 7.1 **(autorização)** Com `npm run dev` contra o `dev`, percorrer o fluxo "Primeiro acesso" do PRD (§6) numa demo: buscar "pizza", escolher RJ e "Niterói", salvar e ver "Local: Niterói (RJ)" no prompt com `--debug` ou no log local. Repetir só pelo teclado e com 390 px de largura. Registrar no `docs/qa.md` e no relatório.
+- [x] 7.2 **(autorização)** No `dev`, gravar numa conta de teste o perfil antigo `{ "plan": "misto", "city": "Bom Jesus" }`, abrir o chat e ver a faixa; salvar o perfil e ver que a faixa some. Registrar no relatório.
 - [x] 7.3 **(autorização)** Rodar `npm run chat -- --perfil <arquivo v2>` uma vez e `npm run eval -- --label perfil-v2 --only 122,123,124,125,126 --delay-ms 4000` contra o `dev`. Verificar que os acertos são iguais aos da última rodada em `eval/resultados/`. Se algum mudar, registrar a pergunta, a resposta e a causa.
 
 ## 8. Verificação final
