@@ -25,12 +25,12 @@ Esta change é a 2 de 3 do PRD `prd-chapa-perfil-estruturado.md`. Ela só começ
 
 ## 4. Interface
 
-- [ ] 4.1 Rodar `npx shadcn add command popover native-select` (decisão 7). Verificar que o `git diff package.json` só acrescenta o `cmdk` e que `npm run build` passa.
-- [ ] 4.2 Criar `search-combobox.tsx` e `cuisine-field.tsx`: busca com `matchesSearch`, opção `Usar "<busca>" como Outro`, campo de "Outro" com o filtro e o limite de 30. Verificar com `npm run typecheck` e `npm run lint`.
-- [ ] 4.3 Criar `location-fields.tsx`: estado com as 27 UFs, cidade desabilitada sem estado, carregada por `loadCities` e limpa ao trocar o estado. Verificar com `npm run typecheck`.
-- [ ] 4.4 Refazer o `profile-form.tsx` na ordem da spec `chat-ui`, com o corpo v2 e os erros por `field`, e ajustar o `saveProfile` e o `isProfileResponse` do `api-client.ts`, com os testes. Verificar com `npm test -- api-client`.
-- [ ] 4.5 Criar `profile-review-banner.tsx` e mostrá-lo em `src/app/page.tsx` quando `profileNeedsReview` for verdadeiro. Verificar com `npm run typecheck`.
-- [ ] 4.6 Revisar a tela com a skill `web-design-guidelines` (comboboxes por teclado, rótulos, erros ligados, 390 px). Verificar que cada apontamento foi corrigido ou justificado no relatório.
+- [x] 4.1 Rodar `npx shadcn add command popover native-select` (decisão 7). Verificar que o `git diff package.json` só acrescenta o `cmdk` e que `npm run build` passa.
+- [x] 4.2 Criar `search-combobox.tsx` e `cuisine-field.tsx`: busca com `matchesSearch`, opção `Usar "<busca>" como Outro`, campo de "Outro" com o filtro e o limite de 30. Verificar com `npm run typecheck` e `npm run lint`.
+- [x] 4.3 Criar `location-fields.tsx`: estado com as 27 UFs, cidade desabilitada sem estado, carregada por `loadCities` e limpa ao trocar o estado. Verificar com `npm run typecheck`.
+- [x] 4.4 Refazer o `profile-form.tsx` na ordem da spec `chat-ui`, com o corpo v2 e os erros por `field`, e ajustar o `saveProfile` e o `isProfileResponse` do `api-client.ts`, com os testes. Verificar com `npm test -- api-client`.
+- [x] 4.5 Criar `profile-review-banner.tsx` e mostrá-lo em `src/app/page.tsx` quando `profileNeedsReview` for verdadeiro. Verificar com `npm run typecheck`.
+- [x] 4.6 Revisar a tela com a skill `web-design-guidelines` (comboboxes por teclado, rótulos, erros ligados, 390 px). Verificar que cada apontamento foi corrigido ou justificado no relatório.
 
 ## 5. CLI e eval
 
