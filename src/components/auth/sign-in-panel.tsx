@@ -1,6 +1,7 @@
 "use client"
 
 import { CircleAlertIcon } from "lucide-react"
+import Link from "next/link"
 import { useFormStatus } from "react-dom"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -54,6 +55,9 @@ export function SignInPanel({ googleEnabled, error, demoAction, googleAction }: 
         )}
       </div>
       <p className="text-xs text-muted-foreground">{PRIVACY_NOTICE}</p>
+      <Link href="/privacidade" className="text-xs underline underline-offset-4">
+        Privacidade
+      </Link>
     </div>
   )
 }
