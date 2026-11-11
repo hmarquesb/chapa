@@ -39,7 +39,7 @@ Esta change é a 2 de 3 do PRD `prd-chapa-perfil-estruturado.md`. Ela só começ
 
 ## 6. Documentação
 
-- [ ] 6.1 Escrever o ADR 0024, acrescentá-lo à lista do `docs/adr/README.md` e atualizar `AGENTS.md`, `docs/business.md`, `docs/architecture.md`, `docs/development.md`, `docs/qa.md` e `README.md` nas seções da decisão 9. Verificar com `git grep -n "nome, cozinha, cidade e horário\|--cidade\|--horario"`, que não deve achar nada fora de `docs/history/` e `openspec/`.
+- [x] 6.1 Escrever o ADR 0024, acrescentá-lo à lista do `docs/adr/README.md` e atualizar `AGENTS.md`, `docs/business.md`, `docs/architecture.md`, `docs/development.md`, `docs/qa.md` e `README.md` nas seções da decisão 9. Verificar com `git grep -n "nome, cozinha, cidade e horário\|--cidade\|--horario"`, que não deve achar nada fora de `docs/history/` e `openspec/`.
 
 ## 7. Verificação manual (orquestrador)
 

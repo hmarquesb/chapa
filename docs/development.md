@@ -47,6 +47,8 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 
 O `npm run brand:export` gera os logos, o avatar e o `README.md` de `public/brand/` e o `src/app/icon.svg`, a partir de `PALETTE`, de `CHAPA_ICON` e dos contornos da fonte (`opentype.js`, só em `devDependencies`; sem rede nem banco). Rode-o sempre que mudar um tom ou o ícone e **commite o resultado**: o `scripts/brand/svg.test.ts` falha com "rode `npm run brand:export`" se os arquivos ficarem velhos. O `public/brand/og.png` é uma cópia da rota `/opengraph-image`, salva à mão.
 
+Os municípios do IBGE ficam em `src/lib/profile/cities/` (um módulo por UF, **gerado: não edite à mão**). Para atualizá-los quando o IBGE criar ou renomear municípios, rode `npx tsx scripts/ibge/generate-cities.ts` (usa a API pública do IBGE, sem chave nem banco), confira o `git diff` e commite o resultado. O `CITIES_EXTRACTED_AT` e o `CITY_COUNT` de `cities/index.ts` registram a data e o total. A parte pura do script (`scripts/ibge/cities.ts`) tem teste.
+
 O `npm run screenshots -- --url http://localhost:3000 [--out .screenshots] [--only entrada,chat]` (ids: `entrada`, `chat`, `demo`, `menu`, `perfil`, `avisos`, `marca`) tira as fotos das telas nos dois temas e em dois tamanhos (desktop e 390 px), em `.screenshots/` (fora do git). Entra como demo uma vez (⚠️ cria 1 conta demo: 5 por IP por dia) e responde `POST /api/chat` e `GET /api/sessions` com dados fixos, sem chamar o LLM. Na primeira vez, rode `npx playwright install chromium`.
 
 ## Idioma

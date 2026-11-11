@@ -88,7 +88,7 @@ As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a documentação 
 
 **Problema.** Restaurantes parceiros da Rango, uma empresa de delivery fictícia, têm dúvidas operacionais repetidas: comissão do plano, dia do repasse, prazo para contestar um cancelamento, formato das fotos do cardápio. A resposta existe na política de parceiros, mas espalhada, e um assistente genérico inventa números.
 
-**Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 11 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil da conta (plano e, se preenchidos, nome, cozinha, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
+**Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 11 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil da conta (plano e, se preenchidos, nome, cozinha, estado, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
 
 **Resultados** (rodada `v3`, 10/11/2026, [`v3.md`](eval/resultados/v3.md)):
 
@@ -206,7 +206,7 @@ Uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding.
 | Conversa | O servidor gera o id e liga a conversa à conta. O navegador não o guarda: a lista de conversas da conta (`GET /api/sessions`) reabre uma conversa, e o histórico vem de `GET /api/sessions/[id]/messages` |
 | Mensagens recentes | Até 16 mensagens desde o último resumo vão inteiras para o modelo; acima disso, as 10 mais recentes |
 | Resumo persistido | Fica em `sessions.summary`, com o id da última mensagem resumida. Cada novo resumo parte do anterior |
-| Perfil do restaurante | Guardado em `accounts.profile` (plano obrigatório e, se quiser, nome, cozinha, cidade e horário), lido a cada mensagem e enviado no prompt de sistema. No CLI e no eval, fica em `sessions.profile` |
+| Perfil do restaurante | Guardado em `accounts.profile` (plano obrigatório e, se quiser, nome, cozinha, estado, cidade e horário), lido a cada mensagem e enviado no prompt de sistema. No CLI e no eval, fica em `sessions.profile` |
 | Autorização | Toda consulta de conversa filtra pela conta dona, e a conversa alheia responde `404`, como a inexistente ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)). A página usa `Referrer-Policy: no-referrer`, e o servidor não loga o id |
 | Expiração | O Vercel Cron diário apaga as conversas web sem mensagem nova há mais de 30 dias e as do CLI e do eval após 7 dias (com as mensagens), as janelas de rate limit com mais de 2 dias, as contas demo vencidas e as contas Google sem acesso há 180 dias |
 
