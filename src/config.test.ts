@@ -28,6 +28,7 @@ describe("loadConfig defaults (RF1)", () => {
       maxBodyBytes: 4096,
       rateLimitPerMinute: 10,
       rateLimitPerDay: 100,
+      messagesPerAccountPerDay: { google: 60, demo: 30 },
     })
     expect(cfg.sessionTtlDays).toBe(7)
     expect(cfg.llm).toEqual({
