@@ -18,12 +18,25 @@ const figtree = Figtree({
   variable: "--font-figtree",
 })
 
+const SOCIAL_TITLE = "Chapa, o assistente de parceiros da Rango"
+const DESCRIPTION =
+  "Assistente com RAG para restaurantes parceiros da Rango, uma empresa de delivery fictícia: taxas, repasse, cancelamentos, cardápio e avaliações, com as fontes de cada resposta. Projeto de estudo."
+
+// metadataBase is left unset: Next builds the absolute og:image address from
+// VERCEL_PROJECT_PRODUCTION_URL (production), the branch URL (previews) or localhost.
 export const metadata: Metadata = {
-  title: "Chapa",
-  description:
-    "Assistente para restaurantes parceiros de apps de delivery tirarem dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações. Projeto de estudo, não oficial.",
+  title: { default: "Chapa", template: "%s · Chapa" },
+  description: DESCRIPTION,
   // No page leaks its address (and any query string) in a Referer header.
   referrer: "no-referrer",
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Chapa",
+    title: SOCIAL_TITLE,
+    description: DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image", title: SOCIAL_TITLE, description: DESCRIPTION },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

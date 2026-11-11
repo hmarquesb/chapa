@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/brand/theme-toggle"
 import { getAuthenticatedAccount, isGoogleEnabled } from "@/infra/auth"
 import { signInErrorMessage } from "@/lib/sign-in"
 
-export const metadata: Metadata = { title: "Entrar · Chapa" }
+export const metadata: Metadata = { title: "Entrar" }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 

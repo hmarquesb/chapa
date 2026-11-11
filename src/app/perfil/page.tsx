@@ -7,7 +7,7 @@ import { ProfileForm } from "@/components/chat/profile-form"
 import { getAuthenticatedAccount } from "@/infra/auth"
 import { PRIVACY_NOTICE } from "@/lib/sign-in"
 
-export const metadata: Metadata = { title: "Perfil · Chapa" }
+export const metadata: Metadata = { title: "Perfil" }
 
 export default async function ProfilePage() {
   const account = await getAuthenticatedAccount()
