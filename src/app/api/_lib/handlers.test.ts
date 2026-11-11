@@ -10,11 +10,13 @@ import type { LogEntry } from "@/app/api/_lib/log"
 import { chunkConfigKey, config } from "@/config"
 import { LlmQuotaError, LlmRequestError, LlmUnavailableError, MissingEnvError } from "@/core/errors"
 import type {
+  AccountRecord,
   Assistant,
   AssistantReply,
   ChunkRepository,
   ChunkSetKey,
   HandleMessageInput,
+  RateLimitBucket,
   RateLimitRepository,
   SessionRecord,
   SessionRepository,
@@ -25,6 +27,16 @@ const SESSION_ID = "0b7c9a52-3f0e-4d4f-9a55-2a1f3c1d9e10"
 const OTHER_ID = "5f1d2c3b-4a59-4e6f-8a7b-9c0d1e2f3a4b"
 const IP = "203.0.113.77"
 const NOW = new Date("2026-11-06T12:00:15.000Z")
+const ACCOUNT: AccountRecord = {
+  id: "7a0f2b8c-1d2e-4f30-9a41-5b6c7d8e9f01",
+  kind: "google",
+  email: "MARCADOR-EMAIL@exemplo.com",
+  profile: {},
+  createdAt: new Date("2026-11-01T12:00:00.000Z"),
+  lastSeenAt: new Date("2026-11-06T11:00:00.000Z"),
+  expiresAt: null,
+}
+const UNAUTHENTICATED = "Sua sessão terminou. Entre de novo para continuar."
 
 // ---------- fakes ----------
 
@@ -32,10 +44,12 @@ class MemoryRateLimits implements RateLimitRepository {
   counts = new Map<string, number>()
   hits = 0
   deletedBefore: Date[] = []
+  order: string[] = []
 
-  async hit(input: { ipHash: string; bucket: "minute" | "day"; windowStart: Date }) {
+  async hit(input: { key: string; bucket: RateLimitBucket; windowStart: Date }) {
     this.hits += 1
-    const key = `${input.ipHash}|${input.bucket}|${input.windowStart.toISOString()}`
+    this.order.push("hit")
+    const key = `${input.key}|${input.bucket}|${input.windowStart.toISOString()}`
     const count = (this.counts.get(key) ?? 0) + 1
     this.counts.set(key, count)
     return count
@@ -44,6 +58,21 @@ class MemoryRateLimits implements RateLimitRepository {
   async deleteBefore(date: Date) {
     this.deletedBefore.push(date)
     return 4
+  }
+}
+
+class FakeAccounts {
+  touched: string[] = []
+  deleteExpiredArgs: Array<{ now: Date; googleInactiveBefore: Date }> = []
+  constructor(private readonly order: string[] = []) {}
+
+  async touchLastSeen(id: string) {
+    this.order.push("touchLastSeen")
+    this.touched.push(id)
+  }
+  async deleteExpired(input: { now: Date; googleInactiveBefore: Date }) {
+    this.deleteExpiredArgs.push(input)
+    return 2
   }
 }
 
@@ -78,14 +107,25 @@ class FakeAssistant implements Assistant {
   }
 }
 
-function chatSetup(overrides: { secret?: () => string } = {}) {
+function chatSetup(
+  overrides: { secret?: () => string; authenticate?: () => Promise<AccountRecord | null> } = {},
+) {
   const assistant = new FakeAssistant()
   const rateLimits = new MemoryRateLimits()
+  const accounts = new FakeAccounts(rateLimits.order)
   const logs: LogEntry[] = []
   let secretReads = 0
+  let authCalls = 0
   const handler = createChatHandler({
     assistant,
     rateLimits,
+    accounts,
+    authenticate:
+      overrides.authenticate ??
+      (async () => {
+        authCalls += 1
+        return ACCOUNT
+      }),
     config,
     ipHashSecret:
       overrides.secret ??
@@ -96,7 +136,15 @@ function chatSetup(overrides: { secret?: () => string } = {}) {
     now: () => NOW,
     log: (entry) => logs.push(entry),
   })
-  return { handler, assistant, rateLimits, logs, secretReads: () => secretReads }
+  return {
+    handler,
+    assistant,
+    rateLimits,
+    accounts,
+    logs,
+    secretReads: () => secretReads,
+    authCalls: () => authCalls,
+  }
 }
 
 function chatRequest(
@@ -118,6 +166,46 @@ const VALID = { sessionId: SESSION_ID, message: "Quando cai o repasse?" }
 // ---------- POST /api/chat ----------
 
 describe("createChatHandler", () => {
+  it("answers 401 without an account, before reading the body or counting the rate limit", async () => {
+    const { handler, assistant, rateLimits, accounts, logs } = chatSetup({
+      authenticate: async () => null,
+    })
+    const req = chatRequest(VALID, { contentType: "text/plain" })
+    const res = await handler(req)
+    expect(res.status).toBe(401)
+    expect(await res.json()).toEqual({ error: UNAUTHENTICATED })
+    expect(req.bodyUsed).toBe(false)
+    expect(rateLimits.hits).toBe(0)
+    expect(accounts.touched).toEqual([])
+    expect(assistant.inputs).toEqual([])
+    expect(logs).toEqual([expect.objectContaining({ route: "/api/chat", status: 401 })])
+    expect(logs[0]?.accountId).toBeUndefined()
+  })
+
+  it("touches the account once, after the rate limit", async () => {
+    const { handler, rateLimits, accounts, authCalls } = chatSetup()
+    expect((await handler(chatRequest(VALID))).status).toBe(200)
+    expect(accounts.touched).toEqual([ACCOUNT.id])
+    expect(rateLimits.order).toEqual(["hit", "hit", "touchLastSeen"])
+    expect(authCalls()).toBe(1)
+  })
+
+  it("does not touch the account when the rate limit refuses the request", async () => {
+    const { handler, accounts } = chatSetup()
+    for (let i = 1; i <= 11; i += 1) await handler(chatRequest(VALID))
+    expect(accounts.touched).toHaveLength(10)
+  })
+
+  it("maps a database failure inside authenticate to 503", async () => {
+    const { handler, rateLimits } = chatSetup({
+      authenticate: async () => {
+        throw Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" })
+      },
+    })
+    expect((await handler(chatRequest(VALID))).status).toBe(503)
+    expect(rateLimits.hits).toBe(0)
+  })
+
   it("answers a valid request with exactly status, answer and sources", async () => {
     const { handler, assistant } = chatSetup()
     const profile = { name: "Pizzaria Bella", city: "Recife" }
@@ -283,6 +371,16 @@ describe("request logs", () => {
     expect(logs[0]?.error).toBeUndefined()
   })
 
+  it("carry the accountId of the session and never the email", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    await handler(chatRequest(VALID))
+    assistant.failWith = new LlmQuotaError("detalhe")
+    await handler(chatRequest(VALID))
+    expect(logs).toHaveLength(2)
+    for (const entry of logs) expect(entry.accountId).toBe(ACCOUNT.id)
+    expect(JSON.stringify(logs)).not.toContain("MARCADOR-EMAIL")
+  })
+
   it("log only the error class name on failure", async () => {
     const { handler, assistant, logs } = chatSetup()
     assistant.failWith = new LlmQuotaError("detalhe do provedor")
@@ -307,6 +405,7 @@ describe("request logs", () => {
 
     const history = createHistoryHandler({
       sessions: new FakeSessions(),
+      authenticate: async () => ACCOUNT,
       log: (entry) => logs.push(entry),
     })
     await history(new Request(`http://localhost/api/sessions/${SESSION_ID}/messages`), {
@@ -315,7 +414,13 @@ describe("request logs", () => {
 
     expect(logs.length).toBeGreaterThanOrEqual(14)
     const text = JSON.stringify(logs)
-    for (const secret of ["MARCADOR-SECRETO-123", "MARCADOR-PERFIL", SESSION_ID, IP]) {
+    for (const secret of [
+      "MARCADOR-SECRETO-123",
+      "MARCADOR-PERFIL",
+      "MARCADOR-EMAIL",
+      SESSION_ID,
+      IP,
+    ]) {
       expect(text).not.toContain(secret)
     }
   })
@@ -385,9 +490,17 @@ class FakeSessions implements SessionRepository {
   }
 }
 
-function historyCall(id: string, sessions = new FakeSessions()) {
+function historyCall(
+  id: string,
+  sessions = new FakeSessions(),
+  authenticate: () => Promise<AccountRecord | null> = async () => ACCOUNT,
+) {
   const logs: LogEntry[] = []
-  const handler = createHistoryHandler({ sessions, log: (entry) => logs.push(entry) })
+  const handler = createHistoryHandler({
+    sessions,
+    authenticate,
+    log: (entry) => logs.push(entry),
+  })
   const res = handler(new Request(`http://localhost/api/sessions/${id}/messages`), {
     params: Promise.resolve({ id }),
   })
@@ -395,6 +508,26 @@ function historyCall(id: string, sessions = new FakeSessions()) {
 }
 
 describe("createHistoryHandler", () => {
+  it("answers 401 without an account, without touching the database", async () => {
+    const { res, sessions, logs } = historyCall(SESSION_ID, new FakeSessions(), async () => null)
+    const response = await res
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: UNAUTHENTICATED })
+    expect(sessions.calls).toEqual([])
+    expect(logs).toEqual([expect.objectContaining({ status: 401 })])
+  })
+
+  it("answers 401 before validating the id", async () => {
+    const { res } = historyCall("nao-e-uuid", new FakeSessions(), async () => null)
+    expect((await res).status).toBe(401)
+  })
+
+  it("logs the accountId", async () => {
+    const { res, logs } = historyCall(SESSION_ID)
+    await res
+    expect(logs[0]?.accountId).toBe(ACCOUNT.id)
+  })
+
   it("returns the profile and every message in order, with ISO dates", async () => {
     const { res, sessions, logs } = historyCall(SESSION_ID)
     const response = await res
@@ -511,10 +644,12 @@ describe("createHealthHandler", () => {
 function cleanupSetup() {
   const sessions = new FakeSessions()
   const rateLimits = new MemoryRateLimits()
+  const accounts = new FakeAccounts()
   const logs: LogEntry[] = []
   const handler = createCleanupHandler({
     sessions,
     rateLimits,
+    accounts,
     config,
     cronSecret: () => "segredo-do-cron",
     now: () => NOW,
@@ -526,7 +661,7 @@ function cleanupSetup() {
         headers: authorization === undefined ? {} : { authorization },
       }),
     )
-  return { call, sessions, rateLimits, logs }
+  return { call, sessions, rateLimits, accounts, logs }
 }
 
 describe("createCleanupHandler", () => {
@@ -537,9 +672,10 @@ describe("createCleanupHandler", () => {
     ["a different scheme", "Basic segredo-do-cron"],
     ["the bare secret", "segredo-do-cron"],
   ])("answers 401 with %s and calls no repository", async (_label, authorization) => {
-    const { call, sessions, rateLimits, logs } = cleanupSetup()
+    const { call, sessions, rateLimits, accounts, logs } = cleanupSetup()
     const res = await call(authorization)
     expect(res.status).toBe(401)
+    expect(accounts.deleteExpiredArgs).toEqual([])
     expect(((await res.json()) as { error: string }).error).toMatch(/\S/)
     expect(sessions.calls).toEqual([])
     expect(rateLimits.deletedBefore).toEqual([])
@@ -550,9 +686,21 @@ describe("createCleanupHandler", () => {
     const { call, sessions, rateLimits } = cleanupSetup()
     const res = await call("Bearer segredo-do-cron")
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ deletedSessions: 3, deletedRateLimits: 4 })
+    expect(await res.json()).toEqual({
+      deletedSessions: 3,
+      deletedRateLimits: 4,
+      deletedAccounts: 2,
+    })
     expect(sessions.deleteInactiveArgs).toEqual([new Date("2026-10-30T12:00:15.000Z")])
     expect(rateLimits.deletedBefore).toEqual([new Date("2026-11-04T12:00:15.000Z")])
+  })
+
+  it("deletes expired demos and Google accounts idle for 180 days", async () => {
+    const { call, accounts } = cleanupSetup()
+    await call("Bearer segredo-do-cron")
+    expect(accounts.deleteExpiredArgs).toEqual([
+      { now: NOW, googleInactiveBefore: new Date("2026-05-10T12:00:15.000Z") },
+    ])
   })
 })
 

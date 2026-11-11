@@ -2,6 +2,7 @@ import "server-only"
 import { type AppConfig, config } from "@/config"
 import { createAssistant } from "@/core/assistant"
 import type {
+  AccountRepository,
   Assistant,
   ChunkRepository,
   LlmClient,
@@ -9,6 +10,7 @@ import type {
   SessionRepository,
 } from "@/core/types"
 import {
+  createAccountRepository,
   createChunkRepository,
   createRateLimitRepository,
   createSessionRepository,
@@ -22,6 +24,7 @@ export type Container = {
   chunks: ChunkRepository
   sessions: SessionRepository
   rateLimits: RateLimitRepository
+  accounts: AccountRepository
   assistant: Assistant
 }
 
@@ -36,12 +39,14 @@ export function getContainer(): Container {
     const chunks = createChunkRepository(sql)
     const sessions = createSessionRepository(sql)
     const rateLimits = createRateLimitRepository(sql)
+    const accounts = createAccountRepository(sql)
     container = {
       config,
       llm,
       chunks,
       sessions,
       rateLimits,
+      accounts,
       assistant: createAssistant({ llm, chunks, sessions, config }),
     }
   }

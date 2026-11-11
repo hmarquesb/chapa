@@ -28,12 +28,15 @@ npm run build       # next build
 ## Verificação manual local
 
 ```bash
-npm run dev                                                          # http://localhost:3000
+npm run dev                                                          # http://localhost:3000 (pede AUTH_SECRET)
 npm run chat -- --nome "Pizzaria Bella" --plano "Plano Próprio" --debug  # ⚠️ chama a API
 npm run chat -- --sessao <uuid> --debug                              # retoma uma sessão
 ```
 
 - O `--debug` mostra a pergunta reescrita, os trechos com score semântico e textual, as chamadas, os tokens e a latência. É o jeito mais rápido de entender por que uma resposta caiu no fallback.
+- **Login:** sem cookie, `/` leva a `/entrar`. "Testar como demo" leva ao chat, com a faixa "Conta de demonstração. Ela e as conversas são apagadas em 7 dias." e o menu da conta. Nas ferramentas do navegador, o cookie `authjs.session-token` é `HttpOnly` e `SameSite=Lax`. "Sair" volta a `/entrar`, e abrir `/` de novo leva a `/entrar`. A 6ª demo do dia no mesmo IP mostra "Muitas contas de demonstração criadas a partir desta rede hoje. Entre com Google para continuar testando." (no local, todos os pedidos dividem o IP). `POST /api/chat` sem cookie responde `401`.
+- **Google em `localhost`** (pessoa, com o cliente OAuth no `.env.local`): "Entrar com Google" cria a conta só com o `sub` e o e-mail, e o menu mostra o e-mail. Sem as credenciais do Google, a tela mostra só "Testar como demo".
+- `npm run chat` e `npm run eval` não passam pelo login.
 - Na interface, confira pelo menos: uma pergunta respondida com fontes, uma fora do escopo (fallback), uma com CPF fictício (bloqueio), o recarregar da página (histórico volta), o link de continuação e o botão "Nova conversa".
 - O `dev` roda no Neon, que suspende a computação depois de 5 min ocioso: a primeira requisição depois disso pode demorar alguns segundos.
 - Fora da Vercel não há cabeçalho de IP, então todas as requisições locais caem no mesmo balde do rate limit.
@@ -82,7 +85,11 @@ Regras:
 npm run smoke -- --url https://<deploy>.vercel.app   # ⚠️ chama a demo publicada
 ```
 
-Só com autorização: contra a produção, ele gasta a cota do Gemini da demo. O passo a passo do teste manual em produção está no [`DEPLOY.md`](../DEPLOY.md#9-teste-manual-no-navegador).
+Só com autorização: contra a produção, ele gasta a cota do Gemini da demo.
+
+Passos: `GET /api/health`; `POST /api/chat` sem cookie → `401`; `GET /entrar` → `200`; entrar como demo (`GET /api/auth/csrf` e `POST /api/auth/callback/demo`) → cookie de sessão; as três mensagens (respondida, fallback e CPF bloqueado) com o cookie; o histórico com o cookie; `GET /api/cron/cleanup` sem `Authorization` → `401`; `GET /` com o cookie e os cabeçalhos de segurança. O smoke nunca imprime o cookie nem o `csrfToken`.
+
+**Cada rodada cria uma conta demo e gasta 1 das 5 demos do IP no dia (UTC).** Na 6ª rodada do dia, o passo do login falha com a dica do limite: rode de novo no dia seguinte ou de outra rede. Também funciona contra o `npm run dev` (`--url http://localhost:3000`). O passo a passo do teste manual em produção está no [`DEPLOY.md`](../DEPLOY.md#9-teste-manual-no-navegador).
 
 ## Regras de portão
 

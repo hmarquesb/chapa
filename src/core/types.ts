@@ -94,11 +94,36 @@ export interface SessionRepository {
   deleteInactive(olderThan: Date): Promise<number>
 }
 
+// ---------- Contas ----------
+export type AccountKind = "google" | "demo"
+
+export type AccountRecord = {
+  id: string
+  kind: AccountKind
+  email: string | null // só google
+  profile: RestaurantProfile
+  createdAt: Date
+  lastSeenAt: Date
+  expiresAt: Date | null // só demo
+}
+
+export interface AccountRepository {
+  // Cria a conta ou, se o sub já existe, atualiza o e-mail e o last_seen_at.
+  upsertGoogle(input: { googleSub: string; email: string }): Promise<AccountRecord>
+  createDemo(input: { expiresAt: Date; profile: RestaurantProfile }): Promise<AccountRecord>
+  // null se a conta não existe ou se expires_at <= now.
+  findActive(id: string, now: Date): Promise<AccountRecord | null>
+  touchLastSeen(id: string): Promise<void>
+  // Demo com expires_at <= now e Google com last_seen_at < googleInactiveBefore. Devolve quantas.
+  deleteExpired(input: { now: Date; googleInactiveBefore: Date }): Promise<number>
+}
+
 // ---------- Rate limit ----------
-export type RateLimitBucket = "minute" | "day"
+export type RateLimitBucket = "minute" | "day" | "demo_day" | "account_day"
 
 export interface RateLimitRepository {
-  hit(input: { ipHash: string; bucket: RateLimitBucket; windowStart: Date }): Promise<number>
+  // key: HMAC do IP (minute, day, demo_day) ou id da conta (account_day).
+  hit(input: { key: string; bucket: RateLimitBucket; windowStart: Date }): Promise<number>
   deleteBefore(date: Date): Promise<number>
 }
 

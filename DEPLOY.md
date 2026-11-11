@@ -18,9 +18,9 @@ Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Su
 | 2 | GitHub: CI verde e visibilidade | Pessoa | `gh run list --branch main --limit 1` → `success`; varredura de segredos vazia |
 | 3 | Supabase `prod`: link e migração | Orquestrador (H5) | `db push` sem erro; RLS ligado nas 4 tabelas e 0 policies |
 | 4 | Ingestão no `prod` | Orquestrador (H5) | Total impresso igual ao `count` e ao `/api/health` do passo 6 |
-| 5 | Projeto e variáveis na Vercel | Pessoa | 4 variáveis em Production e 4 em Preview, nenhuma `NEXT_PUBLIC_` |
-| 6 | Primeiro deploy de produção + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <produção>` → 7 ✅ |
-| 7 | Preview + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <preview>` → 7 ✅, contra o `dev` |
+| 5 | Projeto e variáveis na Vercel | Pessoa | 7 variáveis em Production e 5 em Preview, nenhuma `NEXT_PUBLIC_` (ver "Login com Google") |
+| 6 | Primeiro deploy de produção + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <produção>` → 10 ✅ |
+| 7 | Preview + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <preview>` → 10 ✅, contra o `dev` |
 | 8 | Cron | Pessoa | Cron listado; log da primeira execução com status 200 |
 | 9 | Teste manual no navegador | Pessoa | Checklist do passo 9 inteiro marcado |
 | 10 | Registrar a URL de produção | Pessoa ou orquestrador | Seção "Links da demo" preenchida |
@@ -171,12 +171,14 @@ A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkCon
    | `DATABASE_URL` | pooler do **`prod`** (Supabase), porta 6543 | string com pooler do **`dev`** (Neon, host com `-pooler`) |
    | `IP_HASH_SECRET` | `openssl rand -hex 32` | outro `openssl rand -hex 32` |
    | `CRON_SECRET` | `openssl rand -hex 32` | outro `openssl rand -hex 32` |
+   | `AUTH_SECRET` | `openssl rand -base64 33` | outro `openssl rand -base64 33` |
+   | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | do cliente OAuth (ver "Login com Google") | **não criar**: as URLs dos previews mudam a cada deploy e não podem ser cadastradas no Google, então o preview fica só com a demo |
    | `CHAT_MODEL`, `FAST_MODEL`, `EMBEDDING_MODEL` | não criar (valem os padrões de `src/config.ts`) | não criar |
 
    Nenhuma variável com prefixo `NEXT_PUBLIC_`. Gere os segredos direto no terminal e cole no painel; não os salve em arquivo do repositório. O `CRON_SECRET` só pode ter letras e números (vai num header HTTP); o `openssl rand -hex` já garante isso.
 5. **Settings → Deployment Protection:** manter a **Standard Protection** (Vercel Authentication nos previews, produção pública). Em **Protection Bypass for Automation**, gerar um segredo para o smoke do passo 7.
 
-**Verificação (RNF2):** a lista de variáveis mostra 4 em Production e 4 em Preview, nenhuma `NEXT_PUBLIC_`; abrindo o valor do `DATABASE_URL` de Preview no painel, o host é o do Neon (termina em `neon.tech`), nunca o pooler do Supabase com o usuário `postgres.<ref>` do `prod`. Mudança de variável só vale para deploys novos: depois de editar, faça **Redeploy**.
+**Verificação (RNF2):** a lista de variáveis mostra 7 em Production e 5 em Preview (sem `AUTH_GOOGLE_*`), nenhuma `NEXT_PUBLIC_`; abrindo o valor do `DATABASE_URL` de Preview no painel, o host é o do Neon (termina em `neon.tech`), nunca o pooler do Supabase com o usuário `postgres.<ref>` do `prod`. Mudança de variável só vale para deploys novos: depois de editar, faça **Redeploy**.
 
 ## 6. Primeiro deploy de produção
 
@@ -188,7 +190,7 @@ A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkCon
    npm run smoke -- --url https://<projeto>.vercel.app
    ```
 
-**Verificação:** os 7 passos aparecem com ✅ e o comando sai com código 0. O passo 1 mostra o mesmo número de trechos do passo 4.
+**Verificação:** os 10 passos aparecem com ✅ e o comando sai com código 0. O passo 1 mostra o mesmo número de trechos do passo 4.
 
 O smoke faz 3 chamadas ao chat, com 2 s entre elas: a pergunta no escopo e a fora do escopo gastam cota do Gemini; a do CPF é barrada antes. Ele grava uma sessão fictícia no banco, que o cron apaga depois de 7 dias sem uso.
 
@@ -216,7 +218,7 @@ Se falhar:
    ```
 3. Fechar o PR **sem merge** e apagar a branch.
 
-**Verificação:** 7 ✅. O passo 1 mostra o total de trechos do `dev` no Neon (não do `prod`), e a sessão fictícia aparece no `dev`. Se só a primeira chamada falhar por timeout, repita uma vez: é o scale-to-zero do Neon acordando. Um 401 em todos os passos indica que o bypass não foi enviado ou está errado.
+**Verificação:** 10 ✅. O passo 1 mostra o total de trechos do `dev` no Neon (não do `prod`), e a sessão fictícia aparece no `dev`. Se só a primeira chamada falhar por timeout, repita uma vez: é o scale-to-zero do Neon acordando. Um 401 em todos os passos indica que o bypass não foi enviado ou está errado.
 
 ## 8. Cron
 
@@ -234,12 +236,14 @@ Se falhar:
 
 **Quem:** pessoa, na URL de produção, com o DevTools aberto na aba Network. Cobre também as checagens manuais da S07 que ficaram pendentes.
 
+- [ ] Sem cookie, `/` leva a `/entrar`. "Testar como demo" leva ao chat, com a faixa da conta de demonstração. "Entrar com Google" leva ao chat com o e-mail no menu da conta. "Sair" volta a `/entrar`.
+- [ ] Na aba Application, o cookie `__Secure-authjs.session-token` é `HttpOnly`, `Secure` e `SameSite=Lax`.
 - [ ] Preencher o perfil do restaurante com dados fictícios.
 - [ ] 3 perguntas no escopo (pode usar as 3 perguntas de exemplo): cada uma responde com fontes em badges.
 - [ ] 1 pergunta fora do escopo ("Me passa uma receita de lasanha?"): mostra o aviso de fallback, **sem** badges de fonte.
 - [ ] 1 mensagem bloqueada ("Meu CPF é 123.456.789-09"): aviso de bloqueio, e a mensagem não volta no histórico.
 - [ ] Recarregar a página: o histórico volta igual (sem a mensagem bloqueada).
-- [ ] **"Continuar depois":** copiar o link, abrir numa janela anônima e ver a mesma conversa; o `?sessao=` some da barra de endereço.
+- [ ] **"Continuar depois":** copiar o link, abrir numa janela anônima, entrar como demo e ver a mesma conversa; o `?sessao=` some da barra de endereço.
 - [ ] Abrir `/?sessao=` com um UUID que não existe: aviso de que a conversa não existe mais e começo de uma nova.
 - [ ] **"Nova conversa":** a tela limpa e a próxima mensagem abre outra sessão.
 - [ ] **Teclado:** só com Tab, Shift+Tab e Enter, dá para enviar uma mensagem, abrir o perfil e copiar o link; o foco fica visível.
@@ -255,6 +259,18 @@ Se falhar:
 **Quem:** pessoa ou orquestrador. Preencher a seção "Links da demo" no fim deste arquivo, num PR. A S10 leva a URL para o README.
 
 ---
+
+## Login com Google
+
+Desde o [ADR 0020](docs/adr/0020-login-google-e-conta-demo.md), o chat exige login. A conta demo funciona só com o `AUTH_SECRET`. O Google precisa de um cliente OAuth.
+
+1. **Cliente OAuth (pessoa).** No Google Cloud Console, num projeto do Google Cloud: **APIs e serviços → Tela de consentimento OAuth** (tipo externo, só os escopos `openid`, `email` e `profile`) e depois **Credenciais → Criar credenciais → ID do cliente OAuth**, do tipo **Aplicativo da Web**, com estes **URIs de redirecionamento autorizados**:
+   - `http://localhost:3000/api/auth/callback/google`
+   - `https://<produção>/api/auth/callback/google` (hoje `https://chapa-mu.vercel.app/api/auth/callback/google`)
+2. **Local (pessoa).** Colocar `AUTH_SECRET` (`openssl rand -base64 33`), `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` no `.env.local` do checkout principal, sem colar na conversa nem no terminal. Sem as duas do Google, a tela de entrada mostra só "Testar como demo". Com só uma delas, o servidor falha com "Defina AUTH_GOOGLE_ID e AUTH_GOOGLE_SECRET no .env.local".
+3. **Vercel (pessoa).** `AUTH_SECRET` em Production e Preview (valores diferentes); `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` **só em Production** (passo 5). Depois, **Redeploy**.
+4. **Migração antes do merge (orquestrador, H5 parcial).** A migração `*_accounts.sql` só acrescenta (a tabela `accounts` e os buckets `demo_day` e `account_day` no `rate_limits`), então o código antigo continua funcionando com ela. Aplicá-la no `dev` (seção "Banco `dev` no Neon") e no `prod` (passo 3) **antes** do merge do PR que traz o login. Depois do push, as consultas do passo 3 devem mostrar `accounts` com `relrowsecurity = true` e `policies = 0`.
+5. **Smoke.** Cada rodada cria uma conta demo e gasta 1 das 5 demos do IP no dia (UTC).
 
 ## Como desfazer
 

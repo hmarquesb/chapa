@@ -21,6 +21,7 @@ const RULES = {
   nextInCore: "rule 5: src/core must not import next or next/*",
   publicSecret:
     "rule 6: NEXT_PUBLIC_ variables must not contain KEY, SECRET, TOKEN or DATABASE in their name",
+  authOutsideAuth: "rule 7: only src/infra/auth may import next-auth or @auth/*",
 } as const
 
 function stripComments(source: string): string {
@@ -98,6 +99,12 @@ function checkFile(file: string, rawSource: string): string[] {
     if (isGenai && !isUnder(file, "src/infra/llm")) add(RULES.genaiOutsideLlm)
     if (isPostgres && !isUnder(file, "src/infra/db")) add(RULES.postgresOutsideDb)
     if (inCore && isPackage(specifier, "next")) add(RULES.nextInCore)
+    if (
+      (isPackage(specifier, "next-auth") || specifier.startsWith("@auth/")) &&
+      !isUnder(file, "src/infra/auth")
+    ) {
+      add(RULES.authOutsideAuth)
+    }
   }
 
   if (inServerLayer && !TEST_FILE.test(file) && !firstImportIsServerOnly(source)) {
@@ -179,6 +186,20 @@ describe("architecture checker", () => {
       `src/app/page.tsx: ${RULES.publicSecret}`,
     ])
     expect(checkFile("src/app/page.tsx", `process.env.${PUBLIC}SITE_NAME`)).toEqual([])
+  })
+
+  it("rule 7: only src/infra/auth imports next-auth or @auth/*", () => {
+    expect(checkFile("src/infra/auth/index.ts", SERVER_ONLY + imp("next-auth"))).toEqual([])
+    expect(
+      checkFile("src/infra/auth/config.ts", SERVER_ONLY + imp("next-auth/providers/google")),
+    ).toEqual([])
+    expect(checkFile("src/core/a.ts", SERVER_ONLY + imp("next-auth"))).toEqual([
+      `src/core/a.ts: ${RULES.authOutsideAuth}`,
+    ])
+    expect(checkFile("src/app/page.tsx", imp("@auth/core/errors"))).toEqual([
+      `src/app/page.tsx: ${RULES.authOutsideAuth}`,
+    ])
+    expect(checkFile("src/app/page.tsx", imp("@/infra/auth"))).toEqual([])
   })
 })
 

@@ -4,11 +4,12 @@ import type { RateLimitRepository } from "@/core/types"
 
 export function createRateLimitRepository(sql: Sql): RateLimitRepository {
   return {
-    async hit({ ipHash, bucket, windowStart }) {
+    async hit({ key, bucket, windowStart }) {
+      // The column keeps the name ip_hash; it holds the IP HMAC or the account id (key).
       // Atomic upsert: concurrent hits on the same window never lose an increment.
       const [row] = await sql<[{ count: number }]>`
         insert into public.rate_limits (ip_hash, bucket, window_start, count)
-        values (${ipHash}, ${bucket}, ${windowStart}, 1)
+        values (${key}, ${bucket}, ${windowStart}, 1)
         on conflict (ip_hash, bucket, window_start)
           do update set count = public.rate_limits.count + 1
         returning count

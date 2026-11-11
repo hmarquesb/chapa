@@ -1,4 +1,5 @@
 import { createChatHandler, createLazyHandler } from "@/app/api/_lib/handlers"
+import { getAuthenticatedAccount } from "@/infra/auth"
 import { getContainer } from "@/infra/container"
 import { requireEnv } from "@/infra/env"
 
@@ -9,10 +10,12 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 const handler = createLazyHandler({ route: "/api/chat", method: "POST" }, () => {
-  const { assistant, rateLimits, config } = getContainer()
+  const { assistant, rateLimits, accounts, config } = getContainer()
   return createChatHandler({
     assistant,
     rateLimits,
+    accounts,
+    authenticate: () => getAuthenticatedAccount(),
     config,
     ipHashSecret: () => requireEnv("IP_HASH_SECRET"),
   })

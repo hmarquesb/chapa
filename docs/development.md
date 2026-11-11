@@ -21,15 +21,22 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 - **Sem rede, sem banco e sem chave.** Passe fakes das portas. Nada de mock de módulo para o SDK do Gemini ou para o driver `postgres`: se um teste precisa deles, a lógica está na camada errada.
 - **TDD nas funções puras:** escreva o teste antes do código.
 - O pacote `server-only` é trocado por um stub (`test/stubs/server-only.ts`) no Vitest. Nos scripts, o `--conditions=react-server` faz o mesmo papel.
-- **`src/architecture.test.ts`** falha se uma camada importar o que não pode, se um arquivo de `src/core/` ou `src/infra/` não começar com `import "server-only"` ou se uma variável `NEXT_PUBLIC_` tiver nome de segredo. Regra nova de camada entra nesse teste.
+- **`src/architecture.test.ts`** falha se uma camada importar o que não pode, se um arquivo de `src/core/` ou `src/infra/` não começar com `import "server-only"` se uma variável `NEXT_PUBLIC_` tiver nome de segredo ou se um arquivo fora de `src/infra/auth/` importar `next-auth` ou `@auth/*`. Regra nova de camada entra nesse teste.
 - Dados de teste são sempre fictícios: nomes de restaurante inventados, CPFs e cartões de exemplo.
 
 ## Front-end
 
-- Uma página só (`src/app/page.tsx`), com os componentes do chat em `src/components/chat/` e os do shadcn em `src/components/ui/`.
+- A página do chat (`src/app/page.tsx`) e a tela de entrada (`src/app/entrar/page.tsx`), com os componentes do chat em `src/components/chat/`, os da entrada em `src/components/auth/` e os do shadcn em `src/components/ui/`. As Server Actions de login ficam em `src/app/auth-actions.ts` e chegam aos componentes por props.
 - Para adicionar um componente, use `npx shadcn add <componente>` (skill `shadcn`). Prefira as variantes prontas e as cores semânticas (`bg-primary`, `text-muted-foreground`).
 - Estado do chat em `src/lib/chat-state.ts`, chamadas à API em `src/lib/api-client.ts` e o `sessionId` em `src/lib/session-id.ts`. O navegador só fala com a nossa API.
 - Acessibilidade e responsividade fazem parte do pronto. Revise com a skill `web-design-guidelines`.
+
+## Login no ambiente local
+
+- Variáveis no `.env.local`: `AUTH_SECRET` (obrigatória; gere com `openssl rand -base64 33`) e, para o Google, `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET`, sempre juntas. Com só uma delas, o servidor falha com `MissingEnvError`.
+- **Sem o Google:** deixe as duas credenciais de fora. A tela de entrada mostra só "Testar como demo", que basta para testar o chat. Cada clique cria uma conta demo no banco `dev`, e um IP cria no máximo 5 por dia UTC (no local, sem `x-forwarded-for`, todos os pedidos dividem o mesmo contador).
+- **Com o Google:** crie um cliente OAuth do tipo "Aplicativo da Web" no Google Cloud com o redirecionamento `http://localhost:3000/api/auth/callback/google` (passo a passo no [`DEPLOY.md`](../DEPLOY.md)).
+- A lógica testável fica fora do Auth.js: `src/core/accounts.ts`, `src/infra/auth/callbacks.ts`, `src/infra/auth/env.ts` e os handlers, que recebem uma função `authenticate` e são testados com fakes. O Vitest nunca carrega o `next-auth`.
 
 ## Scripts locais
 

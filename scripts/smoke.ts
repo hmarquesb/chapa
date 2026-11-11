@@ -1,6 +1,7 @@
 // Teste de fumaça de um ambiente publicado (S09, RF1). Fala só com a API pública do deploy.
-// ⚠️ Faz 3 chamadas ao chat (2 delas gastam cota do Gemini) e grava uma sessão fictícia no
-// banco daquele ambiente: rode só com autorização.
+// ⚠️ Faz 3 chamadas ao chat (2 delas gastam cota do Gemini), grava uma sessão fictícia no
+// banco daquele ambiente e cria uma conta demo (gasta 1 das 5 demos do IP no dia): rode só com
+// autorização. Nunca imprime o cookie de sessão nem o csrfToken.
 // npm run smoke -- --url https://<deploy>.vercel.app
 // Deploy com Deployment Protection (preview): exporte VERCEL_AUTOMATION_BYPASS_SECRET no shell.
 import { randomUUID } from "node:crypto"
@@ -15,10 +16,14 @@ import {
   checkChatAnswered,
   checkChatFallback,
   checkCronUnauthorized,
+  checkDemoSignIn,
   checkHealth,
   checkHistory,
   checkHomePage,
+  checkSignInPage,
+  checkUnauthenticatedChat,
   formatStepLine,
+  mergeCookies,
   parseBaseUrl,
   SMOKE_MESSAGES,
   SMOKE_PROFILE,
@@ -43,17 +48,22 @@ async function readBody(response: Response): Promise<unknown> {
 }
 
 // Sem seguir redirects: um deploy protegido redireciona para o login da Vercel, e isso tem
-// que aparecer como falha, não como a página de login respondendo 200.
+// que aparecer como falha, não como a página de login respondendo 200. O login demo também
+// responde com um redirecionamento, que o checkDemoSignIn lê.
+// Os cookies de cada resposta entram no pote (jar), enviado nos pedidos seguintes.
 async function request(
   url: string,
-  init: RequestInit & { timeoutMs?: number },
+  init: RequestInit & { timeoutMs?: number; headers?: Record<string, string> },
+  jar: { cookie: string },
 ): Promise<SmokeResponse> {
-  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...rest } = init
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, headers = {}, ...rest } = init
   const response = await fetch(url, {
     ...rest,
+    headers: jar.cookie === "" ? headers : { ...headers, cookie: jar.cookie },
     redirect: "manual",
     signal: AbortSignal.timeout(timeoutMs),
   })
+  jar.cookie = mergeCookies(jar.cookie, response.headers)
   return { status: response.status, headers: response.headers, body: await readBody(response) }
 }
 
@@ -83,19 +93,62 @@ async function main(): Promise<void> {
   const sessionId = randomUUID()
   const at = (path: string) => `${base.url}${path}`
 
-  const chat = (message: string) =>
-    request(at("/api/chat"), {
-      method: "POST",
-      headers: { ...commonHeaders, "content-type": "application/json" },
-      body: JSON.stringify({ sessionId, message, profile: SMOKE_PROFILE }),
-      timeoutMs: CHAT_TIMEOUT_MS,
-    })
-  const get = (path: string) => request(at(path), { method: "GET", headers: commonHeaders })
+  // Sem cookie: os passos 1 a 3 (e o 7) rodam como um visitante anônimo.
+  const anonymous = { cookie: "" }
+  // Com o cookie da conta demo criada no passo 4.
+  const signedIn = { cookie: "" }
+
+  const chat = (message: string, jar = signedIn) =>
+    request(
+      at("/api/chat"),
+      {
+        method: "POST",
+        headers: { ...commonHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ sessionId, message, profile: SMOKE_PROFILE }),
+        timeoutMs: CHAT_TIMEOUT_MS,
+      },
+      jar,
+    )
+  const get = (path: string, jar = anonymous) =>
+    request(at(path), { method: "GET", headers: commonHeaders }, jar)
+
+  // GET /api/auth/csrf (guarda o cookie e o csrfToken) e POST /api/auth/callback/demo.
+  async function signInAsDemo(): Promise<CheckResult> {
+    const csrf = await get("/api/auth/csrf", signedIn)
+    const body = csrf.body
+    const csrfToken =
+      typeof body === "object" && body !== null && "csrfToken" in body ? body.csrfToken : null
+    if (csrf.status !== 200 || typeof csrfToken !== "string") {
+      return { ok: false, reason: `GET /api/auth/csrf respondeu ${csrf.status} sem csrfToken` }
+    }
+    const res = await request(
+      at("/api/auth/callback/demo"),
+      {
+        method: "POST",
+        headers: { ...commonHeaders, "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ csrfToken, callbackUrl: "/" }).toString(),
+      },
+      signedIn,
+    )
+    return checkDemoSignIn(res)
+  }
 
   const steps: Step[] = [
     {
       title: "GET /api/health",
       run: async () => checkHealth(await get("/api/health")),
+    },
+    {
+      title: "POST /api/chat sem cookie → 401",
+      run: async () => checkUnauthenticatedChat(await chat(SMOKE_MESSAGES.inScope, anonymous)),
+    },
+    {
+      title: "GET /entrar → 200",
+      run: async () => checkSignInPage(await get("/entrar")),
+    },
+    {
+      title: "Entrar como demo (POST /api/auth/callback/demo) → cookie de sessão",
+      run: signInAsDemo,
     },
     {
       title: "POST /api/chat no escopo → answered com fontes",
@@ -117,15 +170,16 @@ async function main(): Promise<void> {
     },
     {
       title: "GET /api/sessions/{id}/messages → 4 mensagens",
-      run: async () => checkHistory(await get(`/api/sessions/${sessionId}/messages`), sessionId),
+      run: async () =>
+        checkHistory(await get(`/api/sessions/${sessionId}/messages`, signedIn), sessionId),
     },
     {
       title: "GET /api/cron/cleanup sem Authorization → 401",
       run: async () => checkCronUnauthorized(await get("/api/cron/cleanup")),
     },
     {
-      title: "GET / com Referrer-Policy e X-Content-Type-Options",
-      run: async () => checkHomePage(await get("/")),
+      title: "GET / com o cookie, Referrer-Policy e X-Content-Type-Options",
+      run: async () => checkHomePage(await get("/", signedIn)),
     },
   ]
 

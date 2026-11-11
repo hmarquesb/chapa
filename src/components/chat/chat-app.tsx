@@ -26,6 +26,12 @@ import {
 import type { RestaurantProfile } from "@/lib/types"
 
 const EXPIRED_SESSION_NOTICE = "Esta conversa não existe mais. Começamos uma nova."
+const SIGN_IN_PATH = "/entrar"
+
+// 401: the account session ended (signed out elsewhere, demo expired, account deleted).
+function isSignedOut(result: { ok: boolean; status?: number }): boolean {
+  return !result.ok && result.status === 401
+}
 
 // localStorage can throw (private mode, blocked site data). Without it the session simply
 // does not survive a reload; the chat keeps working.
@@ -101,6 +107,10 @@ export function ChatApp() {
     setLoadingHistory(true)
     void fetchHistory(initialId).then((result) => {
       if (cancelled || sessionRef.current !== initialId) return
+      if (isSignedOut(result)) {
+        window.location.assign(SIGN_IN_PATH)
+        return
+      }
       setLoadingHistory(false)
       if (result.ok) {
         writeStorage(SESSION_STORAGE_KEY, initialId)
@@ -146,6 +156,10 @@ export function ChatApp() {
       message,
       ...(hasProfileData(cleanProfile) ? { profile: cleanProfile } : {}),
     })
+    if (isSignedOut(result)) {
+      window.location.assign(SIGN_IN_PATH)
+      return
+    }
     if (sessionRef.current !== id) return
 
     if (result.ok) {

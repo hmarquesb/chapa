@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { MissingEnvError } from "@/core/errors"
 import {
+  toAccountRecord,
   toChunkCandidate,
   toProfile,
   toSessionRecord,
@@ -170,5 +171,61 @@ describe("@/infra/db module", () => {
     expect(typeof db.createRateLimitRepository).toBe("function")
     expect(() => db.getSql()).toThrow(MissingEnvError)
     await expect(db.closeSql()).resolves.toBeUndefined()
+  })
+})
+
+describe("toAccountRecord", () => {
+  const ACCOUNT_ID = "7a0f2b8c-1d2e-4f30-9a41-5b6c7d8e9f01"
+
+  it("maps a google account with an email and no expires_at", () => {
+    expect(
+      toAccountRecord({
+        id: ACCOUNT_ID,
+        kind: "google",
+        email: "dono@exemplo.com",
+        profile: { name: "Pizzaria Bella", extra: "x" },
+        created_at: CREATED,
+        last_seen_at: "2026-11-05T12:30:00.000Z",
+        expires_at: null,
+      }),
+    ).toEqual({
+      id: ACCOUNT_ID,
+      kind: "google",
+      email: "dono@exemplo.com",
+      profile: { name: "Pizzaria Bella" },
+      createdAt: CREATED,
+      lastSeenAt: ACTIVE,
+      expiresAt: null,
+    })
+  })
+
+  it("maps a demo account without an email and with expires_at", () => {
+    const record = toAccountRecord({
+      id: ACCOUNT_ID,
+      kind: "demo",
+      email: null,
+      profile: {},
+      created_at: CREATED,
+      last_seen_at: CREATED,
+      expires_at: "2026-11-12T12:00:00.000Z",
+    })
+    expect(record.kind).toBe("demo")
+    expect(record.email).toBeNull()
+    expect(record.expiresAt).toEqual(new Date("2026-11-12T12:00:00.000Z"))
+  })
+
+  it("turns an invalid profile into {}", () => {
+    for (const profile of [null, "texto", ["a"], 3]) {
+      const record = toAccountRecord({
+        id: ACCOUNT_ID,
+        kind: "demo",
+        email: null,
+        profile,
+        created_at: CREATED,
+        last_seen_at: CREATED,
+        expires_at: CREATED,
+      })
+      expect(record.profile).toEqual({})
+    }
   })
 })

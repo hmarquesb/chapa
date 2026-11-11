@@ -1,6 +1,6 @@
 # 0010. Usar um link de continuação da sessão em vez de login
 
-- **Status:** Aceito
+- **Status:** Substituído por [0020](0020-login-google-e-conta-demo.md)
 - **Data:** 2026-11-05
 
 ## Contexto

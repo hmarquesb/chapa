@@ -2,7 +2,7 @@
 
 Restaurantes parceiros da Rango, uma empresa de delivery fictícia, repetem as mesmas dúvidas operacionais, e a resposta está espalhada pela política de parceiros. O Chapa responde com RAG híbrido sobre essa base, cita as fontes e recusa o que está fora do escopo.
 
-**Demo:** https://chapa-mu.vercel.app
+**Demo:** https://chapa-mu.vercel.app. Para testar, clique em **"Testar como demo"**: uma conta de demonstração é criada na hora, sem preencher nada, e apagada em 7 dias com as conversas. Quem quiser guardar as conversas entra com Google.
 
 > **Restaurante (perfil: Cantina do Beto, Plano Próprio):** Qual é a comissão que eu pago por pedido?
 >
@@ -54,7 +54,7 @@ Algumas escolhas facilitam o desenvolvimento e mantêm o custo em zero, mas não
 
 | Decisão | Por que simplifica | Num produto real |
 |---|---|---|
-| Sem login: sessão anônima e um link de continuação ([ADR 0010](docs/adr/0010-link-de-continuacao-em-vez-de-login.md)) | Quem avalia testa a demo sem criar conta, e nenhum e-mail é guardado | Login do parceiro, com os dados vindos da conta |
+| Login com Google e uma conta demo por clique ([ADR 0020](docs/adr/0020-login-google-e-conta-demo.md)) | Quem avalia testa a demo sem criar conta; só o `sub` e o e-mail do Google são guardados | Login do parceiro no sistema da empresa, com papéis e várias lojas |
 | Perfil do restaurante preenchido num formulário | Dispensa integração com dados reais | Perfil lido da conta do parceiro |
 | Só parceiros atuais no escopo ([ADR 0011](docs/adr/0011-somente-parceiros-atuais.md)) | Uma base menor e uma avaliação mais focada | Também o público de cadastro, com base e tom próprios |
 | Base fictícia com 11 documentos escritos para o projeto | Conteúdo controlado e revisado, sem copiar páginas | Ingestão automática e atualizada da central de ajuda oficial |
@@ -113,7 +113,7 @@ npm run ingest                      # ⚠️ chama a API de embeddings e grava o
 npm run dev                         # http://localhost:3000
 ```
 
-- `.env.local`: `GEMINI_API_KEY`, `DATABASE_URL` (connection string com pooler em modo transação: no Neon, o host com `-pooler`), `DATABASE_URL_UNPOOLED` (a string direta do Neon, só para a Supabase CLI), `IP_HASH_SECRET` e `CRON_SECRET` (os dois com `openssl rand -hex 32`). `CHAT_MODEL`, `FAST_MODEL` e `EMBEDDING_MODEL` são opcionais.
+- `.env.local`: `GEMINI_API_KEY`, `DATABASE_URL` (connection string com pooler em modo transação: no Neon, o host com `-pooler`), `DATABASE_URL_UNPOOLED` (a string direta do Neon, só para a Supabase CLI), `IP_HASH_SECRET` e `CRON_SECRET` (os dois com `openssl rand -hex 32`) e `AUTH_SECRET` (com `openssl rand -base64 33`). `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` são opcionais e andam juntas: sem elas, a tela de entrada mostra só "Testar como demo" (o cliente OAuth do Google está no [`DEPLOY.md`](DEPLOY.md)). `CHAT_MODEL`, `FAST_MODEL` e `EMBEDDING_MODEL` são opcionais.
 - O `supabase/dev-bootstrap.sql` cria o que a migração espera e só o Supabase traz pronto (o schema `extensions` e os papéis `anon` e `authenticated`), e recusa rodar num projeto Supabase. Num projeto Supabase, pule o bootstrap. Passo a passo em [`DEPLOY.md`](DEPLOY.md), "Banco `dev` no Neon".
 - Para conversar pelo terminal e ver a busca por dentro (pergunta reescrita, trechos com score semântico e textual, chamadas, tokens e latência):
 
@@ -201,12 +201,13 @@ Uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding.
 
 | Item | Como funciona |
 |---|---|
-| Sessão anônima | `crypto.randomUUID()` no navegador, guardado no `localStorage`. Ao recarregar, o histórico vem de `GET /api/sessions/[id]/messages` |
+| Conta | A página exige login: Google ou uma conta demo criada a cada clique (7 dias, no máximo 5 por IP por dia). O cookie de sessão é `HttpOnly`, `SameSite=Lax` e vale 30 dias, e cada pedido confirma a conta no banco |
+| Sessão (conversa) | `crypto.randomUUID()` no navegador, guardado no `localStorage`. Ao recarregar, o histórico vem de `GET /api/sessions/[id]/messages` |
 | Mensagens recentes | Até 16 mensagens desde o último resumo vão inteiras para o modelo; acima disso, as 10 mais recentes |
 | Resumo persistido | Fica em `sessions.summary`, com o id da última mensagem resumida. Cada novo resumo parte do anterior |
 | Perfil do restaurante | Formulário com nome, plano, cozinha, cidade e horário, guardado em `sessions.profile` e enviado no prompt de sistema |
 | Link de continuação | `/?sessao=<id>` abre a mesma conversa em outro navegador. Ele funciona como credencial: a página usa `Referrer-Policy: no-referrer`, e o servidor não loga o id |
-| Expiração | O Vercel Cron diário apaga sessões sem mensagem nova há mais de 7 dias (com as mensagens) e as janelas de rate limit com mais de 2 dias |
+| Expiração | O Vercel Cron diário apaga sessões sem mensagem nova há mais de 7 dias (com as mensagens) as janelas de rate limit com mais de 2 dias, as contas demo vencidas e as contas Google sem acesso há 180 dias |
 
 Não há estado em memória entre requisições: histórico e resumo vêm do banco a cada mensagem.
 
@@ -379,10 +380,11 @@ Respostas ruins reais da avaliação, com a causa de cada uma.
 ## Segurança, privacidade e custos
 
 - **Chaves só no servidor.** O navegador fala só com a nossa API, nunca com o Gemini nem com o Supabase. Nenhuma variável secreta usa o prefixo `NEXT_PUBLIC_`.
-- **RLS sem policies.** O RLS está ligado nas 4 tabelas, sem nenhuma policy. Só o servidor, pelo driver `postgres`, lê e grava. A função de busca não pode ser executada pelos papéis `anon` e `authenticated`.
+- **Login.** O cookie de sessão é `HttpOnly`, `SameSite=Lax` e `Secure` em HTTPS, só com o id e o tipo da conta, e funciona como credencial. Das contas Google, só o `sub` e o e-mail verificado são guardados; demos vencidas e contas Google paradas há 180 dias são apagadas pelo cron.
+- **RLS sem policies.** O RLS está ligado nas 5 tabelas, sem nenhuma policy. Só o servidor, pelo driver `postgres`, lê e grava. A função de busca não pode ser executada pelos papéis `anon` e `authenticated`.
 - **IP como HMAC.** O rate limit guarda só o HMAC-SHA256 do IP, com o segredo `IP_HASH_SECRET`.
-- **Logs sem conteúdo.** Uma linha por requisição, com rota, status, latência, chamadas, tokens e o nome do erro. Nunca a mensagem, o perfil, o id da sessão ou o IP. O erro do provedor nunca chega ao navegador: a API responde com textos fixos em português.
-- **Link de continuação como credencial.** Quem tem o link lê a conversa. Por isso a página manda `Referrer-Policy: no-referrer`, o servidor não loga o id, e a sessão expira depois de 7 dias sem uso.
+- **Logs sem conteúdo.** Uma linha por requisição, com rota, status, latência, `accountId`, chamadas, tokens e o nome do erro. Nunca a mensagem, o perfil, o id da sessão, o IP ou o e-mail da conta. O erro do provedor nunca chega ao navegador: a API responde com textos fixos em português.
+- **Link de continuação como credencial.** Quem está logado e tem o link lê a conversa (a conversa passa a pertencer à conta numa próxima mudança). Por isso a página manda `Referrer-Policy: no-referrer`, o servidor não loga o id, e a sessão expira depois de 7 dias sem uso.
 - **Planos gratuitos.** Vercel Hobby, Supabase Free (só o `prod`), Neon Free (o `dev`, [ADR 0017](docs/adr/0017-neon-como-banco-dev.md)) e Gemini no plano gratuito. O Supabase pausa um projeto depois de 7 dias com pouca atividade; o cron diário mantém o `prod` ativo.
 - **Cota do Gemini.** Os limites valem por projeto do Google Cloud, não por chave: a demo, o eval e a CLI dividem a mesma cota se as chaves forem do mesmo projeto. O limite diário (RPD) zera à meia-noite do horário do Pacífico. No painel da conta, em 06/11/2026: `gemini-3.5-flash-lite` com 15 por minuto e 500 por dia; `gemini-embedding-001` com 100 por minuto e 1000 por dia. Isso dá perto de 160 mensagens por dia na demo ([`DEPLOY.md`](DEPLOY.md)). Ao estourar, a API responde 429 com um aviso em português.
 - **Uso dos dados pelo provedor.** No plano gratuito, o Google pode usar o conteúdo enviado para melhorar os produtos dele. Por isso a base só tem texto fictício, os testes usam só dados fictícios e a demo não deve receber dados reais.
@@ -396,7 +398,7 @@ Respostas ruins reais da avaliação, com a causa de cada uma.
 - **Fontes = arquivos recuperados.** As fontes mostradas são os arquivos de todos os trechos que passaram do `minScore`, não os que o modelo de fato usou. Na pergunta 122 da `v3`, a resposta sobre a comissão mostra também `02-repasse-financeiro.md`.
 - **Modelo de resposta leve.** O Flash-Lite responde todas as perguntas, por causa da cota ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)). As perguntas 126 e 134 da `v3` mostram o custo disso: o modelo devolveu o fallback com os trechos certos no contexto.
 - **Guardrails por expressão regular.** Pegam os padrões listados, não intenção. Um dado sensível escrito por extenso passa.
-- **Sem login.** O link de continuação é a única forma de levar a conversa para outro navegador, e quem tem o link lê a conversa.
+- **Conversa ainda sem dono.** Qualquer conta logada abre uma conversa pelo UUID do link de continuação. A ligação da conversa à conta é a próxima mudança.
 - **Rate limit local.** Fora da Vercel, sem cabeçalho de IP, todas as requisições caem no mesmo balde.
 
 **Próximos passos**
