@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/brand/site-footer"
 import { config } from "@/config"
 import { PRIVACY_NOTICE } from "@/lib/sign-in"
 
-export const metadata: Metadata = { title: "Privacidade · Chapa" }
+export const metadata: Metadata = { title: "Privacidade" }
 
 const STORED = [
   "O identificador e o e-mail da conta Google (a conta demo não tem e-mail).",

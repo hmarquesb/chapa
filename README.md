@@ -1,8 +1,12 @@
+<img src="public/brand/rango-logo.svg" alt="rango." height="48">
+
 # Chapa
 
 Restaurantes parceiros da Rango, uma empresa de delivery fictícia, repetem as mesmas dúvidas operacionais, e a resposta está espalhada pela política de parceiros. O Chapa responde com RAG híbrido sobre essa base, cita as fontes e recusa o que está fora do escopo.
 
-**Demo:** https://chapa-mu.vercel.app. Para testar, clique em **"Testar como demo"**: uma conta de demonstração é criada na hora, já com um restaurante de exemplo (Marmitaria Boa Panela, Plano Misto), e apagada em 7 dias com as conversas. Para ver a resposta mudar, abra "Editar perfil" e troque o plano. Quem quiser guardar as conversas entra com Google.
+**Demo:** https://chapa-mu.vercel.app. Para testar, clique em **"Testar como demo"**: uma conta de demonstração é criada na hora, já com um restaurante de exemplo (Marmitaria Boa Panela, Plano Misto), e apagada em 7 dias com as conversas. Para ver a resposta mudar, abra "Editar perfil" e troque o plano. Quem quiser guardar as conversas entra com Google. A identidade visual está em [`/marca`](https://chapa-mu.vercel.app/marca).
+
+![O chat do Chapa respondendo sobre repasse, com as fontes embaixo](docs/images/chat.png)
 
 > **Restaurante (perfil: Cantina do Beto, Plano Próprio):** Qual é a comissão que eu pago por pedido?
 >

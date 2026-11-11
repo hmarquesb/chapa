@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest"
 import { buildShotPlan, parseScreenshotArgs, SHOT_IDS } from "./shots"
 
 describe("buildShotPlan", () => {
-  it("planeja 6 ids x 2 temas x 2 viewports", () => {
+  it("planeja 7 ids x 2 temas x 2 viewports", () => {
     const plan = buildShotPlan()
-    expect(plan).toHaveLength(24)
-    expect(new Set(plan.map((shot) => shot.file)).size).toBe(24)
+    expect(plan).toHaveLength(28)
+    expect(new Set(plan.map((shot) => shot.file)).size).toBe(28)
   })
 
   it("nomeia o arquivo como id-tema-viewport.png", () => {

@@ -22,7 +22,8 @@
     "smoke": "node --env-file-if-exists=.env.local --import tsx scripts/smoke.ts",
     "db": "supabase",
     "spec": "openspec",
-    "changes": "node --import tsx scripts/changes.ts"
+    "changes": "node --import tsx scripts/changes.ts",
+    "brand:export": "node --import tsx scripts/export-brand.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
@@ -44,8 +45,10 @@
     "@fission-ai/openspec": "^1.17.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
+    "@types/opentype.js": "1.3.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "opentype.js": "2.0.0",
     "playwright": "1.65.0",
     "supabase": "^3.0.0",
     "tailwindcss": "^4",

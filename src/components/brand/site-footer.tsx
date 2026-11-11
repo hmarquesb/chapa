@@ -9,6 +9,10 @@ export function SiteFooter({ note }: { note?: string }) {
       <Link href="/privacidade" className="underline underline-offset-4">
         Privacidade
       </Link>
+      {" · "}
+      <Link href="/marca" className="underline underline-offset-4">
+        Marca
+      </Link>
     </footer>
   )
 }
