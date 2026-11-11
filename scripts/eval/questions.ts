@@ -3,7 +3,8 @@ import { LlmQuotaError } from "@/core/errors"
 import type { Assistant, AssistantReply, Usage } from "@/core/types"
 import { addUsage } from "@/core/usage"
 import { isPlanId } from "@/lib/plans"
-import { PROFILE_FIELDS, type RestaurantProfile } from "@/lib/types"
+import { parseProfileInput } from "@/lib/profile/parse"
+import type { RestaurantProfile } from "@/lib/types"
 import type { QuestionResult } from "./metrics"
 
 export type EvalQuestionType =
@@ -81,7 +82,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 // Valida um item e devolve os erros dele (lista vazia se estiver certo).
-function validateItem(item: unknown, index: number, knowledgeFiles: Set<string>): string[] {
+async function validateItem(
+  item: unknown,
+  index: number,
+  knowledgeFiles: Set<string>,
+): Promise<string[]> {
   if (!isRecord(item)) return [`Item ${index + 1}: precisa ser um objeto.`]
   const id = item.id
   const label = Number.isInteger(id) ? `Pergunta ${id}` : `Item ${index + 1}`
@@ -168,15 +173,12 @@ function validateItem(item: unknown, index: number, knowledgeFiles: Set<string>)
   if (item.perfil !== undefined) {
     if (!isRecord(item.perfil)) {
       add("perfil precisa ser um objeto.")
+    } else if (item.perfil.plan !== undefined && !isPlanId(item.perfil.plan)) {
+      add('perfil.plan precisa ser "proprio", "entrega" ou "misto".')
     } else {
-      const known: ReadonlySet<string> = new Set(PROFILE_FIELDS)
-      for (const [field, value] of Object.entries(item.perfil)) {
-        if (!known.has(field)) add(`perfil tem campo desconhecido "${field}".`)
-        else if (typeof value !== "string") add(`perfil.${field} precisa ser texto.`)
-        else if (field === "plan" && !isPlanId(value)) {
-          add('perfil.plan precisa ser "proprio", "entrega" ou "misto".')
-        }
-      }
+      // Mesmo parser do PUT /api/profile, do CLI e da conversão; o plano só é exigido acima.
+      const parsed = await parseProfileInput(item.perfil, { requirePlan: false })
+      if (!parsed.ok) add(`perfil inválido: ${parsed.error}`)
     }
   }
 
@@ -184,10 +186,10 @@ function validateItem(item: unknown, index: number, knowledgeFiles: Set<string>)
   return errors
 }
 
-export function validateQuestions(
+export async function validateQuestions(
   data: unknown,
   knowledgeFiles: string[],
-): { ok: true; questions: EvalQuestion[] } | { ok: false; errors: string[] } {
+): Promise<{ ok: true; questions: EvalQuestion[] } | { ok: false; errors: string[] }> {
   if (!Array.isArray(data)) {
     return { ok: false, errors: ["O arquivo precisa ser uma lista de perguntas."] }
   }
@@ -201,16 +203,16 @@ export function validateQuestions(
   const seenIds = new Set<unknown>()
   const counts = new Map<EvalQuestionType, number>()
   const factualSources = new Set<unknown>()
-  data.forEach((item, index) => {
-    errors.push(...validateItem(item, index, files))
-    if (!isRecord(item)) return
+  for (const [index, item] of data.entries()) {
+    errors.push(...(await validateItem(item, index, files)))
+    if (!isRecord(item)) continue
     if (seenIds.has(item.id)) errors.push(`Pergunta ${String(item.id)}: id repetido.`)
     seenIds.add(item.id)
     if (isQuestionType(item.tipo)) counts.set(item.tipo, (counts.get(item.tipo) ?? 0) + 1)
     if (item.tipo === "factual" && Array.isArray(item.fonte_esperada)) {
       for (const source of item.fonte_esperada) factualSources.add(source)
     }
-  })
+  }
 
   for (const [tipo, expected] of Object.entries(QUESTION_DISTRIBUTION)) {
     const count = counts.get(tipo as EvalQuestionType) ?? 0

@@ -187,7 +187,7 @@ async function loadQuestions(): Promise<EvalQuestion[]> {
     const detail = error instanceof Error ? error.message : String(error)
     throw new UsageError(`Não consegui ler eval/perguntas.json: ${detail}`)
   }
-  const validation = validateQuestions(data, knowledgeFiles)
+  const validation = await validateQuestions(data, knowledgeFiles)
   if (!validation.ok) {
     throw new UsageError(
       `eval/perguntas.json tem problemas:\n${validation.errors.map((e) => `- ${e}`).join("\n")}`,

@@ -193,9 +193,10 @@
     "tipo": "perfil",
     "pergunta": "Qual é a comissão que eu pago por pedido?",
     "perfil": {
+      "version": 2,
       "name": "Cantina do Beto",
       "plan": "proprio",
-      "city": "Campinas"
+      "location": { "uf": "SP", "cityCode": 3509502 }
     },
     "fonte_esperada": ["01-planos-e-taxas.md"],
     "deve_conter": ["11%"],
@@ -208,9 +209,10 @@
     "tipo": "perfil",
     "pergunta": "Quanto eu pago de mensalidade por mês?",
     "perfil": {
+      "version": 2,
       "name": "Sushi Kenzo",
       "plan": "entrega",
-      "cuisine": "Japonesa"
+      "cuisine": { "id": "japonesa" }
     },
     "fonte_esperada": ["01-planos-e-taxas.md"],
     "deve_conter": ["139"],
@@ -223,9 +225,10 @@
     "tipo": "perfil",
     "pergunta": "Qual comissão eu pago nos pedidos de clientes que ficam fora da minha área de entrega?",
     "perfil": {
+      "version": 2,
       "name": "Pastelaria Dona Lu",
       "plan": "misto",
-      "city": "Belo Horizonte"
+      "location": { "uf": "MG", "cityCode": 3106200 }
     },
     "fonte_esperada": ["01-planos-e-taxas.md"],
     "deve_conter": ["22%"],
@@ -237,6 +240,7 @@
     "tipo": "perfil",
     "pergunta": "Até quanto eu posso cobrar de taxa de entrega dos meus clientes?",
     "perfil": {
+      "version": 2,
       "name": "Hamburgueria Brasa",
       "plan": "proprio"
     },
@@ -250,6 +254,7 @@
     "tipo": "perfil",
     "pergunta": "Posso aceitar pagamento em dinheiro na entrega?",
     "perfil": {
+      "version": 2,
       "name": "Marmitaria Sabor Caseiro",
       "plan": "entrega"
     },

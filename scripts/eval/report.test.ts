@@ -61,7 +61,7 @@ const Q_PROFILE: EvalQuestion = {
   id: 4,
   tipo: "perfil",
   pergunta: "Qual é a minha comissão?",
-  perfil: { plan: "proprio" },
+  perfil: { version: 2, plan: "proprio" },
   fonte_esperada: ["01-planos-e-taxas.md"],
   deve_conter: ["11%"],
   nao_deve_conter: ["22%"],

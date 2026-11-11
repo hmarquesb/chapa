@@ -18,10 +18,10 @@ Esta change é a 2 de 3 do PRD `prd-chapa-perfil-estruturado.md`. Ela só começ
 
 ## 3. Banco, API e assistente
 
-- [ ] 3.1 Trocar o `toProfile` por `upgradeProfile` nos repositórios de conta e de conversa e acrescentar `profileNeedsReview` ao `AccountRecord` (decisão 5). Ajustar os testes dos mapeadores. Verificar com `npm test -- mappers` e `npm run typecheck`.
-- [ ] 3.2 Escrever os testes do handler de perfil (`GET` com `needsReview`; `PUT` v2 válido; `PUT` antigo; erros com `field: "cuisine"` e `"location"`) e depois ligar o `parseProfileUpdate` ao parser. Verificar com `npm test -- handlers validate`.
-- [ ] 3.3 Escrever os testes de `formatProfile` e `buildSystemInstruction` (cenários da spec `answer-generation`) e do assistente (`cityName` resolvido a partir do local). Depois, implementar a decisão 6. Verificar com `npm test -- prompts assistant`.
-- [ ] 3.4 Passar o `DEMO_PROFILE` para o v2 e ajustar `checkDemoProfile`, com os testes (local certo passa; local ausente ou diferente falha). Verificar com `npm test -- accounts smoke-checks`.
+- [x] 3.1 Trocar o `toProfile` por `upgradeProfile` nos repositórios de conta e de conversa e acrescentar `profileNeedsReview` ao `AccountRecord` (decisão 5). Ajustar os testes dos mapeadores. Verificar com `npm test -- mappers` e `npm run typecheck`.
+- [x] 3.2 Escrever os testes do handler de perfil (`GET` com `needsReview`; `PUT` v2 válido; `PUT` antigo; erros com `field: "cuisine"` e `"location"`) e depois ligar o `parseProfileUpdate` ao parser. Verificar com `npm test -- handlers validate`.
+- [x] 3.3 Escrever os testes de `formatProfile` e `buildSystemInstruction` (cenários da spec `answer-generation`) e do assistente (`cityName` resolvido a partir do local). Depois, implementar a decisão 6. Verificar com `npm test -- prompts assistant`.
+- [x] 3.4 Passar o `DEMO_PROFILE` para o v2 e ajustar `checkDemoProfile`, com os testes (local certo passa; local ausente ou diferente falha). Verificar com `npm test -- accounts smoke-checks`.
 
 ## 4. Interface
 
@@ -34,8 +34,8 @@ Esta change é a 2 de 3 do PRD `prd-chapa-perfil-estruturado.md`. Ela só começ
 
 ## 5. CLI e eval
 
-- [ ] 5.1 Implementar o `--perfil` no `scripts/chat.ts` (decisão 8), com o erro para as flags removidas. Verificar com `npm run typecheck`. A rodada real fica na 7.3.
-- [ ] 5.2 Validar o `perfil` do eval com o parser e atualizar as perguntas 122 a 126 (decisão 8), com os testes do cenário "Perfil no formato antigo". Verificar com `npm test -- questions` e com `git diff eval/perguntas.json`, que só pode mostrar essas mudanças.
+- [x] 5.1 Implementar o `--perfil` no `scripts/chat.ts` (decisão 8), com o erro para as flags removidas. Verificar com `npm run typecheck`. A rodada real fica na 7.3.
+- [x] 5.2 Validar o `perfil` do eval com o parser e atualizar as perguntas 122 a 126 (decisão 8), com os testes do cenário "Perfil no formato antigo". Verificar com `npm test -- questions` e com `git diff eval/perguntas.json`, que só pode mostrar essas mudanças.
 
 ## 6. Documentação
 
