@@ -33,6 +33,12 @@ export type AppConfig = {
     rateLimitPerDay: number
   }
   sessionTtlDays: number
+  accounts: {
+    sessionMaxAgeDays: number // validade do cookie de sessão
+    demoTtlDays: number // vida da conta demo
+    demoAccountsPerIpPerDay: number
+    googleInactiveDays: number // conta Google sem acesso é apagada
+  }
   llm: {
     retries: number // tentativas no total, incluindo a primeira
     baseDelayMs: number
@@ -122,6 +128,12 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       rateLimitPerDay: 100,
     },
     sessionTtlDays: 7,
+    accounts: {
+      sessionMaxAgeDays: 30,
+      demoTtlDays: 7,
+      demoAccountsPerIpPerDay: 5,
+      googleInactiveDays: 180,
+    },
     llm: {
       retries: 3,
       baseDelayMs: 1000,

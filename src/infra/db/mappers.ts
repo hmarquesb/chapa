@@ -1,5 +1,11 @@
 import "server-only"
-import type { ChunkCandidate, SessionRecord, StoredMessage } from "@/core/types"
+import type {
+  AccountKind,
+  AccountRecord,
+  ChunkCandidate,
+  SessionRecord,
+  StoredMessage,
+} from "@/core/types"
 import { type Channel, PROFILE_FIELDS, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
 
 // Pure conversions between database rows and the core types. The driver returns
@@ -36,6 +42,16 @@ export type ChunkRow = {
   keyword: Numeric
 }
 
+export type AccountRow = {
+  id: string
+  kind: string
+  email: string | null
+  profile: unknown
+  created_at: Timestamp
+  last_seen_at: Timestamp
+  expires_at: Timestamp | null
+}
+
 function toNumber(value: Numeric): number {
   return Number(value)
 }
@@ -66,6 +82,19 @@ export function toSessionRecord(row: SessionRow): SessionRecord {
     summaryUntilId: row.summary_until_id === null ? null : toNumber(row.summary_until_id),
     createdAt: toDate(row.created_at),
     lastActivityAt: toDate(row.last_activity_at),
+  }
+}
+
+export function toAccountRecord(row: AccountRow): AccountRecord {
+  return {
+    id: row.id,
+    // The check constraint on accounts.kind guarantees a valid AccountKind.
+    kind: row.kind as AccountKind,
+    email: row.email,
+    profile: toProfile(row.profile),
+    createdAt: toDate(row.created_at),
+    lastSeenAt: toDate(row.last_seen_at),
+    expiresAt: row.expires_at === null ? null : toDate(row.expires_at),
   }
 }
 

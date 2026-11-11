@@ -40,6 +40,15 @@ describe("loadConfig defaults (RF1)", () => {
     expect(cfg.rag).toEqual(RAG_PRESETS.padrao)
   })
 
+  it("returns the account and session defaults", () => {
+    expect(loadConfig({}).accounts).toEqual({
+      sessionMaxAgeDays: 30,
+      demoTtlDays: 7,
+      demoAccountsPerIpPerDay: 5,
+      googleInactiveDays: 180,
+    })
+  })
+
   it("does not share the rag object with the preset", () => {
     const cfg = loadConfig({})
     expect(cfg.rag).not.toBe(RAG_PRESETS.padrao)
