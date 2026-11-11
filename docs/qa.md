@@ -5,7 +5,7 @@
 ## Ordem de verificação
 
 1. **Portões automáticos**, que rodam sem rede, sem banco e sem chave: lint, tipos, testes e, quando a mudança toca rotas, páginas ou configuração do Next, build.
-2. **Verificação manual local**: a interface no navegador ou a conversa pela CLI. Usa a API do Gemini e o banco `dev`, então precisa de autorização.
+2. **Verificação manual local**: a interface no navegador ou a conversa pela CLI. Usa a API do Gemini e o banco `dev`, então precisa de autorização. Numa change do OpenSpec, quem faz é o orquestrador, depois de revisar o diff, ou a pessoa; o implementador só lista o que conferir.
 3. **Avaliação**, quando a mudança pode alterar as respostas (prompt, RAG, memória, guardrails, base, modelo).
 4. **Smoke na demo publicada**, depois do deploy.
 
@@ -97,3 +97,4 @@ Passos: `GET /api/health`; `POST /api/chat` sem cookie → `401`; `GET /entrar` 
 - Todo critério de aceite é conferido um a um, com o comando e a saída resumida como evidência.
 - Uma mudança que pode alterar as respostas não está pronta sem uma rodada de avaliação, ou sem a pendência registrada no PR para a pessoa autorizar.
 - Documentação pura (`docs/`, `README.md`, `AGENTS.md`) passa só pelo lint e pela revisão.
+- Para economizar contexto, corte a saída dos portões (`npm test 2>&1 | tail -15`). Se algo falhar, rode de novo só o arquivo que falhou.

@@ -58,10 +58,9 @@ Regras:
 - O `sessionId` é gerado com `crypto.randomUUID()` e salvo no `localStorage`. Ao recarregar a página, o histórico vem da API.
 - Botão "Continuar depois": mostra e copia o link `/?sessao=<sessionId>`. Ao abrir a página com `?sessao=`, a página adota esse id no `localStorage`, carrega o histórico e limpa o parâmetro da URL. Se a sessão não existe mais, avisa e começa uma conversa nova.
 - Botão "Nova conversa": gera outro `sessionId` e limpa a tela.
-- Sem streaming. A resposta só aparece depois do guardrail de saída.
-- Datas com `Intl.DateTimeFormat`, sem date-fns.
-- Todo texto em PT-BR. Sem logo, nome ou cores de empresas reais.
-- O navegador só fala com a nossa API, nunca com o provedor de LLM nem com o Supabase.
+- Datas com `Intl.DateTimeFormat`.
+
+Streaming, idioma, marca e o que o navegador pode chamar seguem as regras do [`AGENTS.md`](../AGENTS.md).
 
 ## Back-end
 
@@ -80,13 +79,7 @@ Rotas:
 
 `POST /api/chat` e `GET /api/sessions/[id]/messages` exigem sessão (`401` sem ela, antes de ler o corpo e de contar o rate limit). `GET /api/health` e o cron não exigem.
 
-Regras:
-- Nomes de modelo e parâmetros do RAG ficam só em `src/config.ts`.
-- Toda chamada de chat ou embedding passa por `src/infra/llm/`, que aplica retry e conta tokens. Nenhum outro módulo importa o SDK.
-- O guardrail de entrada bloqueia padrões (CPF, cartão, "minha senha é", pedido de senha), não palavras soltas. "O repasse cai via Pix?" tem que passar.
-- Rate limit por IP no Postgres, guardando o HMAC do IP. Corpo máximo de 4 KB.
-- Logue status, latência, tokens e o `accountId`. Nunca logue o conteúdo das mensagens nem o e-mail da conta.
-- `core/` e `infra/` importam `server-only`.
+O rate limit por IP fica no Postgres, com o HMAC do IP. As regras de IA e RAG, de logs, de camadas e de `server-only` estão no [`AGENTS.md`](../AGENTS.md).
 
 Scripts locais (rodam com `tsx`, fora da Vercel): `ingest`, `chat`, `eval` e `smoke`.
 
@@ -109,7 +102,7 @@ Supabase: PostgreSQL com `pgvector` e busca textual com o dicionário `portugues
 - **Neon:** o `dev`, usado no local e no preview, em `aws-sa-east-1` ([ADR 0017](adr/0017-neon-como-banco-dev.md)).
 - **Gemini (Google AI Studio, sem cartão):** único provedor, para chat e embeddings.
 
-Variáveis: `GEMINI_API_KEY`, `DATABASE_URL`, `IP_HASH_SECRET`, `CRON_SECRET`, `AUTH_SECRET`, `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` (opcionais, sempre juntas) e `*_MODEL` (opcionais). Nenhuma variável secreta usa o prefixo `NEXT_PUBLIC_`.
+As variáveis de ambiente estão no [`.env.example`](../.env.example), e os valores de cada ambiente, no [`DEPLOY.md`](../DEPLOY.md).
 
 ## Automação
 

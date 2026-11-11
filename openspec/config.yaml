@@ -8,9 +8,13 @@ context: |
   Projeto: Chapa, assistente com RAG híbrido para restaurantes que já são
   parceiros da Rango, uma empresa de delivery fictícia (Next.js + TypeScript,
   Supabase/pgvector, Gemini). Antes de propor, leia AGENTS.md, docs/business.md e
-  docs/architecture.md. Antes de implementar, leia também docs/development.md e
-  siga docs/qa.md para verificar. Leia os ADRs em docs/adr/ que a mudança toca. As regras de IA e RAG, de segurança
-  e de camadas do AGENTS.md valem para toda mudança.
+  docs/architecture.md. Antes de implementar, leia só os documentos de docs/ que a
+  tabela do início do AGENTS.md indica para o tipo de mudança, e os ADRs que a
+  change cita. As regras de IA e RAG, de segurança e de camadas do AGENTS.md valem
+  para toda mudança.
+
+  Cada assunto da documentação tem um documento dono (tabela do AGENTS.md). Uma
+  mudança atualiza o dono e não copia o fato para outros documentos.
 
   As specs S00 a S10 em docs/history/build-specs/ são o histórico da construção
   inicial e não são mais editadas. O comportamento atual fica em openspec/specs/.
@@ -22,10 +26,16 @@ rules:
     - Uma decisão de arquitetura nova vira um ADR em docs/adr/, citado na proposta
   design:
     - Liste os arquivos que podem ser criados ou alterados; o implementador não toca em mais nada
-    - Escreva por extenso os contratos (tipos, assinaturas, rotas) que a mudança cria ou altera
+    - Nos documentos (docs/, README.md, DEPLOY.md, AGENTS.md), liste também as seções que mudam, para o implementador não procurar
+    - Escreva por extenso os contratos (tipos, assinaturas, rotas) que a mudança cria ou altera; o resto, só a decisão e o porquê, sem pseudocódigo nem código pronto
+    - Não repita o que já está na proposta nem nas specs delta
+    - Mire em até ~200 linhas; uma change que precisa de mais provavelmente deve ser dividida em duas
     - Nenhuma dependência nova sem justificar na proposta
   tasks:
     - Tarefas pequenas e verificáveis, com teste antes do código nas funções puras
+    - Agrupe as tarefas em grupos numerados por área (## 1. Banco, ## 2. Núcleo, ## 3. Interface…), com até ~10 tarefas cada, porque o orquestrador despacha um subagente por bloco de grupos
+    - A documentação fica num grupo próprio, perto do fim
+    - A verificação manual (navegador, CLI, banco dev) fica num grupo próprio, marcado como tarefa do orquestrador
     - A última tarefa é rodar npm run lint, npm run typecheck e npm test (e npm run build quando a mudança toca build ou rotas)
 
 operations:
@@ -33,6 +43,7 @@ operations:
     guidance:
       - Trabalhe só no worktree da mudança e não faça commit nem push; quem commita é o orquestrador
       - Chamadas reais de API e de banco só com autorização escrita na tarefa
+      - Se o prompt indicar grupos de tarefas, faça só esses grupos
   archive:
     guidance:
       - Arquive só depois do merge do PR da mudança, num PR próprio de arquivamento

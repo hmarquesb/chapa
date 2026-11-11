@@ -14,8 +14,13 @@ Assistente web para restaurantes que **já são parceiros** da Rango, uma empres
   | [`business.md`](docs/business.md) | Público, conceitos, temas cobertos, fora do escopo e metas | Ao propor ou avaliar uma mudança de produto |
   | [`development.md`](docs/development.md) | Princípios, testes, front-end e scripts | Ao criar um módulo, um teste novo ou um componente |
   | [`qa.md`](docs/qa.md) | Portões, verificação manual, avaliação e smoke | Antes de declarar uma mudança pronta |
+  | [`DEPLOY.md`](DEPLOY.md) | Vercel, comandos de banco (`dev` e `prod`), cliente OAuth e limites dos planos | Ao mudar variável, migração ou passo de deploy |
+  | [`.env.example`](.env.example) | A lista de variáveis de ambiente, com comentários | Ao criar ou remover uma variável |
+  | [`README.md`](README.md) | Vitrine do projeto: resultados do eval, decisões e aprendizados | Só quando a mudança altera o que ele descreve |
 
   Para um ajuste localizado, este arquivo e a tabela "Onde mexer" bastam: não abra os outros documentos sem necessidade.
+
+  **Cada assunto tem um documento dono**, o da tabela acima. Os outros apontam para ele em vez de repetir o fato. Nomes de modelo e parâmetros (RAG, limites, prazos) ficam em `src/config.ts`. Fora do README, cite um número só no documento dono do assunto, e não conte passos ou itens que mudam (escreva "todos os passos com ✅", não "10 ✅").
 
 - Decisões e seus porquês: [`docs/adr/`](docs/adr/README.md). Uma decisão de arquitetura nova vira um ADR novo; um ADR aceito não é reescrito, e sim substituído por outro (`Substituído por`). Os ADRs são escritos em português.
 - Comportamento atual e mudanças novas: [`openspec/`](openspec/config.yaml), pelo OpenSpec. Leia só a spec da capacidade que a tarefa toca (`openspec/specs/<capacidade>/spec.md`).
