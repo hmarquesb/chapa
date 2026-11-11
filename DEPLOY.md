@@ -13,18 +13,20 @@ Roteiro para publicar a demo: Vercel (preview por PR e produção na `main`), Su
 
 ## Resumo
 
-| # | Passo | Quem | Como verificar |
-|---|---|---|---|
-| 1 | Limites dos planos gratuitos | Orquestrador | Tabelas abaixo, com fonte e data; nenhuma condição de parada |
-| 2 | GitHub: CI verde e visibilidade | Pessoa | `gh run list --branch main --limit 1` → `success`; varredura de segredos vazia |
-| 3 | Supabase `prod`: link e migração | Orquestrador (H5) | `db push` sem erro; RLS ligado nas 4 tabelas e 0 policies |
-| 4 | Ingestão no `prod` | Orquestrador (H5) | Total impresso igual ao `count` e ao `/api/health` do passo 6 |
-| 5 | Projeto e variáveis na Vercel | Pessoa | 7 variáveis em Production e 5 em Preview, nenhuma `NEXT_PUBLIC_` (ver "Login com Google") |
-| 6 | Primeiro deploy de produção + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <produção>` → 10 ✅ |
-| 7 | Preview + smoke | Pessoa (smoke com autorização) | `npm run smoke -- --url <preview>` → 10 ✅, contra o `dev` |
-| 8 | Cron | Pessoa | Cron listado; log da primeira execução com status 200 |
-| 9 | Teste manual no navegador | Pessoa | Checklist do passo 9 inteiro marcado |
-| 10 | Registrar a URL de produção | Pessoa ou orquestrador | Seção "Links da demo" preenchida |
+Cada passo termina com a sua **Verificação**.
+
+| # | Passo | Quem |
+|---|---|---|
+| 1 | Limites dos planos gratuitos | Orquestrador |
+| 2 | GitHub: CI verde e visibilidade | Pessoa |
+| 3 | Supabase `prod`: link e migração | Orquestrador (H5) |
+| 4 | Ingestão no `prod` | Orquestrador (H5) |
+| 5 | Projeto e variáveis na Vercel | Pessoa |
+| 6 | Primeiro deploy de produção + smoke | Pessoa (smoke com autorização) |
+| 7 | Preview + smoke | Pessoa (smoke com autorização) |
+| 8 | Cron | Pessoa |
+| 9 | Teste manual no navegador | Pessoa |
+| 10 | Registrar a URL de produção | Pessoa ou orquestrador |
 
 ---
 
@@ -119,14 +121,14 @@ Cotas por modelo no painel de cotas do AI Studio, informadas pela pessoa em 06/1
 ./node_modules/.bin/supabase db push --remote --yes           # --yes só em modo agente
 ```
 
-**Verificação:** o `db push` aplica a migração sem erro, e as consultas abaixo (somente leitura) mostram o RLS ligado nas 4 tabelas e nenhuma policy:
+**Verificação:** o `db push` aplica as migrações sem erro, e as consultas abaixo (somente leitura) mostram o RLS ligado em todas as tabelas de `public` e nenhuma policy:
 
 ```bash
-./node_modules/.bin/supabase db query --remote --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname"
+./node_modules/.bin/supabase db query --remote --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' order by relname"
 ./node_modules/.bin/supabase db query --remote --read-only "select count(*) as policies from pg_policies where schemaname = 'public'"
 ```
 
-Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`.
+Esperado: `relrowsecurity = true` em todas as linhas e `policies = 0`.
 
 **Atenção:** o link fica gravado em `supabase/.temp/` do diretório onde o comando rodou. Enquanto ele existir, qualquer `db push --remote` sem URL naquele diretório vai para o `prod`. Ao final deste passo, desfaça o link:
 
@@ -191,7 +193,7 @@ A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkCon
    npm run smoke -- --url https://<projeto>.vercel.app
    ```
 
-**Verificação:** os 10 passos aparecem com ✅ e o comando sai com código 0. O passo 1 mostra o mesmo número de trechos do passo 4.
+**Verificação:** todos os passos aparecem com ✅ e o comando sai com código 0. O passo 1 mostra o mesmo número de trechos do passo 4.
 
 O smoke faz 3 chamadas ao chat, com 2 s entre elas: a pergunta no escopo e a fora do escopo gastam cota do Gemini; a do CPF é barrada antes. Ele grava uma sessão fictícia no banco, que o cron apaga depois de 7 dias sem uso.
 
@@ -199,7 +201,7 @@ Se falhar:
 
 | Sintoma | Causa provável |
 |---|---|
-| Passo 1 com **500** | Variável de ambiente faltando na Vercel (o container nem é montado). Confira as 4 variáveis de Production e faça Redeploy |
+| Passo 1 com **500** | Variável de ambiente faltando na Vercel (o container nem é montado). Confira as variáveis de Production do passo 5 e faça Redeploy |
 | Passo 1 com **503** | Banco inacessível: `DATABASE_URL` errado ou projeto Supabase pausado |
 | Passo 1 com `chunks = 0` | Ingestão não rodou no `prod` (passo 4) ou rodou com outro modelo/preset |
 | Passo 2 com 429 | Cota do Gemini ou rate limit por IP. Espere e rode de novo |
@@ -219,7 +221,7 @@ Se falhar:
    ```
 3. Fechar o PR **sem merge** e apagar a branch.
 
-**Verificação:** 10 ✅. O passo 1 mostra o total de trechos do `dev` no Neon (não do `prod`), e a sessão fictícia aparece no `dev`. Se só a primeira chamada falhar por timeout, repita uma vez: é o scale-to-zero do Neon acordando. Um 401 em todos os passos indica que o bypass não foi enviado ou está errado.
+**Verificação:** todos os passos com ✅. O passo 1 mostra o total de trechos do `dev` no Neon (não do `prod`), e a sessão fictícia aparece no `dev`. Se só a primeira chamada falhar por timeout, repita uma vez: é o scale-to-zero do Neon acordando. Um 401 em todos os passos indica que o bypass não foi enviado ou está errado.
 
 ## 8. Cron
 
@@ -270,7 +272,7 @@ Desde o [ADR 0020](docs/adr/0020-login-google-e-conta-demo.md), o chat exige log
    - `https://<produção>/api/auth/callback/google` (hoje `https://chapa-mu.vercel.app/api/auth/callback/google`)
 2. **Local (pessoa).** Colocar `AUTH_SECRET` (`openssl rand -base64 33`), `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` no `.env.local` do checkout principal, sem colar na conversa nem no terminal. Sem as duas do Google, a tela de entrada mostra só "Testar como demo". Com só uma delas, o servidor falha com "Defina AUTH_GOOGLE_ID e AUTH_GOOGLE_SECRET no .env.local".
 3. **Vercel (pessoa).** `AUTH_SECRET` em Production e Preview (valores diferentes); `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` **só em Production** (passo 5). Depois, **Redeploy**.
-4. **Migração antes do merge (orquestrador, H5 parcial).** A migração `*_accounts.sql` só acrescenta (a tabela `accounts` e os buckets `demo_day` e `account_day` no `rate_limits`), então o código antigo continua funcionando com ela. Aplicá-la no `dev` (seção "Banco `dev` no Neon") e no `prod` (passo 3) **antes** do merge do PR que traz o login. Depois do push, as consultas do passo 3 devem mostrar `accounts` com `relrowsecurity = true` e `policies = 0`.
+4. **Migração antes do merge (orquestrador, H5 parcial).** A migração `*_accounts.sql` só acrescenta (a tabela `accounts` e os buckets `demo_day` e `account_day` no `rate_limits`), então o código antigo continua funcionando com ela. Aplicá-la no `dev` (seção "Banco `dev` no Neon") e no `prod` (passo 3) **antes** do merge do PR que traz o login. Depois do push, as consultas do passo 3 incluem a `accounts`.
 5. **Smoke.** Cada rodada cria uma conta demo e gasta 1 das 5 demos do IP no dia (UTC).
 
 ## Como desfazer
@@ -314,11 +316,11 @@ Desde o [ADR 0017](docs/adr/0017-neon-como-banco-dev.md), o `dev` (local, `chat`
 4. **Verificação (orquestrador).** As mesmas consultas do passo 3, somente leitura, no `dev`:
 
    ```bash
-   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname in ('sessions','messages','document_chunks','rate_limits') order by relname" )
+   ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --read-only "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' order by relname" )
    ( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --read-only "select count(*) as policies from pg_policies where schemaname = 'public'" )
    ```
 
-   Esperado: 4 linhas com `relrowsecurity = true` e `policies = 0`. O `--dry-run` de novo responde `Remote database is up to date`.
+   Esperado: `relrowsecurity = true` em todas as linhas e `policies = 0`. O `--dry-run` de novo responde `Remote database is up to date`.
 5. **Ingestão (orquestrador).**
 
    ```bash

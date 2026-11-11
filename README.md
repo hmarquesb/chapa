@@ -104,17 +104,14 @@ Pré-requisitos: Node 24, uma chave do Gemini (Google AI Studio, plano gratuito,
 
 ```bash
 npm install
-cp .env.example .env.local          # preencha as variáveis (ver abaixo)
-# prepara o banco e aplica as migrações (tabelas, extensões e a função de busca)
-( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db query --remote="$U" --yes -f supabase/dev-bootstrap.sql )
-( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db push --remote="$U" --dry-run )
-( set -a; . ./.env.local; set +a; U="${DATABASE_URL_UNPOOLED/channel_binding=require&/}"; U="${U/&channel_binding=require/}"; ./node_modules/.bin/supabase db push --remote="$U" --yes )
+cp .env.example .env.local          # preencha as variáveis: cada uma está comentada no arquivo
+# prepare o banco e aplique as migrações: DEPLOY.md, "Banco `dev` no Neon", passo 3
 npm run ingest                      # ⚠️ chama a API de embeddings e grava os trechos
 npm run dev                         # http://localhost:3000
 ```
 
-- `.env.local`: `GEMINI_API_KEY`, `DATABASE_URL` (connection string com pooler em modo transação: no Neon, o host com `-pooler`), `DATABASE_URL_UNPOOLED` (a string direta do Neon, só para a Supabase CLI), `IP_HASH_SECRET` e `CRON_SECRET` (os dois com `openssl rand -hex 32`) e `AUTH_SECRET` (com `openssl rand -base64 33`). `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` são opcionais e andam juntas: sem elas, a tela de entrada mostra só "Testar como demo" (o cliente OAuth do Google está no [`DEPLOY.md`](DEPLOY.md)). `CHAT_MODEL`, `FAST_MODEL` e `EMBEDDING_MODEL` são opcionais.
-- O `supabase/dev-bootstrap.sql` cria o que a migração espera e só o Supabase traz pronto (o schema `extensions` e os papéis `anon` e `authenticated`), e recusa rodar num projeto Supabase. Num projeto Supabase, pule o bootstrap. Passo a passo em [`DEPLOY.md`](DEPLOY.md), "Banco `dev` no Neon".
+- Sem as credenciais do Google, a tela de entrada mostra só "Testar como demo", que basta para usar o chat. O cliente OAuth está no [`DEPLOY.md`](DEPLOY.md#login-com-google).
+- O `supabase/dev-bootstrap.sql` cria o que a migração espera e só o Supabase traz pronto, e recusa rodar num projeto Supabase. Num projeto Supabase, pule o bootstrap.
 - Para conversar pelo terminal e ver a busca por dentro (pergunta reescrita, trechos com score semântico e textual, chamadas, tokens e latência):
 
   ```bash
