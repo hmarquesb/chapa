@@ -36,17 +36,17 @@ Esta change só começa depois que a `scope-conversations-to-accounts` estiver m
 
 ## 6. Scripts
 
-- [ ] 6.1 Ajustar o `--plano` do `scripts/chat.ts` (decisão 9). **(autorização)** Verificar com `npm run chat -- --nome "Pizzaria Bella" --plano misto` uma resposta que considera o Plano Misto, e com `--plano premium` a mensagem de erro.
+- [x] 6.1 Ajustar o `--plano` do `scripts/chat.ts` (decisão 9). **(autorização)** Verificar com `npm run chat -- --nome "Pizzaria Bella" --plano misto` uma resposta que considera o Plano Misto, e com `--plano premium` a mensagem de erro.
 - [ ] 6.2 Escrever o teste de `checkDemoProfile`, tirar o perfil do corpo do chat e acrescentar o passo `GET /api/profile` ao `smoke.ts`. **(autorização)** Verificar com `npm run smoke -- --url http://localhost:3000` contra o `npm run dev`: todos os passos ✅.
 
 ## 7. Documentação
 
-- [ ] 7.1 Atualizar `AGENTS.md`, `docs/architecture.md`, `docs/business.md`, `docs/qa.md` e `README.md` (decisão 10). Verificar com `git grep -n "Perfil do restaurante (opcional)\|perfil opcional\|plano em texto livre" -- AGENTS.md README.md docs/architecture.md docs/business.md docs/qa.md`, que não deve encontrar nada.
+- [x] 7.1 Atualizar `AGENTS.md`, `docs/architecture.md`, `docs/business.md`, `docs/qa.md` e `README.md` (decisão 10). Verificar com `git grep -n "Perfil do restaurante (opcional)\|perfil opcional\|plano em texto livre" -- AGENTS.md README.md docs/architecture.md docs/business.md docs/qa.md`, que não deve encontrar nada.
 
 ## 8. Verificação com a API
 
 - [ ] 8.1 **(pessoa)** Entrar com uma conta Google nova em `localhost`: a tela "Conte sobre o seu restaurante" aparece antes do chat, e só o plano é obrigatório.
-- [ ] 8.2 **(autorização)** Rodar `npm run eval -- --label perfil-enum --only <ids das 5 perguntas perfil> --delay-ms 4000` contra o `dev`, seguindo o `docs/qa.md`. Verificar que os acertos das 5 perguntas são iguais aos da última rodada registrada em `eval/resultados/`. Se algum mudar, registrar no relatório a pergunta, a resposta e por que a mudança não vem desta change (o prompt é idêntico, pela tarefa 1.2).
+- [x] 8.2 **(autorização)** Rodar `npm run eval -- --label perfil-enum --only <ids das 5 perguntas perfil> --delay-ms 4000` contra o `dev`, seguindo o `docs/qa.md`. Verificar que os acertos das 5 perguntas são iguais aos da última rodada registrada em `eval/resultados/`. Se algum mudar, registrar no relatório a pergunta, a resposta e por que a mudança não vem desta change (o prompt é idêntico, pela tarefa 1.2).
 
 ## 9. Produção
 
