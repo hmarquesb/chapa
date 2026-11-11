@@ -517,12 +517,17 @@ describe("checkDemoSignIn", () => {
 })
 
 describe("checkDemoProfile", () => {
-  it("passes on 200 with the Misto plan", () => {
+  const RIO = { uf: "RJ", cityCode: 3304557 }
+
+  it("passes on 200 with the Misto plan and the Rio de Janeiro location", () => {
     expect(
-      checkDemoProfile(res(200, { profile: { name: "Marmitaria Boa Panela", plan: "misto" } })),
-    ).toEqual({
-      ok: true,
-    })
+      checkDemoProfile(
+        res(200, {
+          profile: { version: 2, name: "Marmitaria Boa Panela", plan: "misto", location: RIO },
+          needsReview: false,
+        }),
+      ),
+    ).toEqual({ ok: true })
   })
 
   it("fails on another status", () => {
@@ -530,8 +535,22 @@ describe("checkDemoProfile", () => {
   })
 
   it("fails when the plan is missing or not misto", () => {
-    expect(checkDemoProfile(res(200, { profile: {} })).ok).toBe(false)
-    expect(checkDemoProfile(res(200, { profile: { plan: "proprio" } })).ok).toBe(false)
+    expect(checkDemoProfile(res(200, { profile: { location: RIO } })).ok).toBe(false)
+    expect(checkDemoProfile(res(200, { profile: { plan: "proprio", location: RIO } })).ok).toBe(
+      false,
+    )
     expect(checkDemoProfile(res(200, { ok: true })).ok).toBe(false)
+  })
+
+  it("fails when the location is missing or different", () => {
+    expect(checkDemoProfile(res(200, { profile: { plan: "misto" } })).ok).toBe(false)
+    expect(
+      checkDemoProfile(
+        res(200, { profile: { plan: "misto", location: { uf: "SP", cityCode: 3550308 } } }),
+      ).ok,
+    ).toBe(false)
+    expect(
+      checkDemoProfile(res(200, { profile: { plan: "misto", location: { uf: "RJ" } } })).ok,
+    ).toBe(false)
   })
 })
