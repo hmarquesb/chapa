@@ -61,6 +61,8 @@ Regras:
 - A lista de conversas da conta (um painel lateral em telas pequenas) vem de `GET /api/sessions`, com o título cortado da primeira pergunta, e é atualizada depois de cada resposta. Clicar numa conversa carrega o histórico por `GET /api/sessions/[id]/messages`; apagar pede confirmação e usa `DELETE /api/sessions/[id]`.
 - Botão "Nova conversa": limpa a tela e esquece o id, e o servidor gera outro no próximo chat.
 - Datas com `Intl.DateTimeFormat`.
+- Cores, fontes, raio, sombras e movimento são tokens em `src/app/globals.css`; `src/lib/palette.ts` espelha as cores em JS e o `palette.test.ts` mantém os dois iguais e confere o contraste ([ADR 0022](adr/0022-identidade-visual-sobre-tokens-do-shadcn.md)).
+- O tema é a classe `dark` no `<html>`, escolhida entre Claro, Escuro e Sistema e guardada no `localStorage`. Um script no `<head>` (`THEME_INIT_SCRIPT`, em `src/lib/theme.ts`) a aplica antes da primeira pintura. O botão fica no menu da conta e em `/entrar`.
 
 Streaming, idioma, marca e o que o navegador pode chamar seguem as regras do [`AGENTS.md`](../AGENTS.md).
 

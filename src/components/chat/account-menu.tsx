@@ -3,6 +3,7 @@
 import { ChevronDownIcon, LogOutIcon, Trash2Icon, UserPenIcon } from "lucide-react"
 import Link from "next/link"
 import { useRef, useState } from "react"
+import { ThemeMenuGroup } from "@/components/brand/theme-toggle"
 import { DeleteAccountDialog } from "@/components/chat/delete-account-dialog"
 import { Button } from "@/components/ui/button"
 import {
@@ -58,6 +59,8 @@ export function AccountMenu({ label, signOutAction }: AccountMenuProps) {
             <Trash2Icon aria-hidden="true" />
             Excluir minha conta
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <ThemeMenuGroup />
         </DropdownMenuContent>
       </DropdownMenu>
     </>
