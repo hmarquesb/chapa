@@ -1,4 +1,10 @@
 import { VALIDATION_MESSAGES } from "@/app/api/_lib/errors"
+import {
+  checkProfileText,
+  type ProfileTextField,
+  type ProfileTextRejection,
+  profileTextMessage,
+} from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
 import { isUuid as isUuidString } from "@/lib/session-id"
 import {
@@ -42,10 +48,15 @@ export function parseChatRequest(
   return { ok: true, value: sessionId === undefined ? { message } : { sessionId, message } }
 }
 
-// PUT /api/profile. Order: object, unknown field, plan, then the other fields.
-export function parseProfileUpdate(
-  body: unknown,
-): { ok: true; value: ProfileUpdateRequest } | { ok: false; error: string } {
+const FILTERED_FIELDS: readonly ProfileTextField[] = ["name", "cuisine"]
+
+export type ProfileUpdateResult =
+  | { ok: true; value: ProfileUpdateRequest }
+  | { ok: false; error: string; field?: ProfileTextField; rejection?: ProfileTextRejection }
+
+// PUT /api/profile. Order: object, unknown field, plan, type and size of the fields, and only
+// then the text filter on name and cuisine.
+export function parseProfileUpdate(body: unknown): ProfileUpdateResult {
   if (!isRecord(body)) return { ok: false, error: VALIDATION_MESSAGES.notObject }
   if (Object.keys(body).some((key) => !PROFILE_FIELD_SET.has(key))) {
     return { ok: false, error: VALIDATION_MESSAGES.unknownField }
@@ -62,6 +73,19 @@ export function parseProfileUpdate(
     }
     const trimmed = raw.trim()
     if (trimmed !== "") value[field] = trimmed
+  }
+  for (const field of FILTERED_FIELDS) {
+    const text = value[field]
+    if (text === undefined) continue
+    const check = checkProfileText(field, text)
+    if (!check.ok) {
+      return {
+        ok: false,
+        error: profileTextMessage(field, check.reason),
+        field,
+        rejection: check.reason,
+      }
+    }
   }
   return { ok: true, value }
 }

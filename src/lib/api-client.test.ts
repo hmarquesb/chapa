@@ -249,6 +249,22 @@ describe("saveProfile", () => {
     })
   })
 
+  it("returns the field of a 400 when the API names one", async () => {
+    const { fn } = fakeFetch(json({ error: "Nome recusado.", field: "name" }, 400))
+    expect(await saveProfile(profile, fn)).toEqual({
+      ok: false,
+      status: 400,
+      error: "Nome recusado.",
+      field: "name",
+    })
+  })
+
+  it("ignores an unknown field in the error body", async () => {
+    const { fn } = fakeFetch(json({ error: "Erro.", field: "city" }, 400))
+    const result = await saveProfile(profile, fn)
+    expect(result).toEqual({ ok: false, status: 400, error: "Erro." })
+  })
+
   it("rejects a reply without a profile object", async () => {
     const { fn } = fakeFetch(json({ ok: true }))
     const result = await saveProfile(profile, fn)

@@ -86,6 +86,8 @@ Rotas:
 - `GET /api/cron/cleanup`, protegida por `CRON_SECRET`
 - `GET|POST /api/auth/*`, do Auth.js (csrf, callbacks do Google e da demo, sessão, saída)
 
+O `PUT /api/profile` passa o nome e a cozinha pelo filtro local de termos (`checkProfileText`, em `src/lib/moderation/`, o mesmo do formulário, do assistente e do CLI): o texto recusado devolve `400` com `{ error, field }`, e o log guarda só o motivo ([ADR 0023](adr/0023-filtro-local-de-termos-no-perfil.md)).
+
 As rotas de chat e de conversas exigem sessão (`401` sem ela, antes de ler o corpo e de contar o rate limit). `GET /api/health` e o cron não exigem. Toda consulta de conversa filtra pela conta logada, e a conversa alheia responde `404`, como a inexistente ([ADR 0021](adr/0021-autorizacao-por-conta-no-repositorio.md)).
 
 O rate limit por IP fica no Postgres, com o HMAC do IP. As regras de IA e RAG, de logs, de camadas e de `server-only` estão no [`AGENTS.md`](../AGENTS.md).

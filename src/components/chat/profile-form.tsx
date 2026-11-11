@@ -10,6 +10,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { saveProfile } from "@/lib/api-client"
+import {
+  checkProfileText,
+  type ProfileTextField,
+  profileTextMessage,
+} from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
 import {
   PLAN_IDS,
@@ -27,6 +32,20 @@ const TEXT_FIELDS: { key: TextField; label: string; placeholder: string }[] = [
   { key: "city", label: "Cidade", placeholder: "Ex.: Campinas…" },
   { key: "hours", label: "Horário de funcionamento", placeholder: "Ex.: 18h às 23h…" },
 ]
+
+const FILTERED_FIELDS: readonly ProfileTextField[] = ["name", "cuisine"]
+
+type FieldErrors = Partial<Record<ProfileTextField, string>>
+
+function isFilteredField(key: TextField): key is ProfileTextField {
+  return key === "name" || key === "cuisine"
+}
+
+// Uma função só decide: a mesma checagem roda no servidor (PUT /api/profile).
+function textError(field: ProfileTextField, value: string): string | undefined {
+  const check = checkProfileText(field, value.trim())
+  return check.ok ? undefined : profileTextMessage(field, check.reason)
+}
 
 const PLAN_REQUIRED_MESSAGE = "Escolha o plano do restaurante na Rango."
 
@@ -46,6 +65,7 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
     hours: profile.hours ?? "",
   })
   const [plan, setPlan] = useState<PlanId | "">(profile.plan ?? "")
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [planError, setPlanError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -55,11 +75,34 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
   const planErrorId = `${idPrefix}-plan-error`
   const errorId = `${idPrefix}-error`
 
+  function focusField(key: TextField): void {
+    document.getElementById(`${idPrefix}-${key}`)?.focus()
+  }
+
+  function validateField(key: ProfileTextField, value: string): void {
+    const message = textError(key, value)
+    setFieldErrors((current) => {
+      const { [key]: _removed, ...rest } = current
+      return message === undefined ? rest : { ...rest, [key]: message }
+    })
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
     if (saving) return
+    const nextErrors: FieldErrors = {}
+    for (const key of FILTERED_FIELDS) {
+      const message = textError(key, values[key])
+      if (message !== undefined) nextErrors[key] = message
+    }
+    setFieldErrors(nextErrors)
+    const firstInvalid = FILTERED_FIELDS.find((key) => nextErrors[key] !== undefined)
+    if (plan === "") setPlanError(PLAN_REQUIRED_MESSAGE)
+    if (firstInvalid !== undefined) {
+      focusField(firstInvalid)
+      return
+    }
     if (plan === "") {
-      setPlanError(PLAN_REQUIRED_MESSAGE)
       planGroupRef.current?.querySelector<HTMLElement>("[role=radio]")?.focus()
       return
     }
@@ -83,6 +126,12 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
       router.push("/entrar")
       return
     }
+    if (result.field !== undefined) {
+      const field = result.field
+      setFieldErrors({ [field]: result.error })
+      focusField(field)
+      return
+    }
     setError(result.error)
   }
 
@@ -96,6 +145,9 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
       <div className="grid gap-4 sm:grid-cols-2">
         {TEXT_FIELDS.map((field) => {
           const inputId = `${idPrefix}-${field.key}`
+          const fieldKey = isFilteredField(field.key) ? field.key : null
+          const fieldError = fieldKey !== null ? fieldErrors[fieldKey] : undefined
+          const fieldErrorId = `${inputId}-error`
           return (
             <div key={field.key} className="flex flex-col gap-1.5">
               <Label htmlFor={inputId}>{field.label}</Label>
@@ -106,8 +158,23 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
                 maxLength={PROFILE_FIELD_MAX_CHARS}
                 placeholder={field.placeholder}
                 autoComplete="off"
-                onChange={(event) => setValues({ ...values, [field.key]: event.target.value })}
+                aria-invalid={fieldError !== undefined ? true : undefined}
+                aria-describedby={fieldError !== undefined ? fieldErrorId : undefined}
+                onChange={(event) => {
+                  setValues({ ...values, [field.key]: event.target.value })
+                  if (fieldKey !== null && fieldError !== undefined) {
+                    setFieldErrors(({ [fieldKey]: _removed, ...rest }) => rest)
+                  }
+                }}
+                onBlur={(event) => {
+                  if (fieldKey !== null) validateField(fieldKey, event.target.value)
+                }}
               />
+              {fieldError !== undefined && (
+                <p id={fieldErrorId} role="alert" className="text-sm text-destructive">
+                  {fieldError}
+                </p>
+              )}
             </div>
           )
         })}

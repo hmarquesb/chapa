@@ -81,6 +81,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 | Conversas da conta | `src/core/conversations.ts`, `src/infra/db/session-repository.ts`, `src/app/api/sessions/`, `src/components/chat/conversation-list.tsx` | Toda porta de conversa recebe o dono (`SessionOwner`): nunca escreva uma consulta sem dono ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)). Mudou uma consulta: rode `npm run authz-check` |
 | Rota de API | `src/app/api/<rota>/route.ts` e o handler em `src/app/api/_lib/handlers.ts` | O `route.ts` só liga o handler ao container. A lógica fica no handler, testado com fakes |
 | Validação, rate limit, logs da API | `src/app/api/_lib/` (`validate.ts`, `rate-limit.ts`, `log.ts`) | Corpo máximo de 4 KB. Mensagens de erro em PT-BR |
+| Filtro de texto do perfil | `src/lib/moderation/` (`profile-text.ts`, `normalize.ts`, `blocked-terms.ts`, `allowed-terms.ts`), `src/app/api/_lib/validate.ts`, `src/core/assistant.ts`, `scripts/chat.ts`, `src/components/chat/profile-form.tsx` | Uma função só (`checkProfileText`) decide, e os quatro pontos a chamam ([ADR 0023](docs/adr/0023-filtro-local-de-termos-no-perfil.md)). Termo novo vai codificado na lista; falso positivo vai em `allowed-terms.ts`. Nunca logue o texto recusado |
 | Campo novo no perfil | `src/lib/types.ts` (`PROFILE_FIELDS`, `PLAN_IDS`), `src/lib/plans.ts`, `src/app/api/_lib/validate.ts` (`parseProfileUpdate`), `src/core/prompts.ts`, `src/components/chat/profile-form.tsx` | O perfil é dado do usuário: não logue. O plano é uma escolha fechada e o nome oficial vem do `regras.yaml` (`src/lib/plans.test.ts` confere) |
 | Cores, fontes, raio, sombra, movimento e tema | `src/app/globals.css`, `src/lib/palette.ts`, `src/lib/theme.ts` | Mudou um tom: o mesmo valor nos dois arquivos; `npm test` diz se passa no AA. Sem cor fixa em componentes |
 | Interface | `src/components/chat/` (entrada em `chat-app.tsx`), `src/components/brand/`, `src/app/page.tsx`, `src/lib/` (`chat-state`, `api-client`, `format`) | Componentes só importam `src/lib/` |
@@ -93,7 +94,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 | Pasta | Pode importar | Não pode importar |
 |---|---|---|
 | `src/components/`, `src/lib/` | `src/lib/`, React, shadcn | `src/core/`, `src/infra/`, `@google/genai`, `postgres` |
-| `src/core/` | `src/core/`, `src/lib/types`, `src/config` | `src/infra/`, `next`, `@google/genai`, `postgres` |
+| `src/core/` | `src/core/`, `src/lib/types`, funções puras de `src/lib/` (`plans`, `moderation`), `src/config` | `src/infra/`, `next`, `@google/genai`, `postgres` |
 | `src/infra/llm/` | `@google/genai`, `src/core/` (tipos e erros), `src/config` | `postgres` |
 | `src/infra/db/` | `postgres`, `src/core/` (tipos), `src/lib/types` | `@google/genai` |
 | `src/infra/auth/` | `next-auth`, `src/core/`, `src/infra/` (container, env), `src/lib/`, `src/config` | `@google/genai`, `postgres` |
@@ -143,6 +144,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 - Sem logo, nome ou cores de empresas reais na interface, no código e nos nomes de recursos. O nome de uma empresa real só pode aparecer no aviso de não afiliação do README e no histórico em `docs/history/`.
 - A base é a política de parceiros da Rango, empresa fictícia ([ADR 0018](docs/adr/0018-empresa-ficticia-rango.md)); todo número vem do `regras.yaml` ([ADR 0019](docs/adr/0019-regras-yaml-fonte-unica.md)).
 - O plano gratuito do Gemini pode usar o conteúdo enviado. A base só tem texto fictício, e os testes usam só dados fictícios.
+- Exceção: a lista de termos e marcas recusados em `src/lib/moderation/blocked-terms.ts` fica codificada em base64 e traz nomes de empresas reais, só para o filtro funcionar ([ADR 0023](docs/adr/0023-filtro-local-de-termos-no-perfil.md)). Nenhum outro arquivo escreve esses termos em texto claro.
 
 ## Custo e cota de API
 

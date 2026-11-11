@@ -17,6 +17,7 @@ import type {
   SessionRepository,
   StoredMessage,
 } from "@/core/types"
+import type { ProfileTextField, ProfileTextRejection } from "@/lib/moderation/profile-text"
 import type {
   ApiErrorResponse,
   ChatResponse,
@@ -82,8 +83,18 @@ function errorName(error: unknown): string {
 }
 
 // Only fixed PT-BR texts leave the server: never the provider's message nor a stack trace.
-function toPublicError(error: unknown): { status: number; message: string } {
-  if (error instanceof HttpError) return { status: error.status, message: error.publicMessage }
+function toPublicError(error: unknown): {
+  status: number
+  message: string
+  field?: ProfileTextField
+} {
+  if (error instanceof HttpError) {
+    return {
+      status: error.status,
+      message: error.publicMessage,
+      ...(error.field === undefined ? {} : { field: error.field }),
+    }
+  }
   if (error instanceof SessionNotFoundError) {
     return { status: 404, message: ERROR_MESSAGES.sessionNotFound }
   }
@@ -94,8 +105,14 @@ function toPublicError(error: unknown): { status: number; message: string } {
   return { status: 500, message: ERROR_MESSAGES.internal }
 }
 
-function errorResponse(status: number, message: string, headers?: HeadersInit): Response {
-  const body: ApiErrorResponse = { error: message }
+function errorResponse(
+  status: number,
+  message: string,
+  headers?: HeadersInit,
+  field?: ProfileTextField,
+): Response {
+  const body: ApiErrorResponse =
+    field === undefined ? { error: message } : { error: message, field }
   return json(body, { status, headers })
 }
 
@@ -126,10 +143,14 @@ async function requireAccount(authenticate: Authenticate, finish: Finish): Promi
   return account
 }
 
-function failed(error: unknown, finish: Finish): Response {
-  const { status, message } = toPublicError(error)
-  finish({ status, error: errorName(error) })
-  return errorResponse(status, message)
+function failed(error: unknown, finish: Finish, profileRejected?: ProfileTextRejection): Response {
+  const { status, message, field } = toPublicError(error)
+  finish({
+    status,
+    error: errorName(error),
+    ...(profileRejected === undefined ? {} : { profileRejected }),
+  })
+  return errorResponse(status, message, undefined, field)
 }
 
 // ---------- POST /api/chat ----------
@@ -308,18 +329,22 @@ export function createProfileHandlers(deps: {
     },
     put: async (req) => {
       const finish = startRequest(ROUTES.profile, "PUT", log)
+      let rejection: ProfileTextRejection | undefined
       try {
         // Without a session the body is never read.
         const account = await requireAccount(deps.authenticate, finish)
         requireJson(req)
         const parsed = parseProfileUpdate(await readJsonBody(req, deps.config.limits.maxBodyBytes))
-        if (!parsed.ok) throw new HttpError(400, parsed.error)
+        if (!parsed.ok) {
+          rejection = parsed.rejection
+          throw new HttpError(400, parsed.error, parsed.field)
+        }
         const profile = await deps.accounts.updateProfile(account.id, parsed.value)
         finish({ status: 200 })
         const body: ProfileResponse = { profile }
         return json(body)
       } catch (error) {
-        return failed(error, finish)
+        return failed(error, finish, rejection)
       }
     },
   }

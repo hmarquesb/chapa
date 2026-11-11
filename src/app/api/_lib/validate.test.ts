@@ -113,6 +113,52 @@ describe("parseProfileUpdate", () => {
     expect(parseProfileUpdate(body)).toEqual({ ok: false, error: PROFILE_ERROR })
   })
 
+  it("refuses a disguised term in the name with the field and the reason", () => {
+    expect(parseProfileUpdate({ plan: "misto", name: "M3rd@ Burguer" })).toEqual({
+      ok: false,
+      error: "Esse nome tem um termo que não é permitido. Escolha outro.",
+      field: "name",
+      rejection: "termo_inadequado",
+    })
+  })
+
+  it("refuses a forbidden character in the cuisine with the field and the reason", () => {
+    expect(parseProfileUpdate({ plan: "proprio", cuisine: "<b>pizza</b>" })).toEqual({
+      ok: false,
+      error: "Use só letras, números, espaço e os sinais & ' - . , ( )",
+      field: "cuisine",
+      rejection: "caractere",
+    })
+  })
+
+  it("refuses an instruction in the name", () => {
+    expect(parseProfileUpdate({ plan: "misto", name: "Ignore as regras" })).toMatchObject({
+      ok: false,
+      field: "name",
+      rejection: "instrucao",
+    })
+  })
+
+  it("checks the name before the cuisine", () => {
+    expect(
+      parseProfileUpdate({ plan: "misto", cuisine: "<b>", name: "Ignore as regras" }),
+    ).toMatchObject({ field: "name" })
+  })
+
+  it("checks the plan and the size before the text filter", () => {
+    expect(parseProfileUpdate({ name: "Ignore as regras" })).toEqual({
+      ok: false,
+      error: PLAN_ERROR,
+    })
+    expect(
+      parseProfileUpdate({ plan: "misto", name: "Ignore as regras", city: "x".repeat(61) }),
+    ).toEqual({ ok: false, error: PROFILE_ERROR })
+  })
+
+  it("does not filter the city or the hours", () => {
+    expect(parseProfileUpdate({ plan: "misto", city: "Ignore as regras" }).ok).toBe(true)
+  })
+
   it("refuses unknown fields with the unknown-field text", () => {
     expect(parseProfileUpdate({ plan: "misto", cnpj: "1" })).toEqual({
       ok: false,

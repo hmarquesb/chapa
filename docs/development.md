@@ -23,6 +23,7 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 - O pacote `server-only` é trocado por um stub (`test/stubs/server-only.ts`) no Vitest. Nos scripts, o `--conditions=react-server` faz o mesmo papel.
 - **`src/architecture.test.ts`** confere as regras de camadas e importações do [`AGENTS.md`](../AGENTS.md#camadas-e-importações); a lista completa está no próprio teste. Regra nova de camada entra nesse teste.
 - **`src/lib/palette.test.ts`** confere que o `palette.ts` e o `globals.css` têm os mesmos valores e que os pares texto/fundo passam no AA. **`src/design-tokens.test.ts`** falha se houver cor fixa (hex, `rgb(`, classe da paleta padrão do Tailwind) em `src/components` ou `src/app`.
+- **`src/lib/moderation/profile-text.test.ts`** gera os casos bloqueados a partir de `BLOCKED_TERMS` e `BLOCKED_BRANDS` (acento, leetspeak, repetição, separadores e maiúsculas), sem escrever termo em texto claro. Os falsos positivos e os nomes legítimos ficam em texto claro. Para ver a lista decodificada: `npx tsx -e 'import("./src/lib/moderation/blocked-terms.ts").then((m) => console.log(m.BLOCKED_TERMS, m.BLOCKED_BRANDS))'`.
 - Dados de teste são sempre fictícios: nomes de restaurante inventados, CPFs e cartões de exemplo.
 
 ## Front-end

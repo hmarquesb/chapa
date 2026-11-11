@@ -1,3 +1,4 @@
+import type { ProfileTextRejection } from "@/lib/moderation/profile-text"
 import type { ReplyStatus } from "@/lib/types"
 
 // Uma linha por requisição. Nunca recebe o conteúdo das mensagens, o perfil, o sessionId,
@@ -14,6 +15,7 @@ export type LogEntry = {
   inputTokens?: number
   outputTokens?: number
   error?: string // só o nome da classe do erro
+  profileRejected?: ProfileTextRejection // só o motivo da recusa do texto do perfil, nunca o texto
 }
 
 export function logRequest(entry: LogEntry): void {
