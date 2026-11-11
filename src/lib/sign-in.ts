@@ -27,3 +27,6 @@ export function signInErrorMessage(params: {
 
 export const DEMO_BANNER_TEXT = "Conta de demonstração. Ela e as conversas são apagadas em 7 dias."
 export const DEMO_ACCOUNT_LABEL = "Conta de demonstração"
+
+export const FICTIONAL_COMPANY_NOTICE =
+  "Rango é uma empresa fictícia, criada para um projeto de estudo, sem afiliação com nenhuma empresa de delivery."
