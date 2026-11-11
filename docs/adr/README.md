@@ -28,6 +28,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0020](0020-login-google-e-conta-demo.md) | Exigir login com Google, com uma conta demo isolada por clique | Aceito |
 | [0021](0021-autorizacao-por-conta-no-repositorio.md) | Autorizar o acesso às conversas por conta, no repositório | Aceito |
 | [0022](0022-identidade-visual-sobre-tokens-do-shadcn.md) | Aplicar a identidade visual da Rango sobre os tokens do shadcn | Aceito |
+| [0023](0023-filtro-local-de-termos-no-perfil.md) | Filtrar localmente os termos do nome e da cozinha do perfil | Aceito |
 
 ## Modelo
 
