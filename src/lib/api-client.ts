@@ -1,9 +1,11 @@
 import type {
   ChatRequest,
   ChatResponse,
+  ConversationListItem,
   HistoryMessage,
   ReplyStatus,
   SessionHistoryResponse,
+  SessionListResponse,
 } from "@/lib/types"
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string }
@@ -39,7 +41,8 @@ function isChatResponse(value: unknown): value is ChatResponse {
     isRecord(value) &&
     isReplyStatus(value.status) &&
     typeof value.answer === "string" &&
-    isStringArray(value.sources)
+    isStringArray(value.sources) &&
+    (value.sessionId === null || typeof value.sessionId === "string")
   )
 }
 
@@ -62,6 +65,21 @@ function isSessionHistory(value: unknown): value is SessionHistoryResponse {
     isRecord(value.profile) &&
     Array.isArray(value.messages) &&
     value.messages.every(isHistoryMessage)
+  )
+}
+
+function isConversationListItem(value: unknown): value is ConversationListItem {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.title === "string" &&
+    typeof value.lastActivityAt === "string"
+  )
+}
+
+function isSessionList(value: unknown): value is SessionListResponse {
+  return (
+    isRecord(value) && Array.isArray(value.sessions) && value.sessions.every(isConversationListItem)
   )
 }
 
@@ -98,6 +116,36 @@ async function request<T>(
     return { ok: false, status: response.status, error: INVALID_RESPONSE_MESSAGE }
   }
   return { ok: true, data: body }
+}
+
+export function listSessions(
+  fetchFn: typeof fetch = defaultFetch,
+): Promise<ApiResult<SessionListResponse>> {
+  return request("/api/sessions", { method: "GET", cache: "no-store" }, isSessionList, fetchFn)
+}
+
+// DELETE answers 204 with no body: any 2xx other than 204 is an unexpected reply.
+export async function deleteSession(
+  id: string,
+  fetchFn: typeof fetch = defaultFetch,
+): Promise<ApiResult<null>> {
+  let response: Response
+  try {
+    response = await fetchFn(`/api/sessions/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      cache: "no-store",
+    })
+  } catch {
+    return { ok: false, status: 0, error: NETWORK_ERROR_MESSAGE }
+  }
+  if (response.status === 204) return { ok: true, data: null }
+  if (response.ok) return { ok: false, status: response.status, error: INVALID_RESPONSE_MESSAGE }
+  const body = await readJson(response)
+  const error =
+    isRecord(body) && typeof body.error === "string" && body.error.trim() !== ""
+      ? body.error
+      : GENERIC_ERROR_MESSAGE
+  return { ok: false, status: response.status, error }
 }
 
 export function sendMessage(

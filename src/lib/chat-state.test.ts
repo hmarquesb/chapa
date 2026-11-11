@@ -4,6 +4,7 @@ import type { HistoryMessage } from "@/lib/types"
 
 const T1 = "2026-11-06T14:05:00.000Z"
 const T2 = "2026-11-06T14:05:07.000Z"
+const SID = "3f1c2b8e-9a4d-4c1e-8f7a-1b2c3d4e5f60"
 
 function sent(text = "Quando o repasse cai?"): ChatState {
   return chatReducer(initialChatState, { type: "send_started", text, now: T1 })
@@ -45,7 +46,12 @@ describe("chatReducer", () => {
   it("send_succeeded confirms the user message and appends the assistant reply", () => {
     const state = chatReducer(sent(), {
       type: "send_succeeded",
-      reply: { status: "answered", answer: "Cai em até 30 dias.", sources: ["02-repasse.md"] },
+      reply: {
+        status: "answered",
+        answer: "Cai em até 30 dias.",
+        sources: ["02-repasse.md"],
+        sessionId: SID,
+      },
       now: T2,
     })
     expect(state.sending).toBe(false)
@@ -65,7 +71,7 @@ describe("chatReducer", () => {
   it("send_succeeded keeps the status of non-answered replies", () => {
     const state = chatReducer(sent("Receita de lasanha?"), {
       type: "send_succeeded",
-      reply: { status: "fallback", answer: "Não sei.", sources: [] },
+      reply: { status: "fallback", answer: "Não sei.", sources: [], sessionId: SID },
       now: T2,
     })
     expect(state.messages[1]).toMatchObject({ status: "fallback", sources: [] })
@@ -81,7 +87,7 @@ describe("chatReducer", () => {
   it("send_failed keeps the confirmed messages", () => {
     const first = chatReducer(sent("Primeira"), {
       type: "send_succeeded",
-      reply: { status: "answered", answer: "Resposta", sources: [] },
+      reply: { status: "answered", answer: "Resposta", sources: [], sessionId: SID },
       now: T2,
     })
     const second = chatReducer(first, { type: "send_started", text: "Segunda", now: T2 })
@@ -92,7 +98,7 @@ describe("chatReducer", () => {
   it("keeps message keys unique across a failed and a retried send", () => {
     const first = chatReducer(sent("Primeira"), {
       type: "send_succeeded",
-      reply: { status: "answered", answer: "Resposta", sources: [] },
+      reply: { status: "answered", answer: "Resposta", sources: [], sessionId: SID },
       now: T2,
     })
     const failed = chatReducer(
@@ -101,7 +107,11 @@ describe("chatReducer", () => {
     )
     const retried = chatReducer(
       chatReducer(failed, { type: "send_started", text: "Segunda", now: T2 }),
-      { type: "send_succeeded", reply: { status: "answered", answer: "Ok", sources: [] }, now: T2 },
+      {
+        type: "send_succeeded",
+        reply: { status: "answered", answer: "Ok", sources: [], sessionId: SID },
+        now: T2,
+      },
     )
     const keys = retried.messages.map((m) => m.key)
     expect(new Set(keys).size).toBe(keys.length)
