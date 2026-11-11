@@ -1,3 +1,4 @@
+import { DAY_IDS } from "@/lib/profile/types"
 import type {
   ChatRequest,
   ChatResponse,
@@ -30,7 +31,15 @@ const REPLY_STATUSES: readonly ReplyStatus[] = [
 const defaultFetch: typeof fetch = (input, init) => fetch(input, init)
 
 function isProfileErrorField(value: unknown): value is ProfileErrorField {
-  return value === "name" || value === "cuisine" || value === "location"
+  return (
+    value === "name" ||
+    value === "cuisine" ||
+    value === "location" ||
+    value === "hours" ||
+    (typeof value === "string" &&
+      value.startsWith("hours.") &&
+      (DAY_IDS as readonly string[]).includes(value.slice("hours.".length)))
+  )
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

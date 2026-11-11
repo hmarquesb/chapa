@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest"
 import { parseProfileInput } from "@/lib/profile/parse"
+import type { WeekHours } from "@/lib/profile/types"
 import { VALIDATION_MESSAGES } from "@/lib/validation-messages"
 
+const WEEK: WeekHours = {
+  seg: [{ open: "11:00", close: "23:00" }],
+  ter: [{ open: "11:00", close: "23:00" }],
+  qua: [{ open: "11:00", close: "23:00" }],
+  qui: [{ open: "11:00", close: "23:00" }],
+  sex: [{ open: "11:00", close: "23:00" }],
+  sab: [{ open: "11:00", close: "23:00" }],
+  dom: [],
+}
+const CLOSED: WeekHours = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] }
 const PUT = { requirePlan: true }
 const LOOSE = { requirePlan: false }
 
@@ -20,7 +31,7 @@ describe("parseProfileInput: valid profiles", () => {
         plan: "entrega",
         cuisine: { id: "pizza" },
         location: { uf: "RJ", cityCode: 3303302 },
-        hours: " 11h às 23h ",
+        hours: WEEK,
       },
       PUT,
     )
@@ -32,7 +43,7 @@ describe("parseProfileInput: valid profiles", () => {
         plan: "entrega",
         cuisine: { id: "pizza" },
         location: { uf: "RJ", cityCode: 3303302 },
-        hours: "11h às 23h",
+        hours: WEEK,
       },
     })
   })
@@ -61,7 +72,7 @@ describe("parseProfileInput: valid profiles", () => {
 
   it("drops empty fields", async () => {
     const result = await parseProfileInput(
-      { version: 2, plan: "misto", name: "   ", hours: "" },
+      { version: 2, plan: "misto", name: "   ", hours: CLOSED },
       PUT,
     )
     expect(result).toEqual({ ok: true, value: { version: 2, plan: "misto" } })
@@ -109,14 +120,37 @@ describe("parseProfileInput: errors", () => {
     )
   })
 
-  it("refuses long or non-text name and hours", async () => {
+  it("refuses a long or non-text name", async () => {
     const long = "a".repeat(61)
     expect((await fail({ version: 2, plan: "misto", name: long })).error).toBe(
       VALIDATION_MESSAGES.profile,
     )
-    expect((await fail({ version: 2, plan: "misto", hours: 5 })).error).toBe(
+    expect((await fail({ version: 2, plan: "misto", name: 5 })).error).toBe(
       VALIDATION_MESSAGES.profile,
     )
+  })
+
+  it("refuses hours in text with field hours", async () => {
+    const result = await fail({ version: 2, plan: "misto", hours: "11h às 15h" })
+    expect(result.field).toBe("hours")
+    expect(result.error).toBe(VALIDATION_MESSAGES.hoursFormat)
+  })
+
+  it("names the day of a broken shift rule", async () => {
+    const result = await fail({
+      version: 2,
+      plan: "misto",
+      hours: { ...CLOSED, ter: [{ open: "18:00", close: "18:00" }] },
+    })
+    expect(result.field).toBe("hours.ter")
+    expect(result.error).toContain("Na terça")
+  })
+
+  it("saves a grid without shifts as a profile without hours", async () => {
+    expect(await parseProfileInput({ version: 2, plan: "misto", hours: CLOSED }, PUT)).toEqual({
+      ok: true,
+      value: { version: 2, plan: "misto" },
+    })
   })
 
   it.each([

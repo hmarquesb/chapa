@@ -20,9 +20,43 @@ describe("upgradeProfile: v2", () => {
       plan: "proprio",
       cuisine: { id: "pizza" },
       location: { uf: "SP", cityCode: 3509502 },
-      hours: "11h às 23h",
+      hours: {
+        seg: [{ open: "11:00", close: "23:00" }],
+        ter: [],
+        qua: [],
+        qui: [],
+        sex: [{ open: "18:00", close: "02:00" }],
+        sab: [],
+        dom: [],
+      },
     }
     expect(await upgradeProfile(profile)).toEqual({ profile, needsReview: false })
+  })
+
+  it("drops hours in text and asks for review", async () => {
+    const result = await upgradeProfile({
+      version: 2,
+      plan: "misto",
+      hours: "11h às 15h e 18h às 23h",
+    })
+    expect(result).toEqual({ profile: { version: 2, plan: "misto" }, needsReview: true })
+  })
+
+  it("drops an invalid grid and asks for review", async () => {
+    const result = await upgradeProfile({
+      version: 2,
+      plan: "misto",
+      hours: {
+        seg: [{ open: "18:00", close: "18:00" }],
+        ter: [],
+        qua: [],
+        qui: [],
+        sex: [],
+        sab: [],
+        dom: [],
+      },
+    })
+    expect(result).toEqual({ profile: { version: 2, plan: "misto" }, needsReview: true })
   })
 
   it("drops an invalid field and asks for review", async () => {
@@ -66,9 +100,8 @@ describe("upgradeProfile: old format", () => {
         plan: "proprio",
         cuisine: { id: "pizza" },
         location: { uf: "SP", cityCode: 3509502 },
-        hours: "11h às 23h",
       },
-      needsReview: false,
+      needsReview: true,
     })
   })
 
