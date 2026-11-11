@@ -21,6 +21,7 @@ import type {
   Usage,
 } from "@/core/types"
 import { addUsage, emptyUsage } from "@/core/usage"
+import { isPlanId } from "@/lib/plans"
 import { PROFILE_FIELDS, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
 
 export type AssistantDeps = {
@@ -39,7 +40,12 @@ function cleanProfile(profile: RestaurantProfile): RestaurantProfile {
   const clean: RestaurantProfile = {}
   for (const field of PROFILE_FIELDS) {
     const value = profile[field]?.trim()
-    if (value) clean[field] = value
+    if (!value) continue
+    if (field === "plan") {
+      if (isPlanId(value)) clean.plan = value
+    } else {
+      clean[field] = value
+    }
   }
   return clean
 }

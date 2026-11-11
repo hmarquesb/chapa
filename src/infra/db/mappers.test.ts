@@ -64,8 +64,19 @@ describe("toStoredMessage", () => {
 describe("toProfile", () => {
   it("keeps only known keys with string values", () => {
     expect(
-      toProfile({ name: "Pizzaria Bella", plan: 2, unknown: "x", city: "Recife", hours: null }),
-    ).toEqual({ name: "Pizzaria Bella", city: "Recife" })
+      toProfile({
+        name: "Pizzaria Bella",
+        plan: "misto",
+        unknown: "x",
+        city: "Recife",
+        hours: null,
+      }),
+    ).toEqual({ name: "Pizzaria Bella", plan: "misto", city: "Recife" })
+  })
+
+  it("drops a plan that is not in the enum (old free text, wrong type)", () => {
+    expect(toProfile({ name: "Bella", plan: "Plano Próprio" })).toEqual({ name: "Bella" })
+    expect(toProfile({ plan: 2 })).toEqual({})
   })
 
   it("returns {} for anything that is not a plain object", () => {
@@ -78,7 +89,7 @@ describe("toProfile", () => {
   it("keeps all five profile fields", () => {
     const full = {
       name: "Sabor Caseiro",
-      plan: "Básico",
+      plan: "proprio",
       cuisine: "Brasileira",
       city: "Belo Horizonte",
       hours: "11h às 15h",

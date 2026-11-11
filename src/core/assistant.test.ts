@@ -465,7 +465,7 @@ describe("createAssistant().handleMessage", () => {
     const { llm, sessions, send } = setup()
     await send("Quando cai o repasse?", {
       name: "  Pizzaria Bella ",
-      plan: "Plano Básico",
+      plan: "misto",
       city: " ",
     })
 
@@ -473,7 +473,7 @@ describe("createAssistant().handleMessage", () => {
       id: SESSION_ID,
       channel: "cli",
       owner: { accountId: null },
-      profile: { name: "Pizzaria Bella", plan: "Plano Básico" },
+      profile: { name: "Pizzaria Bella", plan: "misto" },
     })
     const system = llm.answerCalls()[0]?.system ?? ""
     expect(system).toContain("Perfil do restaurante")
