@@ -6,7 +6,7 @@ Identifica quem usa o chat pela web: entrar com Google ou como demo, manter a se
 ## Requirements
 
 ### Requirement: Login obrigatório na web
-Toda página do chat SHALL exigir uma sessão válida. Sem ela, a página MUST levar a `/entrar`. A tela de entrada e a página de privacidade são públicas. O CLI e a avaliação não passam pelo login.
+Toda página do chat SHALL exigir uma sessão válida. Sem ela, a página MUST levar a `/entrar`. A tela de entrada, a página de privacidade, a página da marca (`/marca`) e as imagens de ícone e de compartilhamento são públicas. O CLI e a avaliação não passam pelo login.
 
 #### Scenario: Visitante sem sessão
 - **WHEN** alguém sem sessão abre `/`
@@ -19,6 +19,10 @@ Toda página do chat SHALL exigir uma sessão válida. Sem ela, a página MUST l
 #### Scenario: Privacidade sem login
 - **WHEN** alguém sem sessão abre `/privacidade`
 - **THEN** vê a página de privacidade
+
+#### Scenario: Marca sem login
+- **WHEN** alguém sem sessão abre `/marca` ou `/opengraph-image`
+- **THEN** recebe a página ou a imagem, sem ser levado a `/entrar`
 
 ### Requirement: Tela de entrada
 A página `/entrar` SHALL mostrar o logo da Rango, o título "Chapa", a linha "Assistente de parceiros da Rango", a frase "Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações.", o botão "Testar como demo" em destaque, o botão "Entrar com Google" (quando o Google está configurado), o aviso de privacidade, no canto superior o botão de tema (ver `brand`) e o rodapé com o aviso de empresa fictícia e o link "Privacidade", em PT-BR e sem marca de empresa real.
