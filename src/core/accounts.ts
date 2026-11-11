@@ -6,10 +6,11 @@ import type { RestaurantProfile } from "@/lib/types"
 
 // Perfil de exemplo de toda conta demo. Cada demo recebe uma cópia (`{ ...DEMO_PROFILE }`).
 export const DEMO_PROFILE: Readonly<Required<RestaurantProfile>> = Object.freeze({
+  version: 2,
   name: "Marmitaria Boa Panela",
   plan: "misto",
-  cuisine: "Brasileira caseira",
-  city: "Rio de Janeiro",
+  cuisine: Object.freeze({ id: "marmita" }),
+  location: Object.freeze({ uf: "RJ", cityCode: 3304557 }),
   hours: "11h às 15h e 18h às 23h",
 })
 

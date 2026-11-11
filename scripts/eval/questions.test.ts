@@ -46,7 +46,7 @@ function validSet(): EvalQuestion[] {
   }
   for (let i = 0; i < 6; i++) items.push(q({ id: id++, tipo: "parafrase" }))
   for (let i = 0; i < 5; i++) {
-    items.push(q({ id: id++, tipo: "perfil", perfil: { plan: "proprio" } }))
+    items.push(q({ id: id++, tipo: "perfil", perfil: { version: 2, plan: "proprio" } }))
   }
   for (let i = 0; i < 5; i++) {
     items.push(q({ id: id++, tipo: "multi_doc", fonte_esperada: ["01-a.md", "02-b.md"] }))
@@ -82,8 +82,8 @@ function replace(items: unknown[], index: number, overrides: Record<string, unkn
   return (items[index] as EvalQuestion).id
 }
 
-function errorsOf(data: unknown, files = FILES): string[] {
-  const result = validateQuestions(data, files)
+async function errorsOf(data: unknown, files = FILES): Promise<string[]> {
+  const result = await validateQuestions(data, files)
   return result.ok ? [] : result.errors
 }
 
@@ -92,15 +92,15 @@ function onlyMessages(items: unknown[]): string[] {
 }
 
 describe("validateQuestions with the real eval/perguntas.json", () => {
-  it("passes against the files of knowledge-base/", () => {
+  it("passes against the files of knowledge-base/", async () => {
     expect(KNOWLEDGE_FILES.length).toBe(11)
-    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+    const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     expect(result.ok ? [] : result.errors).toEqual([])
     expect(result.ok && result.questions).toHaveLength(50)
   })
 
-  it("uses the ids 101 to 150, grouped by type in the distribution order", () => {
-    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+  it("uses the ids 101 to 150, grouped by type in the distribution order", async () => {
+    const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     expect(result.questions.map((item) => item.id)).toEqual(
       Array.from({ length: 50 }, (_, i) => 101 + i),
@@ -119,8 +119,8 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect([...types].sort((a, b) => order.indexOf(a) - order.indexOf(b))).toEqual(types)
   })
 
-  it("has a factual question for every knowledge document", () => {
-    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+  it("has a factual question for every knowledge document", async () => {
+    const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     const factualSources = new Set(
       result.questions
@@ -130,8 +130,8 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect([...factualSources].sort()).toEqual([...KNOWLEDGE_FILES].sort())
   })
 
-  it("covers at least 5 documents in the parafrase questions", () => {
-    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+  it("covers at least 5 documents in the parafrase questions", async () => {
+    const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     const sources = new Set(
       result.questions
@@ -141,8 +141,8 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect(sources.size).toBeGreaterThanOrEqual(5)
   })
 
-  it("matches the input guardrail: blocks the bloqueio questions and nothing in scope", () => {
-    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+  it("matches the input guardrail: blocks the bloqueio questions and nothing in scope", async () => {
+    const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     for (const item of result.questions) {
       // adversarial: any refusal counts, so the guardrail may or may not block it.
@@ -152,8 +152,8 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     }
   })
 
-  it("has an in-scope question with a loose sensitive word (CPF, CNPJ, Pix, senha, cartão)", () => {
-    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+  it("has an in-scope question with a loose sensitive word (CPF, CNPJ, Pix, senha, cartão)", async () => {
+    const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     const sensitive = /\b(cpf|cnpj|pix|senha|cart[aã]o)\b/i
     const found = result.questions.filter(
@@ -162,8 +162,8 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect(found.length).toBeGreaterThanOrEqual(1)
   })
 
-  it("never uses a bare number as a nao_deve_conter term", () => {
-    const result = validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
+  it("never uses a bare number as a nao_deve_conter term", async () => {
+    const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     const bare = result.questions.flatMap((item) =>
       (item.nao_deve_conter ?? [])
@@ -175,38 +175,40 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
 })
 
 describe("validateQuestions", () => {
-  it("accepts a valid set", () => {
-    const result = validateQuestions(validSet(), FILES)
+  it("accepts a valid set", async () => {
+    const result = await validateQuestions(validSet(), FILES)
     expect(result.ok ? [] : result.errors).toEqual([])
   })
 
-  it("rejects data that is not an array", () => {
-    expect(errorsOf({ perguntas: [] })).toEqual(["O arquivo precisa ser uma lista de perguntas."])
+  it("rejects data that is not an array", async () => {
+    expect(await errorsOf({ perguntas: [] })).toEqual([
+      "O arquivo precisa ser uma lista de perguntas.",
+    ])
   })
 
-  it("requires exactly 50 items", () => {
-    const errors = errorsOf(validSet().slice(0, 49))
+  it("requires exactly 50 items", async () => {
+    const errors = await errorsOf(validSet().slice(0, 49))
     expect(errors).toContain("São 49 perguntas; precisam ser 50.")
   })
 
-  it("rejects duplicated ids", () => {
+  it("rejects duplicated ids", async () => {
     const items = validSet()
     replace(items, 1, { id: 1 })
-    expect(errorsOf(items)).toContain("Pergunta 1: id repetido.")
+    expect(await errorsOf(items)).toContain("Pergunta 1: id repetido.")
   })
 
-  it("checks the distribution by type", () => {
+  it("checks the distribution by type", async () => {
     const items = validSet()
     replace(items, firstOf(items, "parafrase"), { tipo: "factual" })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     expect(errors).toContain('Tipo "factual": 16 perguntas; precisam ser 15.')
     expect(errors).toContain('Tipo "parafrase": 5 perguntas; precisam ser 6.')
   })
 
-  it("rejects an unknown type", () => {
+  it("rejects an unknown type", async () => {
     const items: unknown[] = validSet()
     replace(items, 1, { tipo: "outro" })
-    expect(errorsOf(items)).toContain('Pergunta 2: tipo inválido "outro".')
+    expect(await errorsOf(items)).toContain('Pergunta 2: tipo inválido "outro".')
   })
 
   it("treats perfil as in scope and adversarial as out of scope", () => {
@@ -214,60 +216,60 @@ describe("validateQuestions", () => {
     expect(IN_SCOPE_TYPES.has("adversarial")).toBe(false)
   })
 
-  it("accepts adversarial questions with esperado recusa and rejects other values", () => {
+  it("accepts adversarial questions with esperado recusa and rejects other values", async () => {
     const items = validSet()
     expect(items.filter((item) => item.tipo === "adversarial")).toHaveLength(4)
-    expect(errorsOf(items)).toEqual([])
+    expect(await errorsOf(items)).toEqual([])
     const id = replace(items, firstOf(items, "adversarial"), { esperado: "fallback" })
-    expect(errorsOf(items)).toContain(
+    expect(await errorsOf(items)).toContain(
       `Pergunta ${id}: tipo adversarial precisa de esperado "recusa".`,
     )
   })
 
-  it("requires esperado resposta, fonte_esperada and deve_conter in perfil", () => {
+  it("requires esperado resposta, fonte_esperada and deve_conter in perfil", async () => {
     const items = validSet()
     const index = firstOf(items, "perfil")
     const id = replace(items, index, { esperado: "recusa" })
     const id2 = replace(items, index + 1, { fonte_esperada: undefined, deve_conter: undefined })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     expect(errors).toContain(`Pergunta ${id}: tipo perfil precisa de esperado "resposta".`)
     expect(errors).toContain(`Pergunta ${id2}: perguntas no escopo precisam de fonte_esperada.`)
     expect(errors).toContain(`Pergunta ${id2}: deve_conter precisa ter de 1 a 3 termos não vazios.`)
   })
 
-  it("requires perfil.plan in perfil questions", () => {
+  it("requires perfil.plan in perfil questions", async () => {
     const items = validSet()
     const index = firstOf(items, "perfil")
-    const noPlan = replace(items, index, { perfil: { name: "Pizzaria Bella" } })
-    const blankPlan = replace(items, index + 1, { perfil: { plan: "   " } })
+    const noPlan = replace(items, index, { perfil: { version: 2, name: "Pizzaria Bella" } })
+    const blankPlan = replace(items, index + 1, { perfil: { version: 2, plan: "   " } })
     const noProfile = replace(items, index + 2, { perfil: undefined })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     for (const id of [noPlan, blankPlan, noProfile]) {
       expect(errors).toContain(`Pergunta ${id}: perfil precisa de perfil.plan preenchido.`)
     }
   })
 
-  it("does not require a plan in the profile of other types", () => {
+  it("does not require a plan in the profile of other types", async () => {
     const items = validSet()
-    replace(items, 0, { perfil: { name: "Pizzaria Bella" } })
-    expect(errorsOf(items)).toEqual([])
+    replace(items, 0, { perfil: { version: 2, name: "Pizzaria Bella" } })
+    expect(await errorsOf(items)).toEqual([])
   })
 
-  it("accepts nao_deve_conter with 1 to 5 terms in any type", () => {
+  it("accepts nao_deve_conter with 1 to 5 terms in any type", async () => {
     const items = validSet()
     replace(items, 0, { nao_deve_conter: ["22%"] })
     replace(items, firstOf(items, "adversarial"), { nao_deve_conter: ["a", "b", "c", "d", "e"] })
     replace(items, firstOf(items, "fora_de_escopo"), { nao_deve_conter: ["x"] })
-    expect(errorsOf(items)).toEqual([])
+    expect(await errorsOf(items)).toEqual([])
   })
 
-  it("rejects an empty nao_deve_conter, more than 5 terms and blank terms", () => {
+  it("rejects an empty nao_deve_conter, more than 5 terms and blank terms", async () => {
     const items: unknown[] = validSet()
     const empty = replace(items, 0, { nao_deve_conter: [] })
     const six = replace(items, 1, { nao_deve_conter: ["a", "b", "c", "d", "e", "f"] })
     const blank = replace(items, 2, { nao_deve_conter: ["ok", " "] })
     const notList = replace(items, 3, { nao_deve_conter: "22%" })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     for (const id of [empty, six, blank, notList]) {
       expect(errors).toContain(
         `Pergunta ${id}: nao_deve_conter precisa ter de 1 a 5 termos não vazios.`,
@@ -275,100 +277,133 @@ describe("validateQuestions", () => {
     }
   })
 
-  it("requires a factual question for every knowledge document", () => {
+  it("requires a factual question for every knowledge document", async () => {
     const items = validSet()
     replace(items, 0, { fonte_esperada: ["01-a.md"] })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     expect(errors).toContain('Documento "02-b.md" sem pergunta factual.')
     expect(errors).not.toContain('Documento "01-a.md" sem pergunta factual.')
   })
 
-  it("does not count other types toward document coverage", () => {
+  it("does not count other types toward document coverage", async () => {
     const items = validSet()
     replace(items, 0, { fonte_esperada: ["01-a.md"] })
     // parafrase and multi_doc still cite 02-b.md, but only factual counts.
     replace(items, firstOf(items, "parafrase"), { fonte_esperada: ["02-b.md"] })
-    expect(errorsOf(items)).toContain('Documento "02-b.md" sem pergunta factual.')
+    expect(await errorsOf(items)).toContain('Documento "02-b.md" sem pergunta factual.')
   })
 
-  it("requires pergunta and turnos to be mutually exclusive", () => {
+  it("requires pergunta and turnos to be mutually exclusive", async () => {
     const items = validSet()
     replace(items, 0, { turnos: ["a", "b"] })
     replace(items, 1, { pergunta: undefined })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     expect(errors).toContain("Pergunta 1: use pergunta ou turnos, não os dois.")
     expect(errors).toContain("Pergunta 2: falta pergunta ou turnos.")
   })
 
-  it("requires turnos (at least 2) in multi_turno and only there", () => {
+  it("requires turnos (at least 2) in multi_turno and only there", async () => {
     const items = validSet()
     const id = replace(items, firstOf(items, "multi_turno"), { turnos: ["só um"] })
     replace(items, 0, { pergunta: undefined, turnos: ["a", "b"] })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     expect(errors).toContain(
       `Pergunta ${id}: multi_turno precisa de turnos com 2 ou mais mensagens.`,
     )
     expect(errors).toContain("Pergunta 1: só multi_turno usa turnos.")
   })
 
-  it("requires esperado coherent with the type", () => {
+  it("requires esperado coherent with the type", async () => {
     const items = validSet()
     replace(items, 0, { esperado: "fallback" })
     const out = replace(items, firstOf(items, "fora_de_escopo"), { esperado: "recusa" })
     const block = replace(items, firstOf(items, "bloqueio"), { esperado: "fallback" })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     expect(errors).toContain('Pergunta 1: tipo factual precisa de esperado "resposta".')
     expect(errors).toContain(`Pergunta ${out}: tipo fora_de_escopo precisa de esperado "fallback".`)
     expect(errors).toContain(`Pergunta ${block}: tipo bloqueio precisa de esperado "recusa".`)
   })
 
-  it("requires every fonte_esperada to exist in knowledge-base/", () => {
+  it("requires every fonte_esperada to exist in knowledge-base/", async () => {
     const items = validSet()
     replace(items, 1, { fonte_esperada: ["12-inexistente.md"] })
-    expect(errorsOf(items)).toContain(
+    expect(await errorsOf(items)).toContain(
       'Pergunta 2: fonte_esperada "12-inexistente.md" não existe em knowledge-base/.',
     )
   })
 
-  it("requires fonte_esperada and 1 to 3 deve_conter terms in scope", () => {
+  it("requires fonte_esperada and 1 to 3 deve_conter terms in scope", async () => {
     const items = validSet()
     replace(items, 1, { fonte_esperada: [] })
     replace(items, 2, { deve_conter: ["a", "b", "c", "d"] })
     replace(items, 3, { deve_conter: [""] })
-    const errors = errorsOf(items)
+    const errors = await errorsOf(items)
     expect(errors).toContain("Pergunta 2: perguntas no escopo precisam de fonte_esperada.")
     expect(errors).toContain("Pergunta 3: deve_conter precisa ter de 1 a 3 termos não vazios.")
     expect(errors).toContain("Pergunta 4: deve_conter precisa ter de 1 a 3 termos não vazios.")
   })
 
-  it("requires 2 or more distinct sources in multi_doc", () => {
+  it("requires 2 or more distinct sources in multi_doc", async () => {
     const items = validSet()
     const id = replace(items, firstOf(items, "multi_doc"), { fonte_esperada: ["01-a.md"] })
-    expect(errorsOf(items)).toContain(
+    expect(await errorsOf(items)).toContain(
       `Pergunta ${id}: multi_doc precisa de 2 ou mais arquivos em fonte_esperada.`,
     )
   })
 
-  it("requires a nota on every question", () => {
+  it("requires a nota on every question", async () => {
     const items = validSet()
     replace(items, 0, { nota: " " })
-    expect(errorsOf(items)).toContain("Pergunta 1: falta a nota.")
+    expect(await errorsOf(items)).toContain("Pergunta 1: falta a nota.")
   })
 
-  it("rejects a perfil.plan outside the list", () => {
+  it("rejects a perfil.plan outside the list", async () => {
     const items: unknown[] = validSet()
-    replace(items, 0, { perfil: { plan: "Plano Próprio" } })
-    expect(errorsOf(items)).toContain(
+    replace(items, 0, { perfil: { version: 2, plan: "Plano Próprio" } })
+    expect(await errorsOf(items)).toContain(
       'Pergunta 1: perfil.plan precisa ser "proprio", "entrega" ou "misto".',
     )
   })
 
-  it("rejects an invalid perfil", () => {
+  it("rejects an invalid perfil with the message of the shared parser", async () => {
     const items: unknown[] = validSet()
-    replace(items, 0, { perfil: { name: 3, idade: "x" } })
-    const errors = errorsOf(items)
-    expect(errors).toContain("Pergunta 1: perfil.name precisa ser texto.")
-    expect(errors).toContain('Pergunta 1: perfil tem campo desconhecido "idade".')
+    replace(items, 0, { perfil: { version: 2, name: 3 } })
+    replace(items, 1, { perfil: { version: 2, idade: "x" } })
+    replace(items, 2, { perfil: { version: 2, cuisine: { id: "tailandesa" } } })
+    replace(items, 3, { perfil: { version: 2, location: { uf: "SP", cityCode: 3304557 } } })
+    const errors = await errorsOf(items)
+    expect(errors).toContain("Pergunta 1: perfil inválido: O perfil do restaurante é inválido.")
+    expect(errors).toContain("Pergunta 2: perfil inválido: O pedido tem campos desconhecidos.")
+    expect(errors).toContain(
+      "Pergunta 3: perfil inválido: Escolha o tipo de cozinha da lista ou descreva em até 30 caracteres.",
+    )
+    expect(errors).toContain("Pergunta 4: perfil inválido: Escolha o estado e a cidade da lista.")
+  })
+
+  it("rejects a profile in the old format with the message of the PUT", async () => {
+    const items: unknown[] = validSet()
+    replace(items, 0, { perfil: { plan: "misto", city: "Campinas" } })
+    replace(items, 1, { perfil: { plan: "misto", name: "Bella" } })
+    const errors = await errorsOf(items)
+    expect(errors).toContain(
+      "Pergunta 1: perfil inválido: O formulário do perfil mudou. Recarregue a página.",
+    )
+    expect(errors).toContain(
+      "Pergunta 2: perfil inválido: O formulário do perfil mudou. Recarregue a página.",
+    )
+  })
+
+  it("accepts a v2 profile with a cuisine and a city", async () => {
+    const items: unknown[] = validSet()
+    replace(items, 0, {
+      perfil: {
+        version: 2,
+        plan: "entrega",
+        cuisine: { id: "japonesa" },
+        location: { uf: "SP", cityCode: 3509502 },
+      },
+    })
+    expect(await errorsOf(items)).toEqual([])
   })
 })
 
@@ -422,13 +457,13 @@ function baseOptions(assistant: Assistant) {
 }
 
 describe("runQuestions", () => {
-  const single = q({ id: 1, pergunta: "Qual a comissão?", perfil: { plan: "misto" } })
+  const single = q({ id: 1, pergunta: "Qual a comissão?", perfil: { version: 2, plan: "misto" } })
   const multi = q({
     id: 2,
     tipo: "multi_turno",
     pergunta: undefined,
     turnos: ["Faço entrega própria.", "E a comissão?"],
-    perfil: { name: "Loja" },
+    perfil: { version: 2, name: "Loja" },
   })
 
   it("runs each question in a new eval session and sums turns in multi_turno", async () => {
@@ -443,21 +478,21 @@ describe("runQuestions", () => {
         message: "Qual a comissão?",
         channel: "eval",
         accountId: null,
-        profile: { plan: "misto" },
+        profile: { version: 2, plan: "misto" },
       },
       {
         sessionId: "sessao-2",
         message: "Faço entrega própria.",
         channel: "eval",
         accountId: null,
-        profile: { name: "Loja" },
+        profile: { version: 2, name: "Loja" },
       },
       {
         sessionId: "sessao-2",
         message: "E a comissão?",
         channel: "eval",
         accountId: null,
-        profile: { name: "Loja" },
+        profile: { version: 2, name: "Loja" },
       },
     ])
     // Delay between questions and between turns, never before the first message.

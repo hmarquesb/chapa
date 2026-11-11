@@ -44,7 +44,8 @@ const ACCOUNT: AccountRecord = {
   id: "7a0f2b8c-1d2e-4f30-9a41-5b6c7d8e9f01",
   kind: "google",
   email: "MARCADOR-EMAIL@exemplo.com",
-  profile: {},
+  profile: { version: 2 },
+  profileNeedsReview: false,
   createdAt: new Date("2026-11-01T12:00:00.000Z"),
   lastSeenAt: new Date("2026-11-06T11:00:00.000Z"),
   expiresAt: null,
@@ -243,12 +244,12 @@ describe("createChatHandler", () => {
       sessionId: SESSION_ID,
     })
     expect(assistant.inputs).toEqual([
-      { ...VALID, channel: "web", accountId: ACCOUNT.id, accountProfile: {} },
+      { ...VALID, channel: "web", accountId: ACCOUNT.id, accountProfile: { version: 2 } },
     ])
   })
 
   it("passes the profile of the authenticated account to the assistant", async () => {
-    const profile = { name: "Pizzaria Bella", plan: "entrega" as const }
+    const profile = { version: 2 as const, name: "Pizzaria Bella", plan: "entrega" as const }
     const { handler, assistant } = chatSetup({
       authenticate: async () => ({ ...ACCOUNT, profile }),
     })
@@ -317,7 +318,7 @@ describe("createChatHandler", () => {
         message: "Quando cai o repasse?",
         channel: "web",
         accountId: ACCOUNT.id,
-        accountProfile: {},
+        accountProfile: { version: 2 },
       },
     ])
     expect(sessions.calls).toEqual([])
@@ -526,7 +527,7 @@ describe("request logs", () => {
 
   it("never contain the message, the profile, the sessionId or the IP", async () => {
     const { handler, assistant, logs } = chatSetup({
-      authenticate: async () => ({ ...ACCOUNT, profile: { name: "MARCADOR-PERFIL" } }),
+      authenticate: async () => ({ ...ACCOUNT, profile: { version: 2, name: "MARCADOR-PERFIL" } }),
     })
     const body = { sessionId: SESSION_ID, message: "MARCADOR-SECRETO-123" }
     await handler(chatRequest(body))
@@ -564,7 +565,7 @@ const SESSION: SessionRecord = {
   id: SESSION_ID,
   channel: "web",
   accountId: ACCOUNT.id,
-  profile: { name: "Pizzaria Bella", plan: "misto" },
+  profile: { version: 2, name: "Pizzaria Bella", plan: "misto" },
   summary: "RESUMO-INTERNO",
   summaryUntilId: null,
   createdAt: new Date("2026-11-06T11:00:00.000Z"),
@@ -1080,37 +1081,116 @@ function profileRequest(
 }
 
 describe("createProfileHandlers", () => {
-  it("GET returns the profile of the account", async () => {
-    const profile = { name: "Pizzaria Bella", plan: "misto" as const }
+  const V2_BODY = {
+    version: 2,
+    name: "  Pizzaria Bella ",
+    plan: "entrega",
+    cuisine: { id: "pizza" },
+    location: { uf: "RJ", cityCode: 3303302 },
+    hours: "",
+  }
+  const V2_SAVED = {
+    version: 2,
+    name: "Pizzaria Bella",
+    plan: "entrega",
+    cuisine: { id: "pizza" },
+    location: { uf: "RJ", cityCode: 3303302 },
+  }
+
+  it("GET returns the profile of the account and needsReview", async () => {
+    const profile = { version: 2 as const, name: "Pizzaria Bella", plan: "misto" as const }
     const { get, logs } = profileSetup(async () => ({ ...ACCOUNT, profile }))
     const res = await get(profileRequest("GET"))
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ profile })
+    expect(await res.json()).toEqual({ profile, needsReview: false })
     expect(logs).toEqual([
       expect.objectContaining({ route: "/api/profile", method: "GET", status: 200 }),
     ])
     expect(logs[0]?.accountId).toBe(ACCOUNT.id)
   })
 
-  it("PUT trims, drops empty fields, saves on the account and answers the saved profile", async () => {
+  it("GET returns needsReview true for a converted legacy profile", async () => {
+    const { get } = profileSetup(async () => ({
+      ...ACCOUNT,
+      profile: { version: 2, plan: "misto" },
+      profileNeedsReview: true,
+    }))
+    const res = await get(profileRequest("GET"))
+    expect(await res.json()).toEqual({
+      profile: { version: 2, plan: "misto" },
+      needsReview: true,
+    })
+  })
+
+  it("PUT saves a valid v2 profile and answers it with needsReview false", async () => {
     const { put, accounts, logs } = profileSetup()
+    const res = await put(profileRequest("PUT", V2_BODY))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ profile: V2_SAVED, needsReview: false })
+    expect(accounts.updates).toEqual([{ id: ACCOUNT.id, profile: V2_SAVED }])
+    expect(logs[0]).toMatchObject({ route: "/api/profile", method: "PUT", status: 200 })
+  })
+
+  it("PUT saves a profile with only the state", async () => {
+    const { put, accounts } = profileSetup()
     const res = await put(
-      profileRequest("PUT", { name: "  Pizzaria Bella ", plan: "entrega", city: "" }),
+      profileRequest("PUT", { version: 2, plan: "misto", location: { uf: "MG" } }),
     )
     expect(res.status).toBe(200)
-    const profile = { name: "Pizzaria Bella", plan: "entrega" }
-    expect(await res.json()).toEqual({ profile })
-    expect(accounts.updates).toEqual([{ id: ACCOUNT.id, profile }])
-    expect(logs[0]).toMatchObject({ route: "/api/profile", method: "PUT", status: 200 })
+    expect(accounts.updates[0]?.profile.location).toEqual({ uf: "MG" })
+  })
+
+  it("PUT refuses the legacy format with 400 and does not save", async () => {
+    const { put, accounts } = profileSetup()
+    const res = await put(profileRequest("PUT", { plan: "misto", name: "Bella" }))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      error: "O formulário do perfil mudou. Recarregue a página.",
+    })
+    expect(accounts.updates).toEqual([])
+  })
+
+  it("PUT answers 400 with field cuisine for a cuisine outside the list", async () => {
+    const { put, accounts } = profileSetup()
+    for (const cuisine of [
+      { id: "tailandesa" },
+      { id: "outro" },
+      { id: "outro", text: "x".repeat(31) },
+    ]) {
+      const res = await put(profileRequest("PUT", { version: 2, plan: "misto", cuisine }))
+      expect(res.status).toBe(400)
+      expect(await res.json()).toEqual({
+        error: "Escolha o tipo de cozinha da lista ou descreva em até 30 caracteres.",
+        field: "cuisine",
+      })
+    }
+    expect(accounts.updates).toEqual([])
+  })
+
+  it("PUT answers 400 with field location for a city of another state", async () => {
+    const { put, accounts } = profileSetup()
+    const res = await put(
+      profileRequest("PUT", {
+        version: 2,
+        plan: "misto",
+        location: { uf: "SP", cityCode: 3304557 },
+      }),
+    )
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      error: "Escolha o estado e a cidade da lista.",
+      field: "location",
+    })
+    expect(accounts.updates).toEqual([])
   })
 
   it("PUT answers 400 for a missing or invalid plan and an unknown field, without saving", async () => {
     const { put, accounts } = profileSetup()
-    const noPlan = await put(profileRequest("PUT", { name: "Bella" }))
+    const noPlan = await put(profileRequest("PUT", { version: 2, name: "Bella" }))
     expect(noPlan.status).toBe(400)
     expect(await noPlan.json()).toEqual({ error: "Escolha o plano: Próprio, Entrega ou Misto." })
-    expect((await put(profileRequest("PUT", { plan: "premium" }))).status).toBe(400)
-    const unknown = await put(profileRequest("PUT", { plan: "misto", cnpj: "1" }))
+    expect((await put(profileRequest("PUT", { version: 2, plan: "premium" }))).status).toBe(400)
+    const unknown = await put(profileRequest("PUT", { version: 2, plan: "misto", cnpj: "1" }))
     expect(unknown.status).toBe(400)
     expect(await unknown.json()).toEqual({ error: "O pedido tem campos desconhecidos." })
     expect(accounts.updates).toEqual([])
@@ -1118,7 +1198,9 @@ describe("createProfileHandlers", () => {
 
   it("PUT answers 400 with the field for a refused text, logs only the reason and does not save", async () => {
     const { put, accounts, logs } = profileSetup()
-    const res = await put(profileRequest("PUT", { plan: "misto", name: "M3rd@ Burguer" }))
+    const res = await put(
+      profileRequest("PUT", { version: 2, plan: "misto", name: "M3rd@ Burguer" }),
+    )
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       error: "Esse nome tem um termo que não é permitido. Escolha outro.",
@@ -1130,9 +1212,15 @@ describe("createProfileHandlers", () => {
     for (const piece of ["m3rd", "burguer", "rd@"]) expect(line).not.toContain(piece)
   })
 
-  it("PUT answers 400 with the cuisine field for a forbidden character", async () => {
+  it("PUT answers 400 with the cuisine field for a forbidden character in Outro", async () => {
     const { put, logs } = profileSetup()
-    const res = await put(profileRequest("PUT", { plan: "proprio", cuisine: "<b>pizza</b>" }))
+    const res = await put(
+      profileRequest("PUT", {
+        version: 2,
+        plan: "proprio",
+        cuisine: { id: "outro", text: "<b>pizza</b>" },
+      }),
+    )
     expect(res.status).toBe(400)
     expect(await res.json()).toMatchObject({ field: "cuisine" })
     expect(logs[0]).toMatchObject({ profileRejected: "caractere" })
@@ -1141,7 +1229,7 @@ describe("createProfileHandlers", () => {
 
   it("PUT answers 400 without field when the plan is missing, even with a refused name", async () => {
     const { put, logs } = profileSetup()
-    const res = await put(profileRequest("PUT", { name: "M3rd@ Burguer" }))
+    const res = await put(profileRequest("PUT", { version: 2, name: "M3rd@ Burguer" }))
     expect(await res.json()).toEqual({ error: "Escolha o plano: Próprio, Entrega ou Misto." })
     expect(logs[0]).not.toHaveProperty("profileRejected")
   })
@@ -1149,7 +1237,8 @@ describe("createProfileHandlers", () => {
   it("PUT answers 413 for a body over the limit, 415 for a non-JSON type and 400 for broken JSON", async () => {
     const { put, accounts } = profileSetup()
     expect(
-      (await put(profileRequest("PUT", { plan: "misto", name: "x".repeat(5 * 1024) }))).status,
+      (await put(profileRequest("PUT", { version: 2, plan: "misto", name: "x".repeat(5 * 1024) })))
+        .status,
     ).toBe(413)
     expect((await put(profileRequest("PUT", {}, { contentType: "text/plain" }))).status).toBe(415)
     expect((await put(profileRequest("PUT", null, { raw: "{oops" }))).status).toBe(400)
@@ -1159,7 +1248,7 @@ describe("createProfileHandlers", () => {
   it("answers 401 without a session, without reading the body", async () => {
     const { get, put, accounts } = profileSetup(async () => null)
     expect((await get(profileRequest("GET"))).status).toBe(401)
-    const req = profileRequest("PUT", { plan: "misto" }, { contentType: "text/plain" })
+    const req = profileRequest("PUT", { version: 2, plan: "misto" }, { contentType: "text/plain" })
     const res = await put(req)
     expect(res.status).toBe(401)
     expect(await res.json()).toEqual({ error: UNAUTHENTICATED })
@@ -1170,7 +1259,7 @@ describe("createProfileHandlers", () => {
   it("PUT maps a database failure to 503", async () => {
     const { put, accounts } = profileSetup()
     accounts.failWith = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" })
-    expect((await put(profileRequest("PUT", { plan: "misto" }))).status).toBe(503)
+    expect((await put(profileRequest("PUT", { version: 2, plan: "misto" }))).status).toBe(503)
   })
 })
 

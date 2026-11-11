@@ -1,8 +1,9 @@
 // CLI de desenvolvimento do assistente (S05, RF8).
 // ⚠️ Chama a API do Gemini e grava no banco do DATABASE_URL: rode só com autorização.
-// npm run chat -- --nome "Pizzaria Bella" --plano misto --cidade "São Paulo"
+// npm run chat -- --perfil perfil.json --nome "Pizzaria Bella" --plano misto
 // npm run chat -- --sessao <uuid> --debug
 import { randomUUID } from "node:crypto"
+import { readFile } from "node:fs/promises"
 import { createInterface } from "node:readline/promises"
 import { chunkConfigKey } from "@/config"
 import {
@@ -14,48 +15,60 @@ import {
 import type { AssistantReply, RetrievedChunk } from "@/core/types"
 import { getContainer } from "@/infra/container"
 import { closeSql } from "@/infra/db"
-import { checkProfileText, profileTextMessage } from "@/lib/moderation/profile-text"
 import { parsePlanId } from "@/lib/plans"
+import { parseProfileInput } from "@/lib/profile/parse"
 import { isUuid } from "@/lib/session-id"
-import type { RestaurantProfile } from "@/lib/types"
+import { PROFILE_VERSION, type RestaurantProfile } from "@/lib/types"
 import { parseArgs } from "./lib/args"
-
-const PROFILE_FLAGS: Record<string, keyof RestaurantProfile> = {
-  nome: "name",
-  plano: "plan",
-  cozinha: "cuisine",
-  cidade: "city",
-  horario: "hours",
-}
 
 const EXIT_COMMAND = "sair"
 
-// Perfil só com as flags informadas. Sem nenhuma, devolve undefined para manter o da sessão.
-// Um --plano inválido, ou um --nome e --cozinha que o filtro recusa, viram erro: devolve a
-// mensagem em vez do perfil.
+// --cozinha, --cidade e --horario saíram quando o perfil virou estruturado (v2): a cozinha é
+// um id da lista e o local é uma UF com o código IBGE da cidade, que só cabem num arquivo.
+const REMOVED_FLAGS = ["cozinha", "cidade", "horario"] as const
+const REMOVED_FLAGS_MESSAGE =
+  "As flags --cozinha, --cidade e --horario saíram. Use --perfil <arquivo.json> com o perfil v2, " +
+  'por exemplo { "version": 2, "plan": "misto", "cuisine": { "id": "pizza" }, ' +
+  '"location": { "uf": "RJ", "cityCode": 3303302 } }.'
 const INVALID_PLAN_MESSAGE = "--plano precisa ser proprio, entrega ou misto (ou o nome do plano)."
 
-function profileFromFlags(
+// Perfil do CLI: o --perfil (JSON no formato v2) validado pelo parser único, com o --nome e o
+// --plano por cima. Sem nenhuma flag, devolve undefined para manter o perfil da sessão. Um
+// arquivo ilegível ou inválido, ou um --nome que o filtro recusa, viram erro.
+async function profileFromFlags(
   flags: Record<string, string | true>,
-): RestaurantProfile | undefined | { error: string } {
-  const profile: RestaurantProfile = {}
-  for (const [flag, field] of Object.entries(PROFILE_FLAGS)) {
-    const value = flags[flag]
-    if (typeof value !== "string" || value.trim() === "") continue
-    if (field === "plan") {
-      const plan = parsePlanId(value)
-      if (plan === null) return { error: INVALID_PLAN_MESSAGE }
-      profile.plan = plan
-    } else {
-      const text = value.trim()
-      if (field === "name" || field === "cuisine") {
-        const check = checkProfileText(field, text)
-        if (!check.ok) return { error: profileTextMessage(field, check.reason) }
+): Promise<RestaurantProfile | undefined | { error: string }> {
+  if (REMOVED_FLAGS.some((flag) => flags[flag] !== undefined)) {
+    return { error: REMOVED_FLAGS_MESSAGE }
+  }
+  const fileFlag = flags.perfil
+  const name = flags.nome
+  const plan = flags.plano
+  if (fileFlag === true) return { error: "--perfil precisa do caminho de um arquivo JSON." }
+  const hasName = typeof name === "string" && name.trim() !== ""
+  const hasPlan = typeof plan === "string" && plan.trim() !== ""
+  if (fileFlag === undefined && !hasName && !hasPlan) return undefined
+
+  let body: Record<string, unknown> = { version: PROFILE_VERSION }
+  if (typeof fileFlag === "string") {
+    try {
+      const parsed: unknown = JSON.parse(await readFile(fileFlag, "utf8"))
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        return { error: "O arquivo do --perfil precisa conter um objeto JSON." }
       }
-      profile[field] = text
+      body = { ...parsed }
+    } catch {
+      return { error: "Não consegui ler o arquivo do --perfil como JSON." }
     }
   }
-  return Object.keys(profile).length > 0 ? profile : undefined
+  if (hasName) body.name = name
+  if (hasPlan) {
+    const planId = parsePlanId(plan)
+    if (planId === null) return { error: INVALID_PLAN_MESSAGE }
+    body.plan = planId
+  }
+  const result = await parseProfileInput(body, { requirePlan: false })
+  return result.ok ? result.value : { error: result.error }
 }
 
 const SESSION_NOT_FOUND_MESSAGE = "Esta conversa não existe ou não é do CLI."
@@ -120,7 +133,7 @@ async function main(): Promise<void> {
     return
   }
   const sessionId = typeof sessionFlag === "string" ? sessionFlag : randomUUID()
-  const parsedProfile = profileFromFlags(flags)
+  const parsedProfile = await profileFromFlags(flags)
   if (parsedProfile !== undefined && "error" in parsedProfile) {
     console.error(parsedProfile.error)
     process.exitCode = 1

@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/brand/site-footer"
 import { AccountMenu } from "@/components/chat/account-menu"
 import { ChatApp } from "@/components/chat/chat-app"
 import { DemoBanner } from "@/components/chat/demo-banner"
+import { ProfileReviewBanner } from "@/components/chat/profile-review-banner"
 import { ProfileSummary } from "@/components/chat/profile-summary"
 import { getAuthenticatedAccount, isGoogleEnabled } from "@/infra/auth"
 import { DEMO_ACCOUNT_LABEL } from "@/lib/sign-in"
@@ -36,6 +37,7 @@ export default async function Home({
         </div>
         <AccountMenu label={label} signOutAction={signOutOfAccount} />
       </header>
+      {account.profileNeedsReview && <ProfileReviewBanner />}
       {isDemo && <DemoBanner googleEnabled={isGoogleEnabled()} googleAction={signInWithGoogle} />}
       <main className="flex flex-1 flex-col">
         <ChatApp />

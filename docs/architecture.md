@@ -4,14 +4,14 @@
 
 Assistente web para restaurantes que **já são parceiros** da Rango, uma empresa de delivery fictícia. Ele responde dúvidas operacionais com RAG sobre a base em `knowledge-base/`, cita as fontes e encaminha ao suporte quando não sabe a resposta. Cadastro de novos parceiros fica fora do escopo. É um projeto de estudo, não oficial.
 
-O chat na web exige login: com Google ou numa conta de demonstração criada a cada clique ([ADR 0020](adr/0020-login-google-e-conta-demo.md)). O perfil do restaurante (plano, e opcionalmente nome, cozinha, cidade e horário) fica na conta e é preenchido no primeiro acesso. O CLI e a avaliação não passam pelo login.
+O chat na web exige login: com Google ou numa conta de demonstração criada a cada clique ([ADR 0020](adr/0020-login-google-e-conta-demo.md)). O perfil do restaurante (plano, e opcionalmente nome, cozinha, estado, cidade e horário) fica na conta e é preenchido no primeiro acesso. O CLI e a avaliação não passam pelo login.
 
 ## Arquitetura do projeto
 
 - Um projeto Next.js só, com front e API juntos, publicado na Vercel.
 - A lógica do assistente fica em `src/core/` e não importa nada do Next. A API, o eval e a CLI chamam o mesmo `handleMessage`.
 - O `core/` recebe o cliente de LLM e os repositórios por parâmetro. Os testes usam fakes e nunca acessam a rede.
-- O perfil vem da conta na web: `createChatHandler` lê a conta a cada pedido e passa `accountProfile` ao assistente, que o usa só no prompt e nunca o grava na conversa. No CLI e no eval, o perfil continua vindo de `--nome`, `--plano` e afins, e é guardado na conversa.
+- O perfil vem da conta na web: `createChatHandler` lê a conta a cada pedido e passa `accountProfile` ao assistente, que o usa só no prompt e nunca o grava na conversa. No CLI e no eval, o perfil vem de `--perfil <arquivo.json>` (o formato v2, validado pelo mesmo parser da API), com `--nome` e `--plano` por cima, e é guardado na conversa.
 - Fluxo de uma mensagem: dono da conversa (a conta logada; o servidor gera o id da conversa nova) → guardrail de entrada → histórico + resumo da sessão → reescrita da pergunta → embedding → busca híbrida → geração → guardrail de saída → salvar.
 - Se nenhum trecho passa do `minScore`, a resposta é a mensagem de fallback, sem chamar o LLM.
 - Só a pergunta original e a resposta final são salvas. Os trechos recuperados nunca vão para o banco.
@@ -57,7 +57,7 @@ Stack:
 Regras:
 - A página `/` tem o chat, as fontes em `Badge` embaixo de cada resposta, 3 perguntas de exemplo, o resumo do perfil com o link "Editar perfil" e um rodapé (`SiteFooter`) com o aviso de que a Rango é fictícia e o link "Privacidade".
 - **Marca:** Rango é a marca (o logo "rango." no cabeçalho de todas as telas) e Chapa é o assistente (o `<h1>`, o avatar nas respostas e o indicador "Chapa está pensando…"). Os componentes de marca ficam em `src/components/brand/` (`RangoLogo`, `ChapaAvatar`, `ThinkingIndicator`, `SiteFooter`, `ThemeToggle`), e a geometria do ícone do Chapa, em `src/lib/chapa-icon.ts`.
-- `/perfil` tem o formulário do perfil (o plano é um `RadioGroup` obrigatório). Quem entra sem plano salvo é levado para lá antes do chat. `/privacidade` é pública e mostra o que a conta guarda, a retenção e como excluir a conta. O menu da conta tem "Editar perfil" e "Excluir minha conta".
+- `/perfil` tem o formulário do perfil (o plano é um `RadioGroup` obrigatório; a cozinha é um combobox com busca e "Outro", e o local, um seletor de estado e um combobox de cidade). Quando o perfil salvo precisa de revisão, o chat mostra uma faixa com o link para `/perfil`. Quem entra sem plano salvo é levado para lá antes do chat. `/privacidade` é pública e mostra o que a conta guarda, a retenção e como excluir a conta. O menu da conta tem "Editar perfil" e "Excluir minha conta".
 - O id da conversa é gerado no servidor: o primeiro `POST /api/chat` vai sem `sessionId` e a resposta o devolve. O navegador o guarda só em memória, não no `localStorage` nem na URL. Recarregar a página abre uma conversa nova.
 - A lista de conversas da conta (um painel lateral em telas pequenas) vem de `GET /api/sessions`, com o título cortado da primeira pergunta, e é atualizada depois de cada resposta. Clicar numa conversa carrega o histórico por `GET /api/sessions/[id]/messages`; apagar pede confirmação e usa `DELETE /api/sessions/[id]`.
 - Botão "Nova conversa": limpa a tela e esquece o id, e o servidor gera outro no próximo chat.
@@ -81,7 +81,7 @@ Stack:
 
 Rotas:
 - `POST /api/chat`
-- `GET /api/profile` e `PUT /api/profile`, o perfil da conta (o `PUT` exige o plano)
+- `GET /api/profile` (devolve `{ profile, needsReview }`) e `PUT /api/profile`, o perfil da conta no formato v2 (o `PUT` exige o plano)
 - `DELETE /api/account`, que exclui a conta logada e as conversas dela (`204`)
 - `GET /api/sessions`, com as conversas da conta, da mais recente para a mais antiga
 - `GET /api/sessions/[id]/messages`
@@ -90,7 +90,7 @@ Rotas:
 - `GET /api/cron/cleanup`, protegida por `CRON_SECRET`
 - `GET|POST /api/auth/*`, do Auth.js (csrf, callbacks do Google e da demo, sessão, saída)
 
-O `PUT /api/profile` passa o nome e a cozinha pelo filtro local de termos (`checkProfileText`, em `src/lib/moderation/`, o mesmo do formulário, do assistente e do CLI): o texto recusado devolve `400` com `{ error, field }`, e o log guarda só o motivo ([ADR 0023](adr/0023-filtro-local-de-termos-no-perfil.md)).
+O `PUT /api/profile` passa o nome e a cozinha pelo filtro local de termos (`checkProfileText`, em `src/lib/moderation/`, o mesmo do formulário, do assistente e do CLI): o texto recusado devolve `400` com `{ error, field }`, e o log guarda só o motivo ([ADR 0023](adr/0023-filtro-local-de-termos-no-perfil.md)). O corpo é validado por `parseProfileInput` (`src/lib/profile/`), o mesmo parser do CLI e do eval, e erros de forma, de cozinha e de local também trazem `field` ([ADR 0024](adr/0024-perfil-estruturado-e-municipios-do-ibge.md)).
 
 As rotas de chat e de conversas exigem sessão (`401` sem ela, antes de ler o corpo e de contar o rate limit). `GET /api/health` e o cron não exigem. Toda consulta de conversa filtra pela conta logada, e a conversa alheia responde `404`, como a inexistente ([ADR 0021](adr/0021-autorizacao-por-conta-no-repositorio.md)).
 
@@ -102,7 +102,8 @@ Scripts locais (rodam com `tsx`, fora da Vercel): `ingest`, `chat`, `eval` e `sm
 
 Supabase: PostgreSQL com `pgvector` e busca textual com o dicionário `portuguese`.
 
-- Tabelas: `accounts` (tipo `google` ou `demo`, `google_sub`, e-mail, `profile`, `last_seen_at`, `expires_at`), `sessions` (perfil só nas conversas do CLI e do eval, resumo, canal e `account_id`, que uma restrição do banco exige na web e proíbe no CLI e no eval), `messages`, `document_chunks` e `rate_limits` (buckets `minute`, `day`, `demo_day` e `account_day`). O `account_day` limita as mensagens por conta e por dia, com o limite de cada tipo de conta em `src/config.ts`.
+- Tabelas: `accounts` (tipo `google` ou `demo`, `google_sub`, e-mail, `profile` (JSON com `version: 2`; a cidade é só o código IBGE, e o nome vem da lista), `last_seen_at`, `expires_at`), `sessions` (perfil só nas conversas do CLI e do eval, resumo, canal e `account_id`, que uma restrição do banco exige na web e proíbe no CLI e no eval), `messages`, `document_chunks` e `rate_limits` (buckets `minute`, `day`, `demo_day` e `account_day`). O `account_day` limita as mensagens por conta e por dia, com o limite de cada tipo de conta em `src/config.ts`.
+- O `profile` salvo no formato antigo não é migrado no banco: `upgradeProfile` o converte a cada leitura (nas contas e nas conversas) e marca `needsReview` quando algo não tem conversão segura. O dado só é reescrito quando a pessoa salva o perfil.
 - `document_chunks` tem `embedding_model` e `chunk_config`, e toda busca filtra pelos dois. Nunca compare vetores de modelos ou de fatiamentos diferentes.
 - Busca híbrida: o SQL devolve `semantic` e `keyword` por trecho, e uma função pura em TS combina os dois com `alpha`, filtra por `minScore` e corta em `topK`.
 - As mensagens são ordenadas por `id`, não por `created_at`.

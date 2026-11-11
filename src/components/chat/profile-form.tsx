@@ -10,44 +10,55 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { saveProfile } from "@/lib/api-client"
-import {
-  checkProfileText,
-  type ProfileTextField,
-  profileTextMessage,
-} from "@/lib/moderation/profile-text"
+import { checkProfileText, profileTextMessage } from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
 import {
+  CUISINE_TEXT_MAX_CHARS,
   PLAN_IDS,
   PLAN_LABELS,
   type PlanId,
   PROFILE_FIELD_MAX_CHARS,
+  type ProfileErrorField,
+  type ProfileUpdateRequest,
   type RestaurantProfile,
 } from "@/lib/types"
+import { VALIDATION_MESSAGES } from "@/lib/validation-messages"
+import {
+  type CuisineDraft,
+  CuisineField,
+  cuisineErrorTargetId,
+  cuisineFromDraft,
+  draftFromCuisine,
+} from "./cuisine-field"
+import {
+  EMPTY_LOCATION_DRAFT,
+  type LocationDraft,
+  LocationFields,
+  locationErrorTargetId,
+} from "./location-fields"
 
-type TextField = "name" | "cuisine" | "city" | "hours"
-
-const TEXT_FIELDS: { key: TextField; label: string; placeholder: string }[] = [
-  { key: "name", label: "Nome do restaurante", placeholder: "Ex.: Pizzaria Bella…" },
-  { key: "cuisine", label: "Tipo de cozinha", placeholder: "Ex.: italiana…" },
-  { key: "city", label: "Cidade", placeholder: "Ex.: Campinas…" },
-  { key: "hours", label: "Horário de funcionamento", placeholder: "Ex.: 18h às 23h…" },
-]
-
-const FILTERED_FIELDS: readonly ProfileTextField[] = ["name", "cuisine"]
-
-type FieldErrors = Partial<Record<ProfileTextField, string>>
-
-function isFilteredField(key: TextField): key is ProfileTextField {
-  return key === "name" || key === "cuisine"
-}
-
-// Uma função só decide: a mesma checagem roda no servidor (PUT /api/profile).
-function textError(field: ProfileTextField, value: string): string | undefined {
-  const check = checkProfileText(field, value.trim())
-  return check.ok ? undefined : profileTextMessage(field, check.reason)
-}
+type FieldErrors = Partial<Record<ProfileErrorField, string>>
 
 const PLAN_REQUIRED_MESSAGE = "Escolha o plano do restaurante na Rango."
+
+// Uma função só decide o texto do nome: a mesma checagem roda no servidor (PUT /api/profile).
+function nameError(value: string): string | undefined {
+  const check = checkProfileText("name", value.trim())
+  return check.ok ? undefined : profileTextMessage("name", check.reason)
+}
+
+function cuisineError(draft: CuisineDraft): string | undefined {
+  if (draft.id !== "outro") return undefined
+  const text = draft.text.trim()
+  if (text === "" || text.length > CUISINE_TEXT_MAX_CHARS) return VALIDATION_MESSAGES.cuisineText
+  const check = checkProfileText("cuisine", text)
+  return check.ok ? undefined : profileTextMessage("cuisine", check.reason)
+}
+
+function locationDraftFrom(profile: RestaurantProfile): LocationDraft {
+  if (profile.location === undefined) return EMPTY_LOCATION_DRAFT
+  return { uf: profile.location.uf, cityCode: profile.location.cityCode ?? null }
+}
 
 type ProfileFormProps = {
   profile: RestaurantProfile
@@ -58,64 +69,79 @@ type ProfileFormProps = {
 export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) {
   const router = useRouter()
   const idPrefix = useId()
-  const [values, setValues] = useState<Record<TextField, string>>({
-    name: profile.name ?? "",
-    cuisine: profile.cuisine ?? "",
-    city: profile.city ?? "",
-    hours: profile.hours ?? "",
-  })
+  const [name, setName] = useState(profile.name ?? "")
+  const [hours, setHours] = useState(profile.hours ?? "")
   const [plan, setPlan] = useState<PlanId | "">(profile.plan ?? "")
+  const [cuisine, setCuisine] = useState<CuisineDraft>(() => draftFromCuisine(profile.cuisine))
+  const [location, setLocation] = useState<LocationDraft>(() => locationDraftFrom(profile))
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [planError, setPlanError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const planGroupRef = useRef<HTMLDivElement>(null)
+  const nameId = `${idPrefix}-name`
+  const hoursId = `${idPrefix}-hours`
+  const cuisineId = `${idPrefix}-cuisine`
+  const locationId = `${idPrefix}-location`
   const legendId = `${idPrefix}-plan-legend`
   const planErrorId = `${idPrefix}-plan-error`
+  const nameErrorId = `${nameId}-error`
   const errorId = `${idPrefix}-error`
 
-  function focusField(key: TextField): void {
-    document.getElementById(`${idPrefix}-${key}`)?.focus()
+  function focusById(id: string): void {
+    document.getElementById(id)?.focus()
   }
 
-  function validateField(key: ProfileTextField, value: string): void {
-    const message = textError(key, value)
+  function setFieldError(key: ProfileErrorField, message: string | undefined): void {
     setFieldErrors((current) => {
       const { [key]: _removed, ...rest } = current
       return message === undefined ? rest : { ...rest, [key]: message }
     })
   }
 
+  function focusPlan(): void {
+    planGroupRef.current?.querySelector<HTMLElement>("[role=radio]")?.focus()
+  }
+
+  function buildBody(selectedPlan: PlanId): ProfileUpdateRequest {
+    const cuisineValue = cuisineFromDraft(cuisine)
+    return {
+      version: 2,
+      plan: selectedPlan,
+      ...(name.trim() !== "" ? { name: name.trim() } : {}),
+      ...(cuisineValue !== undefined ? { cuisine: cuisineValue } : {}),
+      ...(location.uf !== ""
+        ? {
+            location: {
+              uf: location.uf,
+              ...(location.cityCode !== null ? { cityCode: location.cityCode } : {}),
+            },
+          }
+        : {}),
+      ...(hours.trim() !== "" ? { hours: hours.trim() } : {}),
+    }
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
     if (saving) return
     const nextErrors: FieldErrors = {}
-    for (const key of FILTERED_FIELDS) {
-      const message = textError(key, values[key])
-      if (message !== undefined) nextErrors[key] = message
-    }
+    const nameMessage = nameError(name)
+    if (nameMessage !== undefined) nextErrors.name = nameMessage
+    const cuisineMessage = cuisineError(cuisine)
+    if (cuisineMessage !== undefined) nextErrors.cuisine = cuisineMessage
     setFieldErrors(nextErrors)
-    const firstInvalid = FILTERED_FIELDS.find((key) => nextErrors[key] !== undefined)
-    if (plan === "") setPlanError(PLAN_REQUIRED_MESSAGE)
-    if (firstInvalid !== undefined) {
-      focusField(firstInvalid)
-      return
-    }
-    if (plan === "") {
-      planGroupRef.current?.querySelector<HTMLElement>("[role=radio]")?.focus()
-      return
-    }
-    setPlanError(null)
+    setPlanError(plan === "" ? PLAN_REQUIRED_MESSAGE : null)
+
+    // Ordem da tela: nome, plano, cozinha. O foco vai ao primeiro com erro.
+    if (nextErrors.name !== undefined) return focusById(nameId)
+    if (plan === "") return focusPlan()
+    if (nextErrors.cuisine !== undefined) return focusById(cuisineErrorTargetId(cuisineId, cuisine))
+
     setError(null)
     setSaving(true)
-    const result = await saveProfile({
-      plan,
-      ...(values.name.trim() !== "" ? { name: values.name.trim() } : {}),
-      ...(values.cuisine.trim() !== "" ? { cuisine: values.cuisine.trim() } : {}),
-      ...(values.city.trim() !== "" ? { city: values.city.trim() } : {}),
-      ...(values.hours.trim() !== "" ? { hours: values.hours.trim() } : {}),
-    })
+    const result = await saveProfile(buildBody(plan))
     if (result.ok) {
       router.push("/")
       router.refresh()
@@ -127,9 +153,14 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
       return
     }
     if (result.field !== undefined) {
-      const field = result.field
-      setFieldErrors({ [field]: result.error })
-      focusField(field)
+      setFieldErrors({ [result.field]: result.error })
+      focusById(
+        result.field === "name"
+          ? nameId
+          : result.field === "cuisine"
+            ? cuisineErrorTargetId(cuisineId, cuisine)
+            : locationErrorTargetId(locationId),
+      )
       return
     }
     setError(result.error)
@@ -141,43 +172,28 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
       className="flex flex-col gap-5 rounded-3xl bg-card p-5 shadow-soft"
       noValidate
     >
-      <p className="text-sm text-muted-foreground">{notice}</p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {TEXT_FIELDS.map((field) => {
-          const inputId = `${idPrefix}-${field.key}`
-          const fieldKey = isFilteredField(field.key) ? field.key : null
-          const fieldError = fieldKey !== null ? fieldErrors[fieldKey] : undefined
-          const fieldErrorId = `${inputId}-error`
-          return (
-            <div key={field.key} className="flex flex-col gap-1.5">
-              <Label htmlFor={inputId}>{field.label}</Label>
-              <Input
-                id={inputId}
-                name={field.key}
-                value={values[field.key]}
-                maxLength={PROFILE_FIELD_MAX_CHARS}
-                placeholder={field.placeholder}
-                autoComplete="off"
-                aria-invalid={fieldError !== undefined ? true : undefined}
-                aria-describedby={fieldError !== undefined ? fieldErrorId : undefined}
-                onChange={(event) => {
-                  setValues({ ...values, [field.key]: event.target.value })
-                  if (fieldKey !== null && fieldError !== undefined) {
-                    setFieldErrors(({ [fieldKey]: _removed, ...rest }) => rest)
-                  }
-                }}
-                onBlur={(event) => {
-                  if (fieldKey !== null) validateField(fieldKey, event.target.value)
-                }}
-              />
-              {fieldError !== undefined && (
-                <p id={fieldErrorId} role="alert" className="text-sm text-destructive">
-                  {fieldError}
-                </p>
-              )}
-            </div>
-          )
-        })}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={nameId}>Nome do restaurante</Label>
+        <Input
+          id={nameId}
+          name="name"
+          value={name}
+          maxLength={PROFILE_FIELD_MAX_CHARS}
+          placeholder="Ex.: Pizzaria Bella…"
+          autoComplete="off"
+          aria-invalid={fieldErrors.name !== undefined ? true : undefined}
+          aria-describedby={fieldErrors.name !== undefined ? nameErrorId : undefined}
+          onChange={(event) => {
+            setName(event.target.value)
+            if (fieldErrors.name !== undefined) setFieldError("name", undefined)
+          }}
+          onBlur={(event) => setFieldError("name", nameError(event.target.value))}
+        />
+        {fieldErrors.name !== undefined && (
+          <p id={nameErrorId} role="alert" className="text-sm text-destructive">
+            {fieldErrors.name}
+          </p>
+        )}
       </div>
       <fieldset
         className="flex flex-col gap-2"
@@ -217,6 +233,38 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
           </p>
         )}
       </fieldset>
+      <CuisineField
+        id={cuisineId}
+        draft={cuisine}
+        onChange={(next) => {
+          setCuisine(next)
+          if (fieldErrors.cuisine !== undefined) setFieldError("cuisine", undefined)
+        }}
+        onTextBlur={() => setFieldError("cuisine", cuisineError(cuisine))}
+        {...(fieldErrors.cuisine !== undefined ? { error: fieldErrors.cuisine } : {})}
+      />
+      <LocationFields
+        id={locationId}
+        draft={location}
+        onChange={(next) => {
+          setLocation(next)
+          if (fieldErrors.location !== undefined) setFieldError("location", undefined)
+        }}
+        {...(fieldErrors.location !== undefined ? { error: fieldErrors.location } : {})}
+      />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={hoursId}>Horário de funcionamento</Label>
+        <Input
+          id={hoursId}
+          name="hours"
+          value={hours}
+          maxLength={PROFILE_FIELD_MAX_CHARS}
+          placeholder="Ex.: 18h às 23h…"
+          autoComplete="off"
+          onChange={(event) => setHours(event.target.value)}
+        />
+      </div>
+      <p className="text-sm text-muted-foreground">{notice}</p>
       {error !== null && (
         <Alert variant="destructive" id={errorId} role="alert">
           <CircleAlertIcon aria-hidden="true" />

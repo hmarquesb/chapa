@@ -229,11 +229,14 @@ describe("deleteSession", () => {
 })
 
 describe("saveProfile", () => {
-  const profile = { name: "Bella", plan: "misto" as const }
+  const profile = { version: 2 as const, name: "Bella", plan: "misto" as const }
 
   it("puts JSON to /api/profile and returns the saved profile", async () => {
-    const { fn, calls } = fakeFetch(json({ profile }))
-    expect(await saveProfile(profile, fn)).toEqual({ ok: true, data: { profile } })
+    const { fn, calls } = fakeFetch(json({ profile, needsReview: false }))
+    expect(await saveProfile(profile, fn)).toEqual({
+      ok: true,
+      data: { profile, needsReview: false },
+    })
     expect(calls[0]?.url).toBe("/api/profile")
     expect(calls[0]?.init?.method).toBe("PUT")
     expect(new Headers(calls[0]?.init?.headers).get("Content-Type")).toBe("application/json")
@@ -260,7 +263,7 @@ describe("saveProfile", () => {
   })
 
   it("ignores an unknown field in the error body", async () => {
-    const { fn } = fakeFetch(json({ error: "Erro.", field: "city" }, 400))
+    const { fn } = fakeFetch(json({ error: "Erro.", field: "hours" }, 400))
     const result = await saveProfile(profile, fn)
     expect(result).toEqual({ ok: false, status: 400, error: "Erro." })
   })
@@ -269,6 +272,24 @@ describe("saveProfile", () => {
     const { fn } = fakeFetch(json({ ok: true }))
     const result = await saveProfile(profile, fn)
     expect(result.ok).toBe(false)
+  })
+
+  it("rejects a reply without a boolean needsReview", async () => {
+    const { fn } = fakeFetch(json({ profile }))
+    const result = await saveProfile(profile, fn)
+    expect(result.ok).toBe(false)
+    const { fn: fn2 } = fakeFetch(json({ profile, needsReview: "no" }))
+    expect((await saveProfile(profile, fn2)).ok).toBe(false)
+  })
+
+  it("keeps the location field of a 400", async () => {
+    const { fn } = fakeFetch(json({ error: "Local inválido.", field: "location" }, 400))
+    expect(await saveProfile(profile, fn)).toEqual({
+      ok: false,
+      status: 400,
+      error: "Local inválido.",
+      field: "location",
+    })
   })
 
   it("reports a network failure with status 0", async () => {

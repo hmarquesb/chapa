@@ -135,6 +135,8 @@ export type AccountRecord = {
   kind: AccountKind
   email: string | null // só google
   profile: RestaurantProfile
+  // O perfil salvo no formato antigo perdeu campos na conversão: a pessoa precisa revisar.
+  profileNeedsReview: boolean
   createdAt: Date
   lastSeenAt: Date
   expiresAt: Date | null // só demo

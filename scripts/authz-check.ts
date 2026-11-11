@@ -47,9 +47,9 @@ async function main(): Promise<number> {
 
   try {
     const expiresAt = new Date(Date.now() + DEMO_TTL_MS)
-    const a = await accounts.createDemo({ expiresAt, profile: {} })
+    const a = await accounts.createDemo({ expiresAt, profile: { version: 2 } })
     createdAccounts.push(a.id)
-    const b = await accounts.createDemo({ expiresAt, profile: {} })
+    const b = await accounts.createDemo({ expiresAt, profile: { version: 2 } })
     createdAccounts.push(b.id)
     const ownerA: SessionOwner = { accountId: a.id }
     const ownerB: SessionOwner = { accountId: b.id }

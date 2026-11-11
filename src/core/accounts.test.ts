@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest"
 import { config } from "@/config"
 import { createDemoAccount, DEMO_PROFILE } from "@/core/accounts"
 import type { AccountRecord, RateLimitBucket } from "@/core/types"
+import { findCity } from "@/lib/profile/cities"
+import { parseProfileInput } from "@/lib/profile/parse"
+import type { RestaurantProfile } from "@/lib/types"
 
 const NOW = new Date("2026-11-06T21:30:00.000Z")
 const IP_HASH = "a".repeat(64)
@@ -15,7 +18,8 @@ class FakeAccounts {
       id: `00000000-0000-4000-8000-00000000000${this.created.length}`,
       kind: "demo",
       email: null,
-      profile: {},
+      profile: { version: 2 },
+      profileNeedsReview: false,
       createdAt: NOW,
       lastSeenAt: NOW,
       expiresAt: input.expiresAt,
@@ -36,7 +40,7 @@ class FakeRateLimits {
   }
 }
 
-function setup(profile: object = {}) {
+function setup(profile: RestaurantProfile = { version: 2 }) {
   const accounts = new FakeAccounts()
   const rateLimits = new FakeRateLimits()
   const run = (now = NOW, ipHash = IP_HASH) =>
@@ -67,7 +71,7 @@ describe("createDemoAccount", () => {
     const result = await run()
     expect(result.ok && result.account.expiresAt).toEqual(new Date("2026-11-13T21:30:00.000Z"))
     expect(accounts.created).toEqual([
-      { expiresAt: new Date("2026-11-13T21:30:00.000Z"), profile: {} },
+      { expiresAt: new Date("2026-11-13T21:30:00.000Z"), profile: { version: 2 } },
     ])
   })
 
@@ -85,6 +89,16 @@ describe("createDemoAccount", () => {
   it("DEMO_PROFILE is frozen and has the plan misto", () => {
     expect(Object.isFrozen(DEMO_PROFILE)).toBe(true)
     expect(DEMO_PROFILE.plan).toBe("misto")
+  })
+
+  it("DEMO_PROFILE is a valid v2 profile with the Marmita cuisine and the Rio de Janeiro city", async () => {
+    expect(await parseProfileInput(DEMO_PROFILE, { requirePlan: true })).toEqual({
+      ok: true,
+      value: DEMO_PROFILE,
+    })
+    expect(DEMO_PROFILE.cuisine).toEqual({ id: "marmita" })
+    expect(DEMO_PROFILE.location).toEqual({ uf: "RJ", cityCode: 3304557 })
+    expect((await findCity("RJ", 3304557))?.name).toBe("Rio de Janeiro")
   })
 
   it("counts in the demo_day bucket, keyed by the IP hash, in the UTC day window", async () => {

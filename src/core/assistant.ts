@@ -24,7 +24,8 @@ import type {
 import { addUsage, emptyUsage } from "@/core/usage"
 import { checkProfileText } from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
-import { PROFILE_FIELDS, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
+import { findCity } from "@/lib/profile/cities"
+import { PROFILE_VERSION, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
 
 export type AssistantDeps = {
   llm: LlmClient
@@ -37,20 +38,32 @@ export type AssistantDeps = {
 const ANSWER_TEMPERATURE = 0.2
 const ANSWER_MAX_OUTPUT_TOKENS = 800
 
-// Valores aparados e campos vazios descartados. Nome e cozinha que o filtro recusa (inclusive
-// os salvos antes do filtro existir) ficam fora do prompt.
+// Textos aparados. O nome e o texto de "Outro" que o filtro recusa (inclusive os salvos antes do
+// filtro existir) ficam fora do prompt. O resto já passou pelo parser ou por upgradeProfile.
 function cleanProfile(profile: RestaurantProfile): RestaurantProfile {
-  const clean: RestaurantProfile = {}
-  for (const field of PROFILE_FIELDS) {
-    const value = profile[field]?.trim()
-    if (!value) continue
-    if (field === "plan") {
-      if (isPlanId(value)) clean.plan = value
-    } else if ((field !== "name" && field !== "cuisine") || checkProfileText(field, value).ok) {
-      clean[field] = value
+  const clean: RestaurantProfile = { version: PROFILE_VERSION }
+  if (profile.plan !== undefined && isPlanId(profile.plan)) clean.plan = profile.plan
+  const name = profile.name?.trim()
+  if (name && checkProfileText("name", name).ok) clean.name = name
+  const { cuisine } = profile
+  if (cuisine) {
+    if (cuisine.id !== "outro") clean.cuisine = cuisine
+    else {
+      const text = cuisine.text.trim()
+      if (text && checkProfileText("cuisine", text).ok) clean.cuisine = { id: "outro", text }
     }
   }
+  if (profile.location) clean.location = profile.location
+  const hours = profile.hours?.trim()
+  if (hours) clean.hours = hours
   return clean
+}
+
+// O nome da cidade vem sempre da lista, pelo código: o perfil guarda só o código.
+async function resolveCityName(profile: RestaurantProfile): Promise<string | null> {
+  const { location } = profile
+  if (location?.cityCode === undefined) return null
+  return (await findCity(location.uf, location.cityCode))?.name ?? null
 }
 
 function toChatMessages(messages: StoredMessage[]): ChatMessage[] {
@@ -174,7 +187,11 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     } else {
       const generated = await llm.generate({
         model: config.models.chat,
-        system: buildSystemInstruction({ profile, summary }),
+        system: buildSystemInstruction({
+          profile,
+          cityName: await resolveCityName(profile),
+          summary,
+        }),
         messages: [
           ...startWithUser(history),
           { role: "user", content: buildRagPrompt(message, results) },

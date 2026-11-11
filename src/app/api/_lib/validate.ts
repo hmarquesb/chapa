@@ -1,21 +1,10 @@
-import { VALIDATION_MESSAGES } from "@/app/api/_lib/errors"
-import {
-  checkProfileText,
-  type ProfileTextField,
-  type ProfileTextRejection,
-  profileTextMessage,
-} from "@/lib/moderation/profile-text"
-import { isPlanId } from "@/lib/plans"
+import type { ProfileTextRejection } from "@/lib/moderation/profile-text"
+import { parseProfileInput } from "@/lib/profile/parse"
 import { isUuid as isUuidString } from "@/lib/session-id"
-import {
-  type ChatRequest,
-  PROFILE_FIELD_MAX_CHARS,
-  PROFILE_FIELDS,
-  type ProfileUpdateRequest,
-} from "@/lib/types"
+import type { ChatRequest, ProfileErrorField, ProfileUpdateRequest } from "@/lib/types"
+import { VALIDATION_MESSAGES } from "@/lib/validation-messages"
 
 const CHAT_REQUEST_FIELDS: readonly string[] = ["sessionId", "message"]
-const PROFILE_FIELD_SET: ReadonlySet<string> = new Set(PROFILE_FIELDS)
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -48,44 +37,17 @@ export function parseChatRequest(
   return { ok: true, value: sessionId === undefined ? { message } : { sessionId, message } }
 }
 
-const FILTERED_FIELDS: readonly ProfileTextField[] = ["name", "cuisine"]
-
 export type ProfileUpdateResult =
   | { ok: true; value: ProfileUpdateRequest }
-  | { ok: false; error: string; field?: ProfileTextField; rejection?: ProfileTextRejection }
+  | { ok: false; error: string; field?: ProfileErrorField; rejection?: ProfileTextRejection }
 
-// PUT /api/profile. Order: object, unknown field, plan, type and size of the fields, and only
-// then the text filter on name and cuisine.
-export function parseProfileUpdate(body: unknown): ProfileUpdateResult {
-  if (!isRecord(body)) return { ok: false, error: VALIDATION_MESSAGES.notObject }
-  if (Object.keys(body).some((key) => !PROFILE_FIELD_SET.has(key))) {
-    return { ok: false, error: VALIDATION_MESSAGES.unknownField }
-  }
-  const { plan } = body
-  if (!isPlanId(plan)) return { ok: false, error: VALIDATION_MESSAGES.plan }
-
-  const value: ProfileUpdateRequest = { plan }
-  for (const field of PROFILE_FIELDS) {
-    if (field === "plan" || !(field in body)) continue
-    const raw = body[field]
-    if (typeof raw !== "string" || raw.length > PROFILE_FIELD_MAX_CHARS) {
-      return { ok: false, error: VALIDATION_MESSAGES.profile }
-    }
-    const trimmed = raw.trim()
-    if (trimmed !== "") value[field] = trimmed
-  }
-  for (const field of FILTERED_FIELDS) {
-    const text = value[field]
-    if (text === undefined) continue
-    const check = checkProfileText(field, text)
-    if (!check.ok) {
-      return {
-        ok: false,
-        error: profileTextMessage(field, check.reason),
-        field,
-        rejection: check.reason,
-      }
-    }
-  }
-  return { ok: true, value }
+// PUT /api/profile: the plan is required. The v2 format and its order of checks live in the
+// shared parser (src/lib/profile/parse.ts), which the CLI and the eval also use.
+export async function parseProfileUpdate(body: unknown): Promise<ProfileUpdateResult> {
+  const result = await parseProfileInput(body, { requirePlan: true })
+  if (!result.ok) return result
+  const { plan } = result.value
+  // requirePlan guarantees the plan; the check narrows the type.
+  if (plan === undefined) return { ok: false, error: VALIDATION_MESSAGES.plan }
+  return { ok: true, value: { ...result.value, plan } }
 }

@@ -325,7 +325,8 @@ const REDIRECT_STATUSES = new Set([302, 303, 307, 308])
 
 // Answer of POST /api/auth/callback/demo: a redirect out of /entrar and a session cookie.
 // Never returns the cookie value nor the Location query.
-// O perfil da conta demo recém-criada (DEMO_PROFILE): a API devolve o plano Misto.
+// O perfil da conta demo recém-criada (DEMO_PROFILE): a API devolve o plano Misto e o local
+// Rio de Janeiro (RJ, código 3304557).
 export function checkDemoProfile(res: SmokeResponse): CheckResult {
   if (res.status !== 200) return unexpectedStatus(res.status, 200)
   const body = res.body
@@ -334,6 +335,10 @@ export function checkDemoProfile(res: SmokeResponse): CheckResult {
   }
   if (body.profile.plan !== "misto") {
     return { ok: false, reason: "o plano do perfil demo não é misto" }
+  }
+  const { location } = body.profile
+  if (!isRecord(location) || location.uf !== "RJ" || location.cityCode !== 3304557) {
+    return { ok: false, reason: "o local do perfil demo não é Rio de Janeiro (RJ, 3304557)" }
   }
   return { ok: true }
 }
