@@ -81,14 +81,19 @@ describe("parseProfileInput: errors", () => {
     expect((await fail(null)).error).toBe(VALIDATION_MESSAGES.notObject)
   })
 
-  it("refuses unknown fields, before the version", async () => {
-    expect((await fail({ plan: "misto", cnpj: "1" })).error).toBe(VALIDATION_MESSAGES.unknownField)
-    expect((await fail({ plan: "misto", city: "Niterói" })).error).toBe(
+  it("refuses unknown fields in a v2 body", async () => {
+    expect((await fail({ version: 2, plan: "misto", cnpj: "1" })).error).toBe(
       VALIDATION_MESSAGES.unknownField,
     )
   })
 
-  it("refuses a missing or different version, before the plan", async () => {
+  it("refuses a missing or different version, before unknown fields and the plan", async () => {
+    expect((await fail({ plan: "misto", city: "Niterói" })).error).toBe(
+      VALIDATION_MESSAGES.profileVersion,
+    )
+    expect((await fail({ plan: "misto", cnpj: "1" })).error).toBe(
+      VALIDATION_MESSAGES.profileVersion,
+    )
     expect((await fail({ plan: "misto" })).error).toBe(VALIDATION_MESSAGES.profileVersion)
     expect((await fail({ version: 1, plan: "misto" })).error).toBe(
       VALIDATION_MESSAGES.profileVersion,

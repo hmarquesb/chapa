@@ -67,7 +67,7 @@ export function parseProfileInput(
 ): Promise<ProfileParseResult>
 ```
 
-- A ordem é: objeto, campo desconhecido, `version`, plano, forma e tamanho de cada campo e, por último, o filtro (`name` e o texto de "Outro") e a cidade na lista. Os textos são aparados, e os vazios descartados.
+- A ordem é: objeto, `version`, campo desconhecido, plano, forma e tamanho de cada campo e, por último, o filtro (`name` e o texto de "Outro") e a cidade na lista. Os textos são aparados, e os vazios descartados.
 - O `PUT` chama o parser com `requirePlan: true`. O CLI e o eval chamam com `requirePlan: false`, e o eval continua exigindo o plano nas perguntas `perfil`.
 - Os textos de validação passam de `src/app/api/_lib/errors.ts` (`VALIDATION_MESSAGES`) para `src/lib/validation-messages.ts`, e o `errors.ts` só os reexporta. Ganham `profileVersion`, `cuisine`, `cuisineText` e `location`, com os textos das specs. O `cuisineText` ("Descreva o tipo de cozinha em até 30 caracteres.") é o erro da interface para "Outro" sem texto.
 

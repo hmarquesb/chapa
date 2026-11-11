@@ -75,18 +75,19 @@ function parseLocationShape(raw: unknown): ProfileLocation | Failure {
 }
 
 // Parser único do perfil v2: o PUT /api/profile (requirePlan), o CLI e o eval. Ordem: objeto,
-// campo desconhecido, version, plano, forma e tamanho de cada campo e, por último, o filtro de
+// version, campo desconhecido, plano, forma e tamanho de cada campo e, por último, o filtro de
 // texto (nome e texto de "Outro") e a cidade na lista. Os textos são aparados e os vazios caem.
+// A version vem antes para que o formulário antigo ({ plan, city }) receba "recarregue a página".
 export async function parseProfileInput(
   body: unknown,
   options: { requirePlan: boolean },
 ): Promise<ProfileParseResult> {
   if (!isRecord(body)) return { ok: false, error: VALIDATION_MESSAGES.notObject }
-  if (Object.keys(body).some((key) => !KNOWN_KEYS.has(key))) {
-    return { ok: false, error: VALIDATION_MESSAGES.unknownField }
-  }
   if (body.version !== PROFILE_VERSION) {
     return { ok: false, error: VALIDATION_MESSAGES.profileVersion }
+  }
+  if (Object.keys(body).some((key) => !KNOWN_KEYS.has(key))) {
+    return { ok: false, error: VALIDATION_MESSAGES.unknownField }
   }
   const value: RestaurantProfile = { version: PROFILE_VERSION }
   if (body.plan !== undefined || options.requirePlan) {
