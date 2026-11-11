@@ -20,13 +20,13 @@ Esta change é a 1 de 3 do PRD `prd-chapa-perfil-estruturado.md` e não depende 
 
 ## 4. Interface
 
-- [ ] 4.1 Escrever o teste de `saveProfile` devolvendo o `field` do `400` e depois ajustar o `api-client.ts`. Verificar com `npm test -- api-client`.
-- [ ] 4.2 Ajustar o `profile-form.tsx` (decisão 5): erro por campo ao sair dele e ao salvar, ARIA, foco no primeiro inválido e o `field` da API no campo certo. Verificar com `npm run typecheck` e `npm run lint`. O teste no navegador fica na 6.1.
-- [ ] 4.3 Revisar o formulário com a skill `web-design-guidelines` (erro ligado ao campo, foco, `role="alert"`). Verificar que cada apontamento foi corrigido ou justificado no relatório.
+- [x] 4.1 Escrever o teste de `saveProfile` devolvendo o `field` do `400` e depois ajustar o `api-client.ts`. Verificar com `npm test -- api-client`.
+- [x] 4.2 Ajustar o `profile-form.tsx` (decisão 5): erro por campo ao sair dele e ao salvar, ARIA, foco no primeiro inválido e o `field` da API no campo certo. Verificar com `npm run typecheck` e `npm run lint`. O teste no navegador fica na 6.1.
+- [x] 4.3 Revisar o formulário com a skill `web-design-guidelines` (erro ligado ao campo, foco, `role="alert"`). Verificar que cada apontamento foi corrigido ou justificado no relatório.
 
 ## 5. Documentação
 
-- [ ] 5.1 Escrever o ADR 0023 e acrescentá-lo à lista do `docs/adr/README.md`. Atualizar `AGENTS.md`, `docs/architecture.md` e `docs/development.md` nas seções da decisão 7. Verificar com `git diff --stat`, que deve mostrar só esses arquivos na documentação, e com `git grep -n "0024" docs/adr/`, que não deve achar nada.
+- [x] 5.1 Escrever o ADR 0023 e acrescentá-lo à lista do `docs/adr/README.md`. Atualizar `AGENTS.md`, `docs/architecture.md` e `docs/development.md` nas seções da decisão 7. Verificar com `git diff --stat`, que deve mostrar só esses arquivos na documentação, e com `git grep -n "0024" docs/adr/`, que não deve achar nada.
 
 ## 6. Verificação manual (orquestrador)
 
