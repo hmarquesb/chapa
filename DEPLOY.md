@@ -195,7 +195,7 @@ A ingestão é idempotente: ela substitui os trechos do mesmo modelo e `chunkCon
 
 **Verificação:** todos os passos aparecem com ✅ e o comando sai com código 0. O passo 1 mostra o mesmo número de trechos do passo 4.
 
-O smoke faz 3 chamadas ao chat, com 2 s entre elas: a pergunta no escopo e a fora do escopo gastam cota do Gemini; a do CPF é barrada antes. Ele grava uma sessão fictícia no banco, que o cron apaga depois de 7 dias sem uso.
+O smoke faz 3 chamadas ao chat, com 2 s entre elas: a pergunta no escopo e a fora do escopo gastam cota do Gemini; a do CPF é barrada antes. Ele grava uma conversa fictícia da conta demo que ele cria, e ela é apagada junto com a conta quando a demo vence.
 
 Se falhar:
 
@@ -245,11 +245,12 @@ Se falhar:
 - [ ] 3 perguntas no escopo (pode usar as 3 perguntas de exemplo): cada uma responde com fontes em badges.
 - [ ] 1 pergunta fora do escopo ("Me passa uma receita de lasanha?"): mostra o aviso de fallback, **sem** badges de fonte.
 - [ ] 1 mensagem bloqueada ("Meu CPF é 123.456.789-09"): aviso de bloqueio, e a mensagem não volta no histórico.
-- [ ] Recarregar a página: o histórico volta igual (sem a mensagem bloqueada).
-- [ ] **"Continuar depois":** copiar o link, abrir numa janela anônima, entrar como demo e ver a mesma conversa; o `?sessao=` some da barra de endereço.
-- [ ] Abrir `/?sessao=` com um UUID que não existe: aviso de que a conversa não existe mais e começo de uma nova.
+- [ ] Recarregar a página: abre uma conversa nova, e a anterior está no topo da lista; escolhê-la traz o histórico igual (sem a mensagem bloqueada).
+- [ ] **Lista de conversas:** depois da primeira resposta, a conversa aparece no topo da lista; escolher outra carrega o histórico dela; apagar pede confirmação e tira o item da lista.
+- [ ] Numa janela anônima, entrar como outra demo: a lista começa vazia, sem as conversas da primeira conta.
+- [ ] Abrir `/?sessao=` com qualquer UUID: o chat abre em `/`, sem aviso, numa conversa nova.
 - [ ] **"Nova conversa":** a tela limpa e a próxima mensagem abre outra sessão.
-- [ ] **Teclado:** só com Tab, Shift+Tab e Enter, dá para enviar uma mensagem, abrir o perfil e copiar o link; o foco fica visível.
+- [ ] **Teclado:** só com Tab, Shift+Tab e Enter, dá para enviar uma mensagem, abrir o perfil, escolher e apagar uma conversa; o foco fica visível.
 - [ ] **Modo escuro:** com o sistema em modo escuro, a página fica escura e legível.
 - [ ] Largura de celular (DevTools, ~375 px): sem rolagem horizontal.
 - [ ] Rodapé com o aviso de projeto não oficial.
