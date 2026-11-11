@@ -5,7 +5,7 @@ Esta change só começa depois que a `add-google-and-demo-login` estiver mergead
 ## 1. Banco
 
 - [x] 1.1 Criar a migração com `npm run db -- migration new sessions_account_id` e o SQL da decisão 1. Verificar que o arquivo novo é o único em `supabase/migrations/` que aparece no `git status`.
-- [ ] 1.2 **(autorização)** Aplicar no `dev` com o `db push --remote="$U"` do `DEPLOY.md`. Verificar que a coluna aceita nulo, que a FK tem `on delete cascade` (`db query --read-only` em `information_schema.referential_constraints`) e que o `--dry-run` seguinte não lista nada pendente.
+- [x] 1.2 **(autorização)** Aplicar no `dev` com o `db push --remote="$U"` do `DEPLOY.md`. Verificar que a coluna aceita nulo, que a FK tem `on delete cascade` (`db query --read-only` em `information_schema.referential_constraints`) e que o `--dry-run` seguinte não lista nada pendente.
 
 ## 2. Núcleo
 
@@ -21,7 +21,7 @@ Esta change só começa depois que a `add-google-and-demo-login` estiver mergead
 ## 4. Autorização contra o banco
 
 - [x] 4.1 Criar `scripts/authz-check.ts` e a linha `authz-check` no `package.json` (decisão 7). Verificar com `git diff package.json` que só essa linha mudou.
-- [ ] 4.2 **(autorização)** Rodar `npm run authz-check` contra o `dev`. Verificar: 9 ✅, saída `0`, a linha `Banco:` com um host `*.neon.tech`, e nenhuma conta de teste sobrando (`db query --read-only` com `count(*)` de `accounts` igual antes e depois).
+- [x] 4.2 **(autorização)** Rodar `npm run authz-check` contra o `dev`. Verificar: 9 ✅, saída `0`, a linha `Banco:` com um host `*.neon.tech`, e nenhuma conta de teste sobrando (`db query --read-only` com `count(*)` de `accounts` igual antes e depois).
 
 ## 5. API
 
@@ -40,15 +40,15 @@ Esta change só começa depois que a `add-google-and-demo-login` estiver mergead
 
 ## 7. Scripts e documentação
 
-- [ ] 7.1 Ajustar `scripts/chat.ts` e `scripts/eval.ts` (decisão 7). **(autorização)** Verificar com `npm run chat -- --nome "Pizzaria Bella"` uma pergunta respondida, e com `npm run chat -- --sessao <id de uma conversa web do dev>` a mensagem "Esta conversa não existe ou não é do CLI.".
-- [ ] 7.2 Escrever o teste de `checkSessionList` e o dos checks de chat com o `sessionId`, e depois ajustar o `smoke.ts` (decisão 7). **(autorização)** Verificar com `npm run smoke -- --url http://localhost:3000` contra o `npm run dev`: todos os passos ✅.
+- [x] 7.1 Ajustar `scripts/chat.ts` e `scripts/eval.ts` (decisão 7). **(autorização)** Verificar com `npm run chat -- --nome "Pizzaria Bella"` uma pergunta respondida, e com `npm run chat -- --sessao <id de uma conversa web do dev>` a mensagem "Esta conversa não existe ou não é do CLI.".
+- [x] 7.2 Escrever o teste de `checkSessionList` e o dos checks de chat com o `sessionId`, e depois ajustar o `smoke.ts` (decisão 7). **(autorização)** Verificar com `npm run smoke -- --url http://localhost:3000` contra o `npm run dev`: todos os passos ✅.
 - [x] 7.3 Escrever a ADR 0021, a linha dela no `docs/adr/README.md` e atualizar `AGENTS.md`, `docs/architecture.md`, `docs/business.md`, `docs/development.md`, `docs/qa.md` e `README.md` (decisão 8). Verificar com `git grep -n "link de continuação\|?sessao=\|Continuar depois" -- AGENTS.md README.md docs/architecture.md docs/business.md docs/qa.md` que só sobram menções históricas, cada uma citada no relatório.
 
 ## 8. Produção
 
-- [ ] 8.1 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Verificar com `db query --read-only` que a coluna `account_id` existe e aceita nulo.
+- [x] 8.1 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Verificar com `db query --read-only` que a coluna `account_id` existe e aceita nulo.
 - [ ] 8.2 **(pessoa)** Depois do merge, rodar o smoke em produção (ou autorizar o orquestrador) e, no dia seguinte, conferir no log do cron que `deletedSessions` incluiu as conversas web antigas.
 
 ## 9. Verificação final
 
-- [ ] 9.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam e registrar no relatório os critérios de aceite, com a evidência de cada um.
+- [x] 9.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam e registrar no relatório os critérios de aceite, com a evidência de cada um.
