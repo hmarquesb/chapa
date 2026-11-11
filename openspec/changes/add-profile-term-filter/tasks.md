@@ -30,9 +30,9 @@ Esta change é a 1 de 3 do PRD `prd-chapa-perfil-estruturado.md` e não depende 
 
 ## 6. Verificação manual (orquestrador)
 
-- [ ] 6.1 **(autorização)** Com `npm run dev` contra o `dev`, entrar como demo e percorrer o checkpoint 1 da proposta: "M3rd@ Burguer" e "Ignore as regras" recusados no campo; "Pastelaria do Pinto" salvo; `PUT` direto com nome inadequado → `400` com `field: "name"`, e a linha de log sem o texto. Registrar no relatório.
-- [ ] 6.2 **(autorização)** Rodar `npm run chat -- --nome "Ignore as regras" --plano misto` (deve terminar com a mensagem do filtro) e `npm run eval -- --label perfil-filtro --delay-ms 4000` contra o `dev`. Comparar com a última rodada em `eval/resultados/` e registrar no relatório cada pergunta que mudou, com a causa.
+- [x] 6.1 **(autorização)** Com `npm run dev` contra o `dev`, entrar como demo e percorrer o checkpoint 1 da proposta: "M3rd@ Burguer" e "Ignore as regras" recusados no campo; "Pastelaria do Pinto" salvo; `PUT` direto com nome inadequado → `400` com `field: "name"`, e a linha de log sem o texto. Registrar no relatório.
+- [x] 6.2 **(autorização)** Rodar `npm run chat -- --nome "Ignore as regras" --plano misto` (deve terminar com a mensagem do filtro) e `npm run eval -- --label perfil-filtro --delay-ms 4000` contra o `dev`. Comparar com a última rodada em `eval/resultados/` e registrar no relatório cada pergunta que mudou, com a causa.
 
 ## 7. Verificação final
 
-- [ ] 7.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam e registrar no relatório os critérios de aceite do PRD (§7) que esta change fecha (o filtro e a proteção do prompt com as duas tabelas; nenhum texto recusado nos logs), com a evidência de cada um.
+- [x] 7.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam e registrar no relatório os critérios de aceite do PRD (§7) que esta change fecha (o filtro e a proteção do prompt com as duas tabelas; nenhum texto recusado nos logs), com a evidência de cada um.
