@@ -17,13 +17,14 @@ import type {
   SessionRepository,
   StoredMessage,
 } from "@/core/types"
-import type { ProfileTextField, ProfileTextRejection } from "@/lib/moderation/profile-text"
+import type { ProfileTextRejection } from "@/lib/moderation/profile-text"
 import type {
   ApiErrorResponse,
   ChatResponse,
   ConversationListItem,
   HealthResponse,
   HistoryMessage,
+  ProfileErrorField,
   ProfileResponse,
   SessionHistoryResponse,
   SessionListResponse,
@@ -86,7 +87,7 @@ function errorName(error: unknown): string {
 function toPublicError(error: unknown): {
   status: number
   message: string
-  field?: ProfileTextField
+  field?: ProfileErrorField
 } {
   if (error instanceof HttpError) {
     return {
@@ -109,7 +110,7 @@ function errorResponse(
   status: number,
   message: string,
   headers?: HeadersInit,
-  field?: ProfileTextField,
+  field?: ProfileErrorField,
 ): Response {
   const body: ApiErrorResponse =
     field === undefined ? { error: message } : { error: message, field }
@@ -321,7 +322,10 @@ export function createProfileHandlers(deps: {
       try {
         const account = await requireAccount(deps.authenticate, finish)
         finish({ status: 200 })
-        const body: ProfileResponse = { profile: account.profile }
+        const body: ProfileResponse = {
+          profile: account.profile,
+          needsReview: account.profileNeedsReview,
+        }
         return json(body)
       } catch (error) {
         return failed(error, finish)
@@ -334,14 +338,16 @@ export function createProfileHandlers(deps: {
         // Without a session the body is never read.
         const account = await requireAccount(deps.authenticate, finish)
         requireJson(req)
-        const parsed = parseProfileUpdate(await readJsonBody(req, deps.config.limits.maxBodyBytes))
+        const parsed = await parseProfileUpdate(
+          await readJsonBody(req, deps.config.limits.maxBodyBytes),
+        )
         if (!parsed.ok) {
           rejection = parsed.rejection
           throw new HttpError(400, parsed.error, parsed.field)
         }
         const profile = await deps.accounts.updateProfile(account.id, parsed.value)
         finish({ status: 200 })
-        const body: ProfileResponse = { profile }
+        const body: ProfileResponse = { profile, needsReview: false }
         return json(body)
       } catch (error) {
         return failed(error, finish, rejection)

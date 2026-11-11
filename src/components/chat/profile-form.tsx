@@ -16,6 +16,7 @@ import {
   profileTextMessage,
 } from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
+import { cuisineLabel, matchCuisine } from "@/lib/profile/cuisines"
 import {
   PLAN_IDS,
   PLAN_LABELS,
@@ -24,12 +25,11 @@ import {
   type RestaurantProfile,
 } from "@/lib/types"
 
-type TextField = "name" | "cuisine" | "city" | "hours"
+type TextField = "name" | "cuisine" | "hours"
 
 const TEXT_FIELDS: { key: TextField; label: string; placeholder: string }[] = [
   { key: "name", label: "Nome do restaurante", placeholder: "Ex.: Pizzaria Bella…" },
   { key: "cuisine", label: "Tipo de cozinha", placeholder: "Ex.: italiana…" },
-  { key: "city", label: "Cidade", placeholder: "Ex.: Campinas…" },
   { key: "hours", label: "Horário de funcionamento", placeholder: "Ex.: 18h às 23h…" },
 ]
 
@@ -60,8 +60,7 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
   const idPrefix = useId()
   const [values, setValues] = useState<Record<TextField, string>>({
     name: profile.name ?? "",
-    cuisine: profile.cuisine ?? "",
-    city: profile.city ?? "",
+    cuisine: profile.cuisine ? cuisineLabel(profile.cuisine) : "",
     hours: profile.hours ?? "",
   })
   const [plan, setPlan] = useState<PlanId | "">(profile.plan ?? "")
@@ -109,11 +108,18 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
     setPlanError(null)
     setError(null)
     setSaving(true)
+    // Provisório até o grupo 4: a cozinha vai pelo texto (id da lista se casar, senão "Outro")
+    // e o local salvo segue como está.
+    const cuisineText = values.cuisine.trim()
+    const cuisineId = matchCuisine(cuisineText)
     const result = await saveProfile({
+      version: 2,
       plan,
       ...(values.name.trim() !== "" ? { name: values.name.trim() } : {}),
-      ...(values.cuisine.trim() !== "" ? { cuisine: values.cuisine.trim() } : {}),
-      ...(values.city.trim() !== "" ? { city: values.city.trim() } : {}),
+      ...(cuisineText !== ""
+        ? { cuisine: cuisineId ? { id: cuisineId } : { id: "outro" as const, text: cuisineText } }
+        : {}),
+      ...(profile.location ? { location: profile.location } : {}),
       ...(values.hours.trim() !== "" ? { hours: values.hours.trim() } : {}),
     })
     if (result.ok) {
@@ -128,9 +134,11 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
     }
     if (result.field !== undefined) {
       const field = result.field
-      setFieldErrors({ [field]: result.error })
-      focusField(field)
-      return
+      if (field !== "location") {
+        setFieldErrors({ [field]: result.error })
+        focusField(field)
+        return
+      }
     }
     setError(result.error)
   }

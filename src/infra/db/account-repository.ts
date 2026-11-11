@@ -1,7 +1,8 @@
 import "server-only"
 import type { Sql } from "postgres"
 import type { AccountRepository } from "@/core/types"
-import { type AccountRow, toAccountRecord, toProfile } from "@/infra/db/mappers"
+import { type AccountRow, toAccountRecord } from "@/infra/db/mappers"
+import { upgradeProfile } from "@/lib/profile/upgrade"
 
 export function createAccountRepository(sql: Sql): AccountRepository {
   return {
@@ -14,26 +15,26 @@ export function createAccountRepository(sql: Sql): AccountRepository {
           set email = excluded.email, last_seen_at = now()
         returning id, kind, email, profile, created_at, last_seen_at, expires_at
       `
-      return toAccountRecord(row)
+      return toAccountRecord(row, await upgradeProfile(row.profile))
     },
 
     async createDemo({ expiresAt, profile }) {
       // sql.json sends a JSON object; a pre-stringified value would be stored as a jsonb string.
       const [row] = await sql<[AccountRow]>`
         insert into public.accounts (kind, profile, expires_at)
-        values ('demo', ${sql.json(toProfile(profile))}, ${expiresAt})
+        values ('demo', ${sql.json(profile)}, ${expiresAt})
         returning id, kind, email, profile, created_at, last_seen_at, expires_at
       `
-      return toAccountRecord(row)
+      return toAccountRecord(row, await upgradeProfile(row.profile))
     },
 
     async updateProfile(id, profile) {
       const [row] = await sql<[{ profile: unknown }]>`
-        update public.accounts set profile = ${sql.json(toProfile(profile))}
+        update public.accounts set profile = ${sql.json(profile)}
         where id = ${id}
         returning profile
       `
-      return toProfile(row.profile)
+      return (await upgradeProfile(row.profile)).profile
     },
 
     async findActive(id, now) {
@@ -42,7 +43,7 @@ export function createAccountRepository(sql: Sql): AccountRepository {
         from public.accounts
         where id = ${id} and (expires_at is null or expires_at > ${now})
       `
-      return row ? toAccountRecord(row) : null
+      return row ? toAccountRecord(row, await upgradeProfile(row.profile)) : null
     },
 
     async touchLastSeen(id) {

@@ -1,9 +1,9 @@
-import type { ProfileTextField } from "@/lib/moderation/profile-text"
 import type {
   ChatRequest,
   ChatResponse,
   ConversationListItem,
   HistoryMessage,
+  ProfileErrorField,
   ProfileResponse,
   ProfileUpdateRequest,
   ReplyStatus,
@@ -13,7 +13,7 @@ import type {
 
 export type ApiResult<T> =
   | { ok: true; data: T }
-  | { ok: false; status: number; error: string; field?: ProfileTextField }
+  | { ok: false; status: number; error: string; field?: ProfileErrorField }
 
 export const NETWORK_ERROR_MESSAGE = "Não consegui falar com o servidor. Confira sua conexão."
 const GENERIC_ERROR_MESSAGE = "Algo deu errado do nosso lado. Tente de novo em instantes."
@@ -29,8 +29,8 @@ const REPLY_STATUSES: readonly ReplyStatus[] = [
 // A thin arrow keeps `this` right when the global fetch is passed around as a value.
 const defaultFetch: typeof fetch = (input, init) => fetch(input, init)
 
-function isProfileTextField(value: unknown): value is ProfileTextField {
-  return value === "name" || value === "cuisine"
+function isProfileErrorField(value: unknown): value is ProfileErrorField {
+  return value === "name" || value === "cuisine" || value === "location"
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -122,7 +122,7 @@ async function request<T>(
       isRecord(body) && typeof body.error === "string" && body.error.trim() !== ""
         ? body.error
         : GENERIC_ERROR_MESSAGE
-    const field = isRecord(body) && isProfileTextField(body.field) ? body.field : undefined
+    const field = isRecord(body) && isProfileErrorField(body.field) ? body.field : undefined
     return { ok: false, status: response.status, error, ...(field ? { field } : {}) }
   }
   if (!isValid(body)) {

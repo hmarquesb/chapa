@@ -1,5 +1,5 @@
 import { ERROR_MESSAGES } from "@/app/api/_lib/errors"
-import type { ProfileTextField } from "@/lib/moderation/profile-text"
+import type { ProfileErrorField } from "@/lib/types"
 
 // Error with an HTTP status and a message that is safe to show to the user.
 export class HttpError extends Error {
@@ -7,9 +7,9 @@ export class HttpError extends Error {
   readonly status: number
   readonly publicMessage: string
   // Profile field the message is about, when the refusal belongs to one field.
-  readonly field?: ProfileTextField
+  readonly field?: ProfileErrorField
 
-  constructor(status: number, publicMessage: string, field?: ProfileTextField) {
+  constructor(status: number, publicMessage: string, field?: ProfileErrorField) {
     super(publicMessage)
     this.status = status
     this.publicMessage = publicMessage

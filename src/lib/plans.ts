@@ -12,7 +12,7 @@ export function parsePlanId(input: string): PlanId | null {
 }
 
 // "Marmitaria Boa Panela · Plano Misto"; sem nome, só o plano; sem plano, só o nome; vazio → "".
-export function profileSummary(profile: RestaurantProfile): string {
+export function profileSummary(profile: Pick<RestaurantProfile, "name" | "plan">): string {
   const parts: string[] = []
   const name = profile.name?.trim()
   if (name) parts.push(name)

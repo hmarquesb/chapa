@@ -4,7 +4,6 @@ import {
   toAccountRecord,
   toChunkCandidate,
   toConversationSummaryRecord,
-  toProfile,
   toSessionRecord,
   toStoredMessage,
   toVectorLiteral,
@@ -61,60 +60,23 @@ describe("toStoredMessage", () => {
   })
 })
 
-describe("toProfile", () => {
-  it("keeps only known keys with string values", () => {
-    expect(
-      toProfile({
-        name: "Pizzaria Bella",
-        plan: "misto",
-        unknown: "x",
-        city: "Recife",
-        hours: null,
-      }),
-    ).toEqual({ name: "Pizzaria Bella", plan: "misto", city: "Recife" })
-  })
-
-  it("drops a plan that is not in the enum (old free text, wrong type)", () => {
-    expect(toProfile({ name: "Bella", plan: "Plano Próprio" })).toEqual({ name: "Bella" })
-    expect(toProfile({ plan: 2 })).toEqual({})
-  })
-
-  it("returns {} for anything that is not a plain object", () => {
-    expect(toProfile(null)).toEqual({})
-    expect(toProfile(undefined)).toEqual({})
-    expect(toProfile("name")).toEqual({})
-    expect(toProfile(["name"])).toEqual({})
-  })
-
-  it("keeps all five profile fields", () => {
-    const full = {
-      name: "Sabor Caseiro",
-      plan: "proprio",
-      cuisine: "Brasileira",
-      city: "Belo Horizonte",
-      hours: "11h às 15h",
-    }
-    expect(toProfile(full)).toEqual(full)
-  })
-})
-
 describe("toSessionRecord", () => {
-  it("maps snake_case columns to camelCase and filters the profile", () => {
+  it("maps snake_case columns to camelCase and uses the converted profile", () => {
     const row = {
       id: "5f0c1d7e-0000-4000-8000-000000000001",
       channel: "web",
       account_id: "a1b2c3d4-0000-4000-8000-00000000000a",
-      profile: { name: "Pizzaria Bella", plan: 1, extra: "drop" },
+      profile: { name: "Pizzaria Bella", plan: 1, extra: "drop" }, // raw column, ignored here
       summary: "Falou sobre repasse.",
       summary_until_id: "42",
       created_at: CREATED,
       last_activity_at: ACTIVE,
     }
-    expect(toSessionRecord(row)).toEqual({
+    expect(toSessionRecord(row, { version: 2, name: "Pizzaria Bella" })).toEqual({
       id: "5f0c1d7e-0000-4000-8000-000000000001",
       channel: "web",
       accountId: "a1b2c3d4-0000-4000-8000-00000000000a",
-      profile: { name: "Pizzaria Bella" },
+      profile: { version: 2, name: "Pizzaria Bella" },
       summary: "Falou sobre repasse.",
       summaryUntilId: 42,
       createdAt: CREATED,
@@ -123,19 +85,22 @@ describe("toSessionRecord", () => {
   })
 
   it("keeps a null summary and summary_until_id", () => {
-    const record = toSessionRecord({
-      id: "5f0c1d7e-0000-4000-8000-000000000002",
-      channel: "cli",
-      account_id: null,
-      profile: {},
-      summary: null,
-      summary_until_id: null,
-      created_at: CREATED,
-      last_activity_at: ACTIVE,
-    })
+    const record = toSessionRecord(
+      {
+        id: "5f0c1d7e-0000-4000-8000-000000000002",
+        channel: "cli",
+        account_id: null,
+        profile: {},
+        summary: null,
+        summary_until_id: null,
+        created_at: CREATED,
+        last_activity_at: ACTIVE,
+      },
+      { version: 2 },
+    )
     expect(record.summary).toBeNull()
     expect(record.summaryUntilId).toBeNull()
-    expect(record.profile).toEqual({})
+    expect(record.profile).toEqual({ version: 2 })
     expect(record.accountId).toBeNull()
   })
 })
@@ -211,20 +176,24 @@ describe("toAccountRecord", () => {
 
   it("maps a google account with an email and no expires_at", () => {
     expect(
-      toAccountRecord({
-        id: ACCOUNT_ID,
-        kind: "google",
-        email: "dono@exemplo.com",
-        profile: { name: "Pizzaria Bella", extra: "x" },
-        created_at: CREATED,
-        last_seen_at: "2026-11-05T12:30:00.000Z",
-        expires_at: null,
-      }),
+      toAccountRecord(
+        {
+          id: ACCOUNT_ID,
+          kind: "google",
+          email: "dono@exemplo.com",
+          profile: { name: "Pizzaria Bella", extra: "x" }, // raw column, ignored here
+          created_at: CREATED,
+          last_seen_at: "2026-11-05T12:30:00.000Z",
+          expires_at: null,
+        },
+        { profile: { version: 2, name: "Pizzaria Bella" }, needsReview: false },
+      ),
     ).toEqual({
       id: ACCOUNT_ID,
       kind: "google",
       email: "dono@exemplo.com",
-      profile: { name: "Pizzaria Bella" },
+      profile: { version: 2, name: "Pizzaria Bella" },
+      profileNeedsReview: false,
       createdAt: CREATED,
       lastSeenAt: ACTIVE,
       expiresAt: null,
@@ -232,32 +201,36 @@ describe("toAccountRecord", () => {
   })
 
   it("maps a demo account without an email and with expires_at", () => {
-    const record = toAccountRecord({
-      id: ACCOUNT_ID,
-      kind: "demo",
-      email: null,
-      profile: {},
-      created_at: CREATED,
-      last_seen_at: CREATED,
-      expires_at: "2026-11-12T12:00:00.000Z",
-    })
+    const record = toAccountRecord(
+      {
+        id: ACCOUNT_ID,
+        kind: "demo",
+        email: null,
+        profile: {},
+        created_at: CREATED,
+        last_seen_at: CREATED,
+        expires_at: "2026-11-12T12:00:00.000Z",
+      },
+      { profile: { version: 2 }, needsReview: false },
+    )
     expect(record.kind).toBe("demo")
     expect(record.email).toBeNull()
     expect(record.expiresAt).toEqual(new Date("2026-11-12T12:00:00.000Z"))
   })
 
-  it("turns an invalid profile into {}", () => {
-    for (const profile of [null, "texto", ["a"], 3]) {
-      const record = toAccountRecord({
+  it("carries the needsReview flag of the converted profile", () => {
+    const record = toAccountRecord(
+      {
         id: ACCOUNT_ID,
         kind: "demo",
         email: null,
-        profile,
+        profile: { city: "Bom Jesus" },
         created_at: CREATED,
         last_seen_at: CREATED,
         expires_at: CREATED,
-      })
-      expect(record.profile).toEqual({})
-    }
+      },
+      { profile: { version: 2 }, needsReview: true },
+    )
+    expect(record.profileNeedsReview).toBe(true)
   })
 })

@@ -7,8 +7,7 @@ import type {
   SessionRecord,
   StoredMessage,
 } from "@/core/types"
-import { isPlanId } from "@/lib/plans"
-import { type Channel, PROFILE_FIELDS, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
+import type { Channel, ReplyStatus, RestaurantProfile } from "@/lib/types"
 
 // Pure conversions between database rows and the core types. The driver returns
 // bigint columns as strings, so every id and score goes through toNumber.
@@ -69,27 +68,15 @@ function toDate(value: Timestamp): Date {
   return value instanceof Date ? value : new Date(value)
 }
 
-// Keeps only the PROFILE_FIELDS keys whose value is a string (plan: only a valid PlanId).
-export function toProfile(value: unknown): RestaurantProfile {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return {}
-  const source = value as Record<string, unknown>
-  const profile: RestaurantProfile = {}
-  for (const field of PROFILE_FIELDS) {
-    const fieldValue = source[field]
-    if (field === "plan") {
-      if (isPlanId(fieldValue)) profile.plan = fieldValue
-    } else if (typeof fieldValue === "string") profile[field] = fieldValue
-  }
-  return profile
-}
-
-export function toSessionRecord(row: SessionRow): SessionRecord {
+// The profile column is converted by upgradeProfile (src/lib/profile/upgrade.ts), which is async,
+// so the repositories convert it and pass the result in.
+export function toSessionRecord(row: SessionRow, profile: RestaurantProfile): SessionRecord {
   return {
     id: row.id,
     // The check constraint on sessions.channel guarantees a valid Channel.
     channel: row.channel as Channel,
     accountId: row.account_id,
-    profile: toProfile(row.profile),
+    profile,
     summary: row.summary,
     summaryUntilId: row.summary_until_id === null ? null : toNumber(row.summary_until_id),
     createdAt: toDate(row.created_at),
@@ -105,13 +92,17 @@ export function toConversationSummaryRecord(row: ConversationRow): ConversationS
   }
 }
 
-export function toAccountRecord(row: AccountRow): AccountRecord {
+export function toAccountRecord(
+  row: AccountRow,
+  upgraded: { profile: RestaurantProfile; needsReview: boolean },
+): AccountRecord {
   return {
     id: row.id,
     // The check constraint on accounts.kind guarantees a valid AccountKind.
     kind: row.kind as AccountKind,
     email: row.email,
-    profile: toProfile(row.profile),
+    profile: upgraded.profile,
+    profileNeedsReview: upgraded.needsReview,
     createdAt: toDate(row.created_at),
     lastSeenAt: toDate(row.last_seen_at),
     expiresAt: row.expires_at === null ? null : toDate(row.expires_at),

@@ -229,7 +229,7 @@ describe("deleteSession", () => {
 })
 
 describe("saveProfile", () => {
-  const profile = { name: "Bella", plan: "misto" as const }
+  const profile = { version: 2 as const, name: "Bella", plan: "misto" as const }
 
   it("puts JSON to /api/profile and returns the saved profile", async () => {
     const { fn, calls } = fakeFetch(json({ profile }))
@@ -260,7 +260,7 @@ describe("saveProfile", () => {
   })
 
   it("ignores an unknown field in the error body", async () => {
-    const { fn } = fakeFetch(json({ error: "Erro.", field: "city" }, 400))
+    const { fn } = fakeFetch(json({ error: "Erro.", field: "hours" }, 400))
     const result = await saveProfile(profile, fn)
     expect(result).toEqual({ ok: false, status: 400, error: "Erro." })
   })

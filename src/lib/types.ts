@@ -1,4 +1,17 @@
-import type { ProfileTextField } from "@/lib/moderation/profile-text"
+import type { ProfileErrorField } from "@/lib/profile/types"
+
+export type {
+  City,
+  Cuisine,
+  CuisineId,
+  ProfileErrorField,
+  ProfileLocation,
+  ProfileResponse,
+  ProfileUpdateRequest,
+  RestaurantProfile,
+  Uf,
+} from "@/lib/profile/types"
+export { CUISINE_TEXT_MAX_CHARS, PROFILE_VERSION } from "@/lib/profile/types"
 
 export type ReplyStatus = "answered" | "fallback" | "blocked_input" | "blocked_output"
 
@@ -13,20 +26,9 @@ export const PLAN_LABELS: Readonly<Record<PlanId, string>> = {
   misto: "Plano Misto",
 }
 
-export type RestaurantProfile = {
-  name?: string
-  plan?: PlanId
-  cuisine?: string
-  city?: string
-  hours?: string
-}
-
-export const PROFILE_FIELDS = ["name", "plan", "cuisine", "city", "hours"] as const
+export const PROFILE_FIELDS = ["name", "plan", "cuisine", "location", "hours"] as const
+// Limite de name e hours; o texto de "Outro" usa CUISINE_TEXT_MAX_CHARS.
 export const PROFILE_FIELD_MAX_CHARS = 60
-
-// GET e PUT /api/profile
-export type ProfileResponse = { profile: RestaurantProfile }
-export type ProfileUpdateRequest = Omit<RestaurantProfile, "plan"> & { plan: PlanId }
 
 // POST /api/chat
 export type ChatRequest = {
@@ -75,6 +77,6 @@ export type HealthResponse = {
 // Qualquer resposta de erro da API
 export type ApiErrorResponse = {
   error: string
-  // Campo do perfil recusado pelo filtro de texto (400 do PUT /api/profile).
-  field?: ProfileTextField
+  // Campo do perfil recusado (400 do PUT /api/profile).
+  field?: ProfileErrorField
 }

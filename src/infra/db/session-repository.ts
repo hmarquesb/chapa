@@ -7,10 +7,11 @@ import {
   type MessageRow,
   type SessionRow,
   toConversationSummaryRecord,
-  toProfile,
   toSessionRecord,
   toStoredMessage,
 } from "@/infra/db/mappers"
+import { PROFILE_VERSION } from "@/lib/profile/types"
+import { upgradeProfile } from "@/lib/profile/upgrade"
 
 // Every conversation query carries the owner (ADR 0021): `account_id is not distinct from` also
 // matches null with null, so cli and eval conversations belong to the "no account" owner.
@@ -23,7 +24,7 @@ export function createSessionRepository(sql: Sql): SessionRepository {
         from public.sessions
         where id = ${id} and account_id is not distinct from ${owner.accountId}::uuid
       `
-      return row ? toSessionRecord(row) : null
+      return row ? toSessionRecord(row, (await upgradeProfile(row.profile)).profile) : null
     },
 
     async touch({ id, channel, owner, profile }) {
@@ -32,7 +33,7 @@ export function createSessionRepository(sql: Sql): SessionRepository {
       // sql.json sends a JSON object; a pre-stringified value would be stored as a jsonb string.
       const [row] = await sql<[SessionRow?]>`
         insert into public.sessions (id, channel, account_id, profile)
-        values (${id}, ${channel}, ${owner.accountId}, ${sql.json(toProfile(profile ?? {}))})
+        values (${id}, ${channel}, ${owner.accountId}, ${sql.json(profile ?? { version: PROFILE_VERSION })})
         on conflict (id) do update
           set last_activity_at = now()
           ${profile ? sql`, profile = excluded.profile` : sql``}
@@ -41,7 +42,7 @@ export function createSessionRepository(sql: Sql): SessionRepository {
           last_activity_at
       `
       if (!row) throw new SessionNotFoundError("Conversa inexistente ou de outro dono.")
-      return toSessionRecord(row)
+      return toSessionRecord(row, (await upgradeProfile(row.profile)).profile)
     },
 
     async listMessages(sessionId, owner, opts) {
