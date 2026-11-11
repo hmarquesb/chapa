@@ -11,6 +11,7 @@ export const ERROR_MESSAGES = {
   sessionNotFound: "Esta conversa não existe mais. Começamos uma nova.",
   invalidSessionId: "O identificador da conversa é inválido.",
   unauthorized: "Acesso não autorizado.",
+  unauthenticated: "Sua sessão terminou. Entre de novo para continuar.",
 } as const
 
 // Motivos de recusa do corpo do POST /api/chat (validate.ts).

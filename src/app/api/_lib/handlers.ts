@@ -2,11 +2,14 @@ import { timingSafeEqual } from "node:crypto"
 import { ERROR_MESSAGES } from "@/app/api/_lib/errors"
 import { HttpError, json, readJsonBody } from "@/app/api/_lib/http"
 import { type LogEntry, logRequest } from "@/app/api/_lib/log"
-import { checkRateLimit, getClientIp, hashIp } from "@/app/api/_lib/rate-limit"
+import { checkRateLimit } from "@/app/api/_lib/rate-limit"
 import { isUuid, parseChatRequest } from "@/app/api/_lib/validate"
 import { type AppConfig, chunkConfigKey } from "@/config"
 import { LlmQuotaError, LlmUnavailableError } from "@/core/errors"
+import { getClientIp, hashIp } from "@/core/request-limits"
 import type {
+  AccountRecord,
+  AccountRepository,
   Assistant,
   ChunkRepository,
   RateLimitRepository,
@@ -22,6 +25,10 @@ import type {
 } from "@/lib/types"
 
 type Log = (entry: LogEntry) => void
+
+// Resolves the account of the request's session cookie (null without a valid session). The
+// route files pass getAuthenticatedAccount from src/infra/auth; the tests pass fakes.
+export type Authenticate = () => Promise<AccountRecord | null>
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const RATE_LIMIT_RETENTION_DAYS = 2
@@ -81,14 +88,34 @@ function errorResponse(status: number, message: string, headers?: HeadersInit): 
   return json(body, { status, headers })
 }
 
-// Measures latency and writes exactly one log line per request.
-function startRequest(route: string, method: string, log: Log) {
-  const started = performance.now()
-  return (entry: Omit<LogEntry, "route" | "method" | "latencyMs">) =>
-    log({ route, method, ...entry, latencyMs: Math.round(performance.now() - started) })
+type Finish = ((entry: Omit<LogEntry, "route" | "method" | "latencyMs" | "accountId">) => void) & {
+  // Set as soon as the session is resolved, so every later log line carries it.
+  accountId?: string
 }
 
-function failed(error: unknown, finish: ReturnType<typeof startRequest>): Response {
+// Measures latency and writes exactly one log line per request.
+function startRequest(route: string, method: string, log: Log): Finish {
+  const started = performance.now()
+  const finish: Finish = (entry) =>
+    log({
+      route,
+      method,
+      ...entry,
+      ...(finish.accountId === undefined ? {} : { accountId: finish.accountId }),
+      latencyMs: Math.round(performance.now() - started),
+    })
+  return finish
+}
+
+// Answers 401 (HttpError) without a valid session; otherwise records the accountId for the log.
+async function requireAccount(authenticate: Authenticate, finish: Finish): Promise<AccountRecord> {
+  const account = await authenticate()
+  if (account === null) throw new HttpError(401, ERROR_MESSAGES.unauthenticated)
+  finish.accountId = account.id
+  return account
+}
+
+function failed(error: unknown, finish: Finish): Response {
   const { status, message } = toPublicError(error)
   finish({ status, error: errorName(error) })
   return errorResponse(status, message)
@@ -99,6 +126,8 @@ function failed(error: unknown, finish: ReturnType<typeof startRequest>): Respon
 export function createChatHandler(deps: {
   assistant: Assistant
   rateLimits: RateLimitRepository
+  accounts: Pick<AccountRepository, "touchLastSeen">
+  authenticate: Authenticate
   config: AppConfig
   ipHashSecret: () => string
   now?: () => Date
@@ -112,6 +141,8 @@ export function createChatHandler(deps: {
   return async (req) => {
     const finish = startRequest(ROUTES.chat, "POST", log)
     try {
+      // First of all: without a session, the body is never read and the rate limit never counts.
+      const account = await requireAccount(deps.authenticate, finish)
       const contentType = req.headers.get("content-type") ?? ""
       if (!contentType.toLowerCase().startsWith("application/json")) {
         throw new HttpError(415, ERROR_MESSAGES.unsupportedMediaType)
@@ -133,6 +164,7 @@ export function createChatHandler(deps: {
           "Retry-After": String(limit.retryAfterSeconds),
         })
       }
+      await deps.accounts.touchLastSeen(account.id)
 
       const reply = await deps.assistant.handleMessage({ ...parsed.value, channel: "web" })
       finish({
@@ -170,6 +202,7 @@ function toHistoryMessage(message: StoredMessage): HistoryMessage {
 
 export function createHistoryHandler(deps: {
   sessions: SessionRepository
+  authenticate: Authenticate
   log?: Log
 }): (req: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response> {
   const log = deps.log ?? logRequest
@@ -177,6 +210,8 @@ export function createHistoryHandler(deps: {
   return async (_req, ctx) => {
     const finish = startRequest(ROUTES.history, "GET", log)
     try {
+      // The owner of the conversation is checked in the change scope-conversations-to-accounts.
+      await requireAccount(deps.authenticate, finish)
       const { id } = await ctx.params
       if (!isUuid(id)) throw new HttpError(400, ERROR_MESSAGES.invalidSessionId)
       // Read-only: get and listMessages never update last_activity_at.
@@ -237,6 +272,7 @@ const BEARER_PREFIX = "Bearer "
 export function createCleanupHandler(deps: {
   sessions: SessionRepository
   rateLimits: RateLimitRepository
+  accounts: Pick<AccountRepository, "deleteExpired">
   config: AppConfig
   cronSecret: () => string
   now?: () => Date
@@ -261,8 +297,12 @@ export function createCleanupHandler(deps: {
       const deletedRateLimits = await deps.rateLimits.deleteBefore(
         new Date(current - RATE_LIMIT_RETENTION_DAYS * DAY_MS),
       )
+      const deletedAccounts = await deps.accounts.deleteExpired({
+        now: new Date(current),
+        googleInactiveBefore: new Date(current - deps.config.accounts.googleInactiveDays * DAY_MS),
+      })
       finish({ status: 200 })
-      return json({ deletedSessions, deletedRateLimits })
+      return json({ deletedSessions, deletedRateLimits, deletedAccounts })
     } catch (error) {
       return failed(error, finish)
     }
