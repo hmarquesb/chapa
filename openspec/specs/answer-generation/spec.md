@@ -42,11 +42,15 @@ A instrução de sistema SHALL apresentar o assistente como o Chapa, o assistent
 - **THEN** ela lista os temas da base: planos e taxas, repasse, cancelamentos e contestações, cardápio e fotos, horários e pausas, avaliações, embalagem e entrega, promoções e cupons, suporte e chamados, conta e segurança, pagamentos e notas fiscais
 
 ### Requirement: Perfil e resumo na instrução de sistema
-O sistema SHALL acrescentar à instrução de sistema um bloco "Perfil do restaurante" com uma linha `Rótulo: valor` por campo preenchido (Nome, Plano, Cozinha, Cidade, Horário, nessa ordem, com os valores aparados) e, se houver, um bloco "Resumo da conversa até aqui". Sem perfil nem resumo, a instrução MUST ser só o texto base.
+O sistema SHALL acrescentar à instrução de sistema um bloco "Perfil do restaurante" com uma linha `Rótulo: valor` por campo preenchido (Nome, Plano, Cozinha, Cidade, Horário, nessa ordem, com os valores aparados, e o plano pelo nome oficial: "Plano Próprio", "Plano Entrega" ou "Plano Misto") e, se houver, um bloco "Resumo da conversa até aqui". Sem perfil nem resumo, a instrução MUST ser só o texto base.
 
 #### Scenario: Perfil parcial
 - **WHEN** o perfil tem só o nome "X" e a cidade "SP"
 - **THEN** o bloco de perfil tem exatamente as linhas "Nome: X" e "Cidade: SP"
+
+#### Scenario: Plano pelo nome oficial
+- **WHEN** o perfil tem o plano `misto`
+- **THEN** o bloco de perfil tem a linha "Plano: Plano Misto", e não "Plano: misto"
 
 ### Requirement: Contexto rotulado por fonte
 A mensagem enviada ao modelo SHALL trazer as instruções de resposta, dois exemplos fictícios (um respondido pelo contexto e um que cai no fallback), os trechos recuperados separados por `---`, cada um rotulado `[Fonte: <arquivo> › <seção>]` (ou `[Fonte: <arquivo>]`, sem seção), e por último a pergunta original do parceiro.

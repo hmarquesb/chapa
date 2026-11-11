@@ -17,7 +17,7 @@ O arquivo `eval/perguntas.json` SHALL ter exatamente 50 perguntas: 15 `factual`,
 - **THEN** essas perguntas passam na validação de tipo
 
 ### Requirement: Validação de cada pergunta
-Antes de rodar, a avaliação SHALL validar cada pergunta e listar todos os problemas de uma vez. Cada pergunta SHALL ter id inteiro positivo e único, tipo conhecido, `pergunta` (ou `turnos`, com 2 ou mais, só em `multi_turno`), `esperado` coerente com o tipo, `fonte_esperada` com arquivos da base, de 1 a 3 termos em `deve_conter` no escopo, de 1 a 5 em `nao_deve_conter` quando houver, perfil só com campos conhecidos (com o plano no tipo `perfil`) e uma `nota`.
+Antes de rodar, a avaliação SHALL validar cada pergunta e listar todos os problemas de uma vez. Cada pergunta SHALL ter id inteiro positivo e único, tipo conhecido, `pergunta` (ou `turnos`, com 2 ou mais, só em `multi_turno`), `esperado` coerente com o tipo, `fonte_esperada` com arquivos da base, de 1 a 3 termos em `deve_conter` no escopo, de 1 a 5 em `nao_deve_conter` quando houver, perfil só com campos conhecidos e plano válido (ver "Plano fora da lista"), e uma `nota`.
 
 #### Scenario: Fonte que não existe
 - **WHEN** uma pergunta espera a fonte `12-inexistente.md`
@@ -30,6 +30,10 @@ Antes de rodar, a avaliação SHALL validar cada pergunta e listar todos os prob
 #### Scenario: Pergunta de perfil sem plano
 - **WHEN** uma pergunta `perfil` tem o perfil `{ "name": "Pizzaria Bella" }`
 - **THEN** a avaliação não roda e aponta que `perfil` precisa de `perfil.plan` preenchido
+
+#### Scenario: Plano fora da lista
+- **WHEN** uma pergunta tem o perfil `{ "plan": "Plano Próprio" }`
+- **THEN** a avaliação não roda e aponta que `perfil.plan` precisa ser "proprio", "entrega" ou "misto"
 
 #### Scenario: nao_deve_conter vazio
 - **WHEN** uma pergunta tem `nao_deve_conter: []`
