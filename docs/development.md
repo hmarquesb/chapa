@@ -22,12 +22,14 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 - **TDD nas funções puras:** escreva o teste antes do código.
 - O pacote `server-only` é trocado por um stub (`test/stubs/server-only.ts`) no Vitest. Nos scripts, o `--conditions=react-server` faz o mesmo papel.
 - **`src/architecture.test.ts`** confere as regras de camadas e importações do [`AGENTS.md`](../AGENTS.md#camadas-e-importações); a lista completa está no próprio teste. Regra nova de camada entra nesse teste.
+- **`src/lib/palette.test.ts`** confere que o `palette.ts` e o `globals.css` têm os mesmos valores e que os pares texto/fundo passam no AA. **`src/design-tokens.test.ts`** falha se houver cor fixa (hex, `rgb(`, classe da paleta padrão do Tailwind) em `src/components` ou `src/app`.
 - Dados de teste são sempre fictícios: nomes de restaurante inventados, CPFs e cartões de exemplo.
 
 ## Front-end
 
 - A página do chat (`src/app/page.tsx`) e a tela de entrada (`src/app/entrar/page.tsx`), com os componentes do chat em `src/components/chat/`, os da entrada em `src/components/auth/` e os do shadcn em `src/components/ui/`. As Server Actions de login ficam em `src/app/auth-actions.ts` e chegam aos componentes por props.
-- Para adicionar um componente, use `npx shadcn add <componente>` (skill `shadcn`). Prefira as variantes prontas e as cores semânticas (`bg-primary`, `text-muted-foreground`).
+- Para adicionar um componente, use `npx shadcn add <componente>` (skill `shadcn`). Prefira as variantes prontas e as cores semânticas (`bg-primary`, `text-muted-foreground`). **Nenhuma cor fixa:** só tokens. Um tom novo entra no `src/app/globals.css` e no `src/lib/palette.ts` (o `npm test` diz se passa no AA).
+- O tema (Claro, Escuro, Sistema) é a classe `dark` no `<html>`. Para pôr o botão numa tela, use o `ThemeToggle` (ou o `ThemeMenuGroup`, dentro de um menu), de `src/components/brand/theme-toggle.tsx`.
 - Estado do chat em `src/lib/chat-state.ts`, chamadas à API em `src/lib/api-client.ts` e a lista de conversas em `src/lib/` (`format.ts` formata as datas). O navegador não guarda o id da conversa: ele vem da API. O navegador só fala com a nossa API.
 - Acessibilidade e responsividade fazem parte do pronto. Revise com a skill `web-design-guidelines`.
 
