@@ -32,11 +32,11 @@ Esta change só começa depois que a `add-google-and-demo-login` estiver mergead
 
 ## 6. Interface
 
-- [ ] 6.1 Escrever os testes de `formatActivity` (mesmo dia → "14:05"; outro dia → "10/11"; ISO inválido → "") e de `listSessions` e `deleteSession` no `api-client.test.ts` (`204` → ok; `401`; corpo inesperado). Ajustar `isChatResponse` para o `sessionId` e reduzir `session-id.ts` e os testes dele a `isUuid`. Verificar com `npm test -- format api-client session-id`.
-- [ ] 6.2 Gerar `src/components/ui/sheet.tsx` com `npx shadcn@<versão do lockfile> add sheet`. Verificar com `git diff package.json` que nada mudou.
-- [ ] 6.3 Criar `conversation-list.tsx` e `delete-conversation-dialog.tsx` e reescrever o `chat-app.tsx` com os fluxos da decisão 5. Apagar o `continue-dialog.tsx` e ajustar `page.tsx` (`?sessao=` → `redirect("/")`), `layout.tsx` e `next.config.ts` (só os comentários). Verificar com `git grep -n "sessao\|ContinueDialog\|SESSION_STORAGE_KEY" src/` que só sobra o tratamento do `?sessao=` em `page.tsx`.
+- [x] 6.1 Escrever os testes de `formatActivity` (mesmo dia → "14:05"; outro dia → "10/11"; ISO inválido → "") e de `listSessions` e `deleteSession` no `api-client.test.ts` (`204` → ok; `401`; corpo inesperado). Ajustar `isChatResponse` para o `sessionId` e reduzir `session-id.ts` e os testes dele a `isUuid`. Verificar com `npm test -- format api-client session-id`.
+- [x] 6.2 Gerar `src/components/ui/sheet.tsx` com `npx shadcn@<versão do lockfile> add sheet`. Verificar com `git diff package.json` que nada mudou.
+- [x] 6.3 Criar `conversation-list.tsx` e `delete-conversation-dialog.tsx` e reescrever o `chat-app.tsx` com os fluxos da decisão 5. Apagar o `continue-dialog.tsx` e ajustar `page.tsx` (`?sessao=` → `redirect("/")`), `layout.tsx` e `next.config.ts` (só os comentários). Verificar com `git grep -n "sessao\|ContinueDialog\|SESSION_STORAGE_KEY" src/` que só sobra o tratamento do `?sessao=` em `page.tsx`.
 - [ ] 6.4 **(autorização)** Verificação manual no `npm run dev` com o `dev`, seguindo o `docs/qa.md`: duas demos em navegadores diferentes não veem as conversas uma da outra; a primeira resposta põe a conversa no topo da lista; escolher uma conversa carrega o histórico; apagar pede confirmação e, se era a conversa aberta, volta ao estado vazio; `/?sessao=<uuid>` abre o chat em `/` sem aviso; abaixo de 768 px, o botão "Conversas" abre o painel. Registrar no relatório.
-- [ ] 6.5 Revisar a lista e o diálogo com a skill `web-design-guidelines` (navegação pelo teclado, `aria-current`, rótulo do botão de apagar, foco ao fechar o painel). Verificar que cada apontamento foi corrigido ou justificado no relatório.
+- [x] 6.5 Revisar a lista e o diálogo com a skill `web-design-guidelines` (navegação pelo teclado, `aria-current`, rótulo do botão de apagar, foco ao fechar o painel). Verificar que cada apontamento foi corrigido ou justificado no relatório.
 
 ## 7. Scripts e documentação
 

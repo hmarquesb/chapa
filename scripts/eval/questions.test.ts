@@ -434,18 +434,21 @@ describe("runQuestions", () => {
         sessionId: "sessao-1",
         message: "Qual a comissão?",
         channel: "eval",
+        accountId: null,
         profile: { plan: "Plano Básico" },
       },
       {
         sessionId: "sessao-2",
         message: "Faço entrega própria.",
         channel: "eval",
+        accountId: null,
         profile: { name: "Loja" },
       },
       {
         sessionId: "sessao-2",
         message: "E a comissão?",
         channel: "eval",
+        accountId: null,
         profile: { name: "Loja" },
       },
     ])

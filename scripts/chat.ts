@@ -5,7 +5,12 @@
 import { randomUUID } from "node:crypto"
 import { createInterface } from "node:readline/promises"
 import { chunkConfigKey } from "@/config"
-import { LlmQuotaError, LlmRequestError, LlmUnavailableError } from "@/core/errors"
+import {
+  LlmQuotaError,
+  LlmRequestError,
+  LlmUnavailableError,
+  SessionNotFoundError,
+} from "@/core/errors"
 import type { AssistantReply, RetrievedChunk } from "@/core/types"
 import { getContainer } from "@/infra/container"
 import { closeSql } from "@/infra/db"
@@ -33,7 +38,10 @@ function profileFromFlags(flags: Record<string, string | true>): RestaurantProfi
   return Object.keys(profile).length > 0 ? profile : undefined
 }
 
+const SESSION_NOT_FOUND_MESSAGE = "Esta conversa não existe ou não é do CLI."
+
 function friendlyError(error: unknown): string {
+  if (error instanceof SessionNotFoundError) return SESSION_NOT_FOUND_MESSAGE
   if (error instanceof LlmQuotaError) {
     return "A cota do Gemini acabou por enquanto. Espere um pouco e tente de novo."
   }
@@ -106,11 +114,12 @@ async function main(): Promise<void> {
     console.log("A base está vazia para esta configuração. Rode `npm run ingest` antes do chat.")
     return
   }
-  const existing = sessionFlag === undefined ? null : await sessions.get(sessionId)
+  const existing =
+    sessionFlag === undefined ? null : await sessions.get(sessionId, { accountId: null })
   if (existing === null) {
     console.log("Sessão: nova")
   } else {
-    const count = (await sessions.listMessages(sessionId)).length
+    const count = (await sessions.listMessages(sessionId, { accountId: null })).length
     console.log(`Sessão: retomada (${count} mensagens anteriores)`)
   }
   console.log(`Digite sua dúvida. Para encerrar, digite "${EXIT_COMMAND}" ou use Ctrl+D.\n`)
@@ -139,10 +148,15 @@ async function main(): Promise<void> {
           sessionId,
           message: line,
           channel: "cli",
+          accountId: null,
           profile,
         })
         printReply(reply, debug)
       } catch (error) {
+        if (error instanceof SessionNotFoundError) {
+          console.log(`\n${SESSION_NOT_FOUND_MESSAGE}`)
+          return
+        }
         const detail = debug && error instanceof Error ? ` (${error.name})` : ""
         console.log(`\n${friendlyError(error)}${detail}\n`)
       }
