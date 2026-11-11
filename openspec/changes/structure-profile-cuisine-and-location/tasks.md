@@ -45,8 +45,8 @@ Esta change é a 2 de 3 do PRD `prd-chapa-perfil-estruturado.md`. Ela só começ
 
 - [ ] 7.1 **(autorização)** Com `npm run dev` contra o `dev`, percorrer o fluxo "Primeiro acesso" do PRD (§6) numa demo: buscar "pizza", escolher RJ e "Niterói", salvar e ver "Local: Niterói (RJ)" no prompt com `--debug` ou no log local. Repetir só pelo teclado e com 390 px de largura. Registrar no `docs/qa.md` e no relatório.
 - [ ] 7.2 **(autorização)** No `dev`, gravar numa conta de teste o perfil antigo `{ "plan": "misto", "city": "Bom Jesus" }`, abrir o chat e ver a faixa; salvar o perfil e ver que a faixa some. Registrar no relatório.
-- [ ] 7.3 **(autorização)** Rodar `npm run chat -- --perfil <arquivo v2>` uma vez e `npm run eval -- --label perfil-v2 --only 122,123,124,125,126 --delay-ms 4000` contra o `dev`. Verificar que os acertos são iguais aos da última rodada em `eval/resultados/`. Se algum mudar, registrar a pergunta, a resposta e a causa.
+- [x] 7.3 **(autorização)** Rodar `npm run chat -- --perfil <arquivo v2>` uma vez e `npm run eval -- --label perfil-v2 --only 122,123,124,125,126 --delay-ms 4000` contra o `dev`. Verificar que os acertos são iguais aos da última rodada em `eval/resultados/`. Se algum mudar, registrar a pergunta, a resposta e a causa.
 
 ## 8. Verificação final
 
-- [ ] 8.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam, que o build separa os municípios por UF (decisão 2) e registrar no relatório os critérios de aceite do PRD (§7) que esta change fecha, com a evidência de cada um.
+- [x] 8.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam, que o build separa os municípios por UF (decisão 2) e registrar no relatório os critérios de aceite do PRD (§7) que esta change fecha, com a evidência de cada um.
