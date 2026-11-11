@@ -2,13 +2,22 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Dark mode follows the operating system (prefers-color-scheme); there is no manual toggle. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/* Dark mode is the .dark class on <html>, set before first paint by THEME_INIT_SCRIPT (src/lib/theme.ts). */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-figtree);
+  --font-heading: var(--font-bricolage);
+  --color-cinnamon: var(--cinnamon);
+  --color-cinnamon-foreground: var(--cinnamon-foreground);
+  --color-cinnamon-text: var(--cinnamon-text);
+  --color-overlay: var(--overlay);
+  --shadow-soft: var(--elevation-soft);
+  --shadow-raised: var(--elevation-raised);
+  --animate-message-in: message-in var(--motion-fast) ease-out both;
+  --animate-thinking-dot: thinking-dot var(--motion-thinking) ease-in-out infinite;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,75 +57,132 @@
 }
 
 :root {
-  color-scheme: light dark;
-  /* Neutral grays plus one discreet slate-blue accent (primary and focus ring). */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.4 0.07 255);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.55 0.09 255);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Colors mirror src/lib/palette.ts: a tone changes in both files (npm test checks AA). */
+  --background: #faf5f0;
+  --foreground: #2a1e22;
+  --card: #fffcf8;
+  --card-foreground: #2a1e22;
+  --popover: #fffcf8;
+  --popover-foreground: #2a1e22;
+  --primary: #7a2e3b;
+  --primary-foreground: #ffffff;
+  --secondary: #f2e8df;
+  --secondary-foreground: #2a1e22;
+  --muted: #f2e8df;
+  --muted-foreground: #6b5a5f;
+  --accent: #f5e3cf;
+  --accent-foreground: #2a1e22;
+  --destructive: #b23b1e;
+  --border: #e8dad0;
+  --input: #977d84;
+  --ring: #7a2e3b;
+  --cinnamon: #c98b4e;
+  --cinnamon-foreground: #2a1e22;
+  --cinnamon-text: #9a5f2a;
+  --overlay: #2a1e2266;
+  --chart-1: #7a2e3b;
+  --chart-2: #c98b4e;
+  --chart-3: #b5717d;
+  --chart-4: #8c7a6b;
+  --chart-5: #4a3439;
+  --sidebar: #f5ede6;
+  --sidebar-foreground: #2a1e22;
+  --sidebar-primary: #7a2e3b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5e3cf;
+  --sidebar-accent-foreground: #2a1e22;
+  --sidebar-border: #e8dad0;
+  --sidebar-ring: #7a2e3b;
+  --radius: 1rem;
+  --elevation-soft: 0 1px 2px rgb(42 30 34 / 6%), 0 2px 8px rgb(42 30 34 / 6%);
+  --elevation-raised: 0 4px 12px rgb(42 30 34 / 10%), 0 12px 32px rgb(42 30 34 / 12%);
+  --motion-fast: 200ms;
+  --motion-thinking: 1.2s;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.82 0.06 255);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.7 0.08 255);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.82 0.06 255);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+.dark {
+  --background: #1d1517;
+  --foreground: #f3e9e4;
+  --card: #271d20;
+  --card-foreground: #f3e9e4;
+  --popover: #2a1f23;
+  --popover-foreground: #f3e9e4;
+  --primary: #cf7686;
+  --primary-foreground: #1d1517;
+  --secondary: #33272b;
+  --secondary-foreground: #f3e9e4;
+  --muted: #33272b;
+  --muted-foreground: #b3a2a6;
+  --accent: #3d2c24;
+  --accent-foreground: #f3e9e4;
+  --destructive: #e98a6c;
+  --border: #3a2d31;
+  --input: #7d6a6f;
+  --ring: #cf7686;
+  --cinnamon: #d9a06a;
+  --cinnamon-foreground: #1d1517;
+  --cinnamon-text: #d9a06a;
+  --overlay: #0e0a0bb3;
+  --chart-1: #cf7686;
+  --chart-2: #d9a06a;
+  --chart-3: #e3a9b3;
+  --chart-4: #b8a595;
+  --chart-5: #8e6a72;
+  --sidebar: #221a1c;
+  --sidebar-foreground: #f3e9e4;
+  --sidebar-primary: #cf7686;
+  --sidebar-primary-foreground: #1d1517;
+  --sidebar-accent: #3d2c24;
+  --sidebar-accent-foreground: #f3e9e4;
+  --sidebar-border: #3a2d31;
+  --sidebar-ring: #cf7686;
+  --elevation-soft: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 8px rgb(0 0 0 / 25%);
+  --elevation-raised: 0 4px 12px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 40%);
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes thinking-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Only while the theme switches: a permanent transition on * would delay every hover. */
+@media (prefers-reduced-motion: no-preference) {
+  .theme-changing,
+  .theme-changing *,
+  .theme-changing *::before,
+  .theme-changing *::after {
+    transition:
+      background-color var(--motion-fast) ease,
+      border-color var(--motion-fast) ease,
+      color var(--motion-fast) ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none;
+    transition: none;
   }
 }
 
