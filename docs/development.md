@@ -30,6 +30,7 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 - A página do chat (`src/app/page.tsx`) e a tela de entrada (`src/app/entrar/page.tsx`), com os componentes do chat em `src/components/chat/`, os da entrada em `src/components/auth/` e os do shadcn em `src/components/ui/`. As Server Actions de login ficam em `src/app/auth-actions.ts` e chegam aos componentes por props.
 - Para adicionar um componente, use `npx shadcn add <componente>` (skill `shadcn`). Prefira as variantes prontas e as cores semânticas (`bg-primary`, `text-muted-foreground`). **Nenhuma cor fixa:** só tokens. Um tom novo entra no `src/app/globals.css` e no `src/lib/palette.ts` (o `npm test` diz se passa no AA).
 - O tema (Claro, Escuro, Sistema) é a classe `dark` no `<html>`. Para pôr o botão numa tela, use o `ThemeToggle` (ou o `ThemeMenuGroup`, dentro de um menu), de `src/components/brand/theme-toggle.tsx`.
+- Componentes de marca (`src/components/brand/`): `RangoLogo` no topo de cada tela (como link para `/` no `/perfil` e na `/privacidade`), `SiteFooter` no fim de cada tela (aviso de empresa fictícia, `note` opcional e o link "Privacidade"), `ChapaAvatar` ao lado de cada resposta do assistente (`decorative` quando o nome já vem no texto) e `ThinkingIndicator` enquanto a resposta não chega. O desenho do ícone fica só em `src/lib/chapa-icon.ts`.
 - Estado do chat em `src/lib/chat-state.ts`, chamadas à API em `src/lib/api-client.ts` e a lista de conversas em `src/lib/` (`format.ts` formata as datas). O navegador não guarda o id da conversa: ele vem da API. O navegador só fala com a nossa API.
 - Acessibilidade e responsividade fazem parte do pronto. Revise com a skill `web-design-guidelines`.
 
@@ -41,6 +42,8 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 ## Scripts locais
 
 `scripts/` roda fora da Vercel, com `tsx`, e pode importar `src/core/`, `src/infra/` e `src/config`. As flags são lidas por `scripts/lib/args.ts`. Mensagens de erro e de uso ficam em PT-BR. Todo script que chama API ou banco leva o aviso ⚠️ no `AGENTS.md`. O `npm run authz-check` confere, no banco `dev`, que toda consulta de conversa respeita o dono ([ADR 0021](adr/0021-autorizacao-por-conta-no-repositorio.md)): rode-o quando mexer em `src/infra/db/session-repository.ts` e acrescente um caso a cada consulta nova de conversa.
+
+O `npm run screenshots -- --url http://localhost:3000 [--out .screenshots] [--only entrada,chat]` tira as fotos das telas nos dois temas e em dois tamanhos (desktop e 390 px), em `.screenshots/` (fora do git). Entra como demo uma vez (⚠️ cria 1 conta demo: 5 por IP por dia) e responde `POST /api/chat` e `GET /api/sessions` com dados fixos, sem chamar o LLM. Na primeira vez, rode `npx playwright install chromium`.
 
 ## Idioma
 

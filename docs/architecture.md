@@ -55,7 +55,8 @@ Stack:
 - Biome
 
 Regras:
-- A página `/` tem o chat, as fontes em `Badge` embaixo de cada resposta, 3 perguntas de exemplo, o resumo do perfil com o link "Editar perfil" e um rodapé com o aviso de projeto não oficial e o link "Privacidade".
+- A página `/` tem o chat, as fontes em `Badge` embaixo de cada resposta, 3 perguntas de exemplo, o resumo do perfil com o link "Editar perfil" e um rodapé (`SiteFooter`) com o aviso de que a Rango é fictícia e o link "Privacidade".
+- **Marca:** Rango é a marca (o logo "rango." no cabeçalho de todas as telas) e Chapa é o assistente (o `<h1>`, o avatar nas respostas e o indicador "Chapa está pensando…"). Os componentes de marca ficam em `src/components/brand/` (`RangoLogo`, `ChapaAvatar`, `ThinkingIndicator`, `SiteFooter`, `ThemeToggle`), e a geometria do ícone do Chapa, em `src/lib/chapa-icon.ts`.
 - `/perfil` tem o formulário do perfil (o plano é um `RadioGroup` obrigatório). Quem entra sem plano salvo é levado para lá antes do chat. `/privacidade` é pública e mostra o que a conta guarda, a retenção e como excluir a conta. O menu da conta tem "Editar perfil" e "Excluir minha conta".
 - O id da conversa é gerado no servidor: o primeiro `POST /api/chat` vai sem `sessionId` e a resposta o devolve. O navegador o guarda só em memória, não no `localStorage` nem na URL. Recarregar a página abre uma conversa nova.
 - A lista de conversas da conta (um painel lateral em telas pequenas) vem de `GET /api/sessions`, com o título cortado da primeira pergunta, e é atualizada depois de cada resposta. Clicar numa conversa carrega o histórico por `GET /api/sessions/[id]/messages`; apagar pede confirmação e usa `DELETE /api/sessions/[id]`.
