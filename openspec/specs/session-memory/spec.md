@@ -6,19 +6,23 @@ Mantém cada conversa anônima no banco, com o perfil do restaurante, o históri
 ## Requirements
 
 ### Requirement: Perfil do restaurante por sessão
-Quando a mensagem traz um perfil, o sistema SHALL substituir o perfil da sessão por ele, com os valores aparados e os campos vazios descartados. Quando a mensagem não traz perfil, MUST usar o perfil já salvo na sessão. Os campos são nome, plano, cozinha, cidade e horário.
+No CLI e no eval, quando a mensagem traz um perfil, o sistema SHALL substituir o perfil da sessão por ele, com os valores aparados, os campos vazios descartados e o plano só se for `proprio`, `entrega` ou `misto`. Sem perfil, MUST usar o salvo na sessão. Na web, o perfil vem sempre da conta, lido a cada mensagem, e MUST NOT ser gravado na conversa.
 
 #### Scenario: Perfil enviado com espaços
-- **WHEN** a mensagem traz o perfil `{ "name": "  Pizzaria Bella ", "city": "" }`
+- **WHEN** uma mensagem do CLI traz o perfil `{ "name": "  Pizzaria Bella ", "city": "" }`
 - **THEN** a sessão passa a ter o perfil `{ "name": "Pizzaria Bella" }`, que também vai para a instrução de sistema
 
 #### Scenario: Perfil vazio apaga o salvo
-- **WHEN** a mensagem traz `profile: {}` (ou só campos vazios) e a sessão tem um perfil salvo
-- **THEN** o perfil da sessão passa a ser vazio. A interface nunca manda o perfil vazio (omite o campo), então isso só acontece em chamadas diretas à API
+- **WHEN** uma mensagem do CLI ou do eval traz `profile: {}` (ou só campos vazios) e a sessão tem um perfil salvo
+- **THEN** o perfil da sessão passa a ser vazio
 
 #### Scenario: Perfil omitido
-- **WHEN** a mensagem não traz perfil e a sessão tem um perfil salvo
+- **WHEN** uma mensagem do CLI não traz perfil e a sessão tem um perfil salvo
 - **THEN** a resposta usa o perfil salvo e o perfil da sessão não muda
+
+#### Scenario: Perfil da conta na web
+- **WHEN** uma conta com o plano Misto envia uma mensagem e depois troca o plano para Próprio
+- **THEN** a mensagem seguinte, em qualquer conversa da conta, usa o Plano Próprio, e o perfil gravado na conversa continua vazio
 
 ### Requirement: Só a pergunta e a resposta finais são gravadas
 A cada turno que passa pelo guardrail de entrada e termina sem erro, o sistema SHALL gravar, numa única transação, a pergunta original do parceiro e a resposta final com o status e as fontes, e atualizar a última atividade da sessão. Os trechos recuperados, a pergunta reescrita e o prompt MUST NOT ser gravados.
@@ -108,7 +112,7 @@ O sistema SHALL criar a conversa na primeira mensagem que passa pelo guardrail d
 - **THEN** a conversa é criada com o canal `cli` e sem conta
 
 ### Requirement: Continuar uma conversa do mesmo dono
-Uma mensagem com o id de uma conversa existente SHALL continuar a conversa, com o histórico, o resumo e o perfil dela, só quando o dono é o mesmo: a mesma conta, na web, ou nenhuma conta, no CLI e no eval. Com outro dono, a conversa MUST ser tratada como inexistente, sem ler nem gravar nada nela.
+Uma mensagem com o id de uma conversa existente SHALL continuar a conversa, com o histórico e o resumo dela, só quando o dono é o mesmo: a mesma conta, na web, ou nenhuma conta, no CLI e no eval. No CLI e no eval, o perfil da conversa também vale. Com outro dono, a conversa MUST ser tratada como inexistente, sem ler nem gravar nada nela.
 
 #### Scenario: Conta continua a própria conversa
 - **WHEN** a conta A envia uma mensagem com o id de uma conversa dela que já tem mensagens

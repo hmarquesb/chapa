@@ -6,7 +6,7 @@ Expõe o assistente ao navegador por rotas HTTP próprias, com validação do pe
 ## Requirements
 
 ### Requirement: Enviar uma mensagem
-`POST /api/chat` SHALL receber `{ sessionId?, message, profile? }`, passar a mensagem ao assistente pelo canal `web`, na conversa indicada ou, sem `sessionId`, numa conversa nova da conta, e responder 200 com exatamente `{ status, answer, sources, sessionId }`. `sessionId` é o id da conversa, ou `null` quando nenhuma conversa foi criada. A pergunta reescrita, os trechos e o consumo MUST NOT sair do servidor.
+`POST /api/chat` SHALL receber `{ sessionId?, message }`, passar a mensagem ao assistente pelo canal `web`, com o perfil da conta, na conversa indicada ou, sem `sessionId`, numa conversa nova da conta, e responder 200 com exatamente `{ status, answer, sources, sessionId }`. `sessionId` é o id da conversa, ou `null` quando nenhuma conversa foi criada. A pergunta reescrita, os trechos e o consumo MUST NOT sair do servidor.
 
 #### Scenario: Pergunta respondida
 - **WHEN** o navegador envia uma pergunta coberta pela base numa conversa da conta
@@ -15,6 +15,10 @@ Expõe o assistente ao navegador por rotas HTTP próprias, com validação do pe
 #### Scenario: Primeira mensagem sem id
 - **WHEN** o navegador envia uma pergunta sem `sessionId`
 - **THEN** a resposta traz o `sessionId` da conversa nova, que passa a aparecer na lista da conta
+
+#### Scenario: Perfil da conta no prompt
+- **WHEN** a conta tem o plano Entrega salvo e envia uma pergunta sobre a comissão
+- **THEN** a instrução de sistema traz "Plano: Plano Entrega", e a conversa não grava perfil nenhum
 
 #### Scenario: Bloqueio não é erro HTTP
 - **WHEN** a mensagem tem um CPF ou passa de 1.000 caracteres, num corpo de até 4.096 bytes
@@ -43,7 +47,7 @@ Expõe o assistente ao navegador por rotas HTTP próprias, com validação do pe
 - **THEN** a resposta é 400 com "O pedido não é um JSON válido."
 
 ### Requirement: Validação do formato do pedido
-`POST /api/chat` SHALL responder 400 com um motivo em PT-BR quando o corpo não é um objeto, tem campos além de `sessionId`, `message` e `profile`, tem `sessionId` presente que não é UUID, tem `message` que não é texto, ou tem `profile` que não é um objeto só com `name`, `plan`, `cuisine`, `city` e `hours` em texto de até 60 caracteres.
+`POST /api/chat` SHALL responder 400 com um motivo em PT-BR quando o corpo não é um objeto, traz `profile` ("O perfil agora fica salvo na conta. Recarregue a página."), tem outros campos além de `sessionId` e `message`, tem `sessionId` presente que não é UUID, ou tem `message` que não é texto.
 
 #### Scenario: Campo desconhecido
 - **WHEN** o corpo traz `{ "message": "oi", "role": "admin" }`
@@ -53,9 +57,13 @@ Expõe o assistente ao navegador por rotas HTTP próprias, com validação do pe
 - **WHEN** o corpo traz `{ "sessionId": "abc", "message": "oi" }`
 - **THEN** a resposta é 400 com "O identificador da conversa é inválido."
 
+#### Scenario: Perfil no corpo
+- **WHEN** o corpo traz `{ "message": "oi", "profile": { "plan": "misto" } }`
+- **THEN** a resposta é 400 com "O perfil agora fica salvo na conta. Recarregue a página.", e nada é gravado
+
 #### Scenario: Campo do perfil longo demais
-- **WHEN** o perfil traz `city` com 61 caracteres
-- **THEN** a resposta é 400 com "O perfil do restaurante é inválido."
+- **WHEN** o corpo traz um perfil com `city` de 61 caracteres
+- **THEN** a resposta é 400 com "O perfil agora fica salvo na conta. Recarregue a página.", porque nenhum perfil é aceito no corpo
 
 ### Requirement: Rate limit por IP com hash
 `POST /api/chat` SHALL limitar cada IP a 10 pedidos por minuto e 100 por dia, em janelas fixas de minuto e de dia em UTC guardadas no banco (a janela diária vira à meia-noite UTC, 21h em Brasília). O IP vem do primeiro valor de `x-forwarded-for`, depois de `x-real-ip`, ou vira `unknown`, e MUST ser guardado só como HMAC-SHA256 com um segredo do servidor, nunca em claro.
@@ -99,11 +107,11 @@ Toda resposta JSON das rotas SHALL levar `Cache-Control: no-store`, porque respo
 - **THEN** a resposta traz `Cache-Control: no-store`
 
 ### Requirement: Ler o histórico de uma sessão
-`GET /api/sessions/[id]/messages` SHALL responder 200 com `{ sessionId, profile, messages }` para uma conversa da conta logada, em que cada mensagem tem `id`, `role`, `content`, `status` (nulo nas do parceiro), `sources` e `createdAt` em ISO 8601, na ordem de gravação. A leitura MUST NOT alterar a última atividade da conversa.
+`GET /api/sessions/[id]/messages` SHALL responder 200 com `{ sessionId, messages }` para uma conversa da conta logada, em que cada mensagem tem `id`, `role`, `content`, `status` (nulo nas do parceiro), `sources` e `createdAt` em ISO 8601, na ordem de gravação. A leitura MUST NOT alterar a última atividade da conversa.
 
 #### Scenario: Sessão existente
 - **WHEN** a conta pede o histórico de uma conversa dela com dois turnos
-- **THEN** a resposta é 200 com o perfil salvo e as quatro mensagens em ordem
+- **THEN** a resposta é 200 com as quatro mensagens em ordem e sem campo `profile`
 
 #### Scenario: Sessão que não existe
 - **WHEN** o id é um UUID que o banco não conhece, ou de uma conversa já apagada
@@ -165,7 +173,7 @@ O navegador SHALL falar só com estas rotas, nunca com o provedor de LLM nem com
 - **THEN** o acesso é negado pelo RLS
 
 ### Requirement: Login obrigatório nas rotas de conversa
-`POST /api/chat`, `GET /api/sessions`, `GET /api/sessions/[id]/messages` e `DELETE /api/sessions/[id]` SHALL exigir uma sessão válida (ver `auth`) antes de qualquer outra verificação. Sem ela, MUST responder `401` com "Sua sessão terminou. Entre de novo para continuar.", sem ler o corpo e sem contar no rate limit. `GET /api/health` e `GET /api/cron/cleanup` não exigem login.
+`POST /api/chat`, `GET /api/sessions`, `GET /api/sessions/[id]/messages`, `DELETE /api/sessions/[id]`, `GET` e `PUT /api/profile` e `DELETE /api/account` SHALL exigir uma sessão válida (ver `auth`) antes de qualquer outra verificação. Sem ela, MUST responder `401` com "Sua sessão terminou. Entre de novo para continuar.", sem ler o corpo e sem contar no rate limit. `GET /api/health` e `GET /api/cron/cleanup` não exigem login.
 
 #### Scenario: Mensagem sem cookie
 - **WHEN** alguém envia `POST /api/chat` sem cookie de sessão
@@ -178,6 +186,10 @@ O navegador SHALL falar só com estas rotas, nunca com o provedor de LLM nem com
 #### Scenario: Lista sem cookie
 - **WHEN** alguém pede `GET /api/sessions` sem cookie de sessão
 - **THEN** a resposta é `401`
+
+#### Scenario: Perfil sem cookie
+- **WHEN** alguém envia `PUT /api/profile` sem cookie de sessão
+- **THEN** a resposta é `401`, e nenhum perfil muda
 
 #### Scenario: Demo vencida
 - **WHEN** uma conta demo vencida envia `POST /api/chat` com o cookie ainda dentro da validade
@@ -223,3 +235,44 @@ Toda rota que recebe o id de uma conversa SHALL responder `404` com "Esta conver
 #### Scenario: Apagar a conversa de outra conta
 - **WHEN** a conta A tenta apagar uma conversa da conta B
 - **THEN** a resposta é `404`, e a conversa de B continua
+
+### Requirement: Ler e salvar o perfil da conta
+`GET /api/profile` SHALL responder 200 com `{ profile }`, o perfil da conta logada. `PUT /api/profile` SHALL receber `{ name?, plan, cuisine?, city?, hours? }`, aparar os valores, descartar os campos vazios, salvar o perfil na conta e responder 200 com `{ profile }`. O `plan` MUST ser `proprio`, `entrega` ou `misto`.
+
+#### Scenario: Salvar o perfil
+- **WHEN** a conta envia `PUT /api/profile` com `{ "name": "  Pizzaria Bella ", "plan": "entrega", "city": "" }`
+- **THEN** a resposta é 200 com `{ "profile": { "name": "Pizzaria Bella", "plan": "entrega" } }`, e a próxima mensagem de qualquer conversa da conta usa esse perfil
+
+#### Scenario: Sem plano
+- **WHEN** o corpo do `PUT` não traz `plan`, ou traz `"plan": "premium"`
+- **THEN** a resposta é 400 com "Escolha o plano: Próprio, Entrega ou Misto.", e o perfil salvo não muda
+
+#### Scenario: Campo longo ou desconhecido
+- **WHEN** o corpo traz `city` com 61 caracteres, ou o campo `cnpj`
+- **THEN** a resposta é 400 com "O perfil do restaurante é inválido." no primeiro caso e "O pedido tem campos desconhecidos." no segundo
+
+#### Scenario: Formato do pedido
+- **WHEN** o `PUT` chega sem `Content-Type: application/json`, com mais de 4.096 bytes ou com JSON quebrado
+- **THEN** a resposta é 415, 413 ou 400, com os mesmos textos de `POST /api/chat`
+
+### Requirement: Excluir a conta pela API
+`DELETE /api/account` SHALL apagar a conta logada, junto com o perfil e todas as conversas e mensagens, e responder `204` sem corpo. Os pedidos seguintes com o mesmo cookie MUST receber `401`.
+
+#### Scenario: Excluir e tentar de novo
+- **WHEN** a conta envia `DELETE /api/account` e depois `GET /api/sessions` com o mesmo cookie
+- **THEN** a primeira resposta é `204` e a segunda é `401`
+
+### Requirement: Limite diário de mensagens por conta
+Depois do limite por IP, `POST /api/chat` SHALL limitar cada conta a 60 mensagens por dia UTC (conta Google) ou a 30 (conta demo), contando cada pedido válido que passou pelo limite por IP. Acima disso, MUST responder 429 com `Retry-After` até a meia-noite UTC seguinte e o texto fixo do tipo de conta.
+
+#### Scenario: 61ª mensagem de uma conta Google
+- **WHEN** uma conta Google envia a 61ª mensagem válida no mesmo dia UTC
+- **THEN** a resposta é 429 com "Você chegou ao limite de mensagens de hoje nesta conta. Volte amanhã."
+
+#### Scenario: 31ª mensagem de uma demo
+- **WHEN** uma conta demo envia a 31ª mensagem válida no mesmo dia UTC
+- **THEN** a resposta é 429 com "A conta de demonstração chegou ao limite de mensagens de hoje. Entre com Google para continuar."
+
+#### Scenario: Recusa pelo IP não conta na conta
+- **WHEN** um pedido é recusado pelo limite por IP
+- **THEN** ele não entra na contagem diária da conta

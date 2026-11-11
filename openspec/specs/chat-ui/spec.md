@@ -6,15 +6,15 @@ Dá ao restaurante parceiro uma página única de chat em PT-BR, sem login, com 
 ## Requirements
 
 ### Requirement: Página única em PT-BR
-A interface do chat SHALL ser uma página só, em `/`, aberta só com sessão válida (ver `auth`), em PT-BR (`lang="pt-BR"`), com o título "Chapa", a linha de subtítulo, o menu da conta, a lista de conversas, o botão "Nova conversa", o perfil, a conversa, a caixa de mensagem e o rodapé.
+A interface do chat SHALL ser uma página só, em `/`, aberta só com sessão válida e perfil com plano (ver `auth`), em PT-BR (`lang="pt-BR"`), com o título "Chapa", a linha de subtítulo, o menu da conta, a lista de conversas, o botão "Nova conversa", o resumo do perfil, a conversa, a caixa de mensagem e o rodapé com o aviso de não afiliação e o link "Privacidade".
 
 #### Scenario: Textos fixos
-- **WHEN** alguém logado abre a página
-- **THEN** o subtítulo é "Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações." e o rodapé é "Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery. As conversas são apagadas depois de 30 dias sem uso. Não envie dados pessoais."
+- **WHEN** alguém logado, com o perfil salvo, abre a página
+- **THEN** o subtítulo é "Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações." e o rodapé é "Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery. As conversas são apagadas depois de 30 dias sem uso. Não envie dados pessoais.", seguido do link "Privacidade"
 
 #### Scenario: Primeira visita
-- **WHEN** alguém logado abre a página pela primeira vez
-- **THEN** vê o título, o menu da conta, a lista de conversas vazia, o perfil recolhido, a dica "Faça uma pergunta sobre a operação do seu restaurante ou escolha um exemplo abaixo.", as perguntas de exemplo, a caixa de mensagem e o rodapé com o aviso de não afiliação
+- **WHEN** alguém logado, com o perfil salvo, abre a página pela primeira vez
+- **THEN** vê o título, o menu da conta, a lista de conversas vazia, o resumo do perfil, a dica "Faça uma pergunta sobre a operação do seu restaurante ou escolha um exemplo abaixo.", as perguntas de exemplo, a caixa de mensagem e o rodapé com o aviso de não afiliação
 
 ### Requirement: Sem marca de empresa real
 A interface MUST NOT mostrar logo, nome ou cores de empresas reais de delivery.
@@ -64,17 +64,6 @@ Com a conversa vazia e sem carregamento em curso, a interface SHALL mostrar trê
 #### Scenario: Clique num exemplo
 - **WHEN** o parceiro clica em "Quando o repasse cai na minha conta?"
 - **THEN** essa pergunta é enviada e os exemplos somem quando a conversa deixa de estar vazia
-
-### Requirement: Perfil opcional do restaurante
-A interface SHALL oferecer, recolhido, o formulário "Perfil do restaurante (opcional)" com nome, plano, tipo de cozinha, cidade e horário, cada um com até 60 caracteres e a marca "preenchido" quando houver algum valor. O perfil MUST ser salvo no navegador e enviado com cada mensagem só quando tem algum campo preenchido, aparado.
-
-#### Scenario: Perfil vazio
-- **WHEN** o parceiro envia uma pergunta sem preencher o perfil
-- **THEN** o pedido não traz o campo `profile`
-
-#### Scenario: Perfil preenchido
-- **WHEN** o parceiro preenche o plano e envia uma pergunta
-- **THEN** o pedido traz o perfil com o plano, e o perfil continua preenchido depois de recarregar a página
 
 ### Requirement: Conversa que não existe mais
 Quando o servidor responde 404 ao abrir ou continuar uma conversa, a interface SHALL tirar a conversa da lista, voltar ao estado de conversa nova e avisar "Esta conversa não existe mais. Começamos uma nova." Em outro erro, MUST mostrar o erro e manter a conversa aberta.
@@ -126,13 +115,6 @@ Se a conversa mudou enquanto um pedido estava em curso, a interface SHALL descar
 - **WHEN** o histórico de uma sessão chega depois de a sessão ter sido trocada
 - **THEN** a tela não mostra esse histórico
 
-### Requirement: Funciona sem localStorage
-Se o navegador bloquear o `localStorage`, a interface SHALL continuar funcionando, só sem guardar o perfil entre recargas.
-
-#### Scenario: Navegação privada com armazenamento bloqueado
-- **WHEN** o `localStorage` lança erro em toda leitura e escrita
-- **THEN** o chat envia e recebe mensagens e a lista de conversas funciona normalmente
-
 ### Requirement: Acessibilidade da conversa
 A conversa SHALL ser uma região de log anunciada aos leitores de tela, focável pelo teclado e com rolagem até a última mensagem, e cada mensagem MUST identificar o autor ("Você" ou "Chapa") para leitores de tela.
 
@@ -148,15 +130,15 @@ Quando qualquer rota da API responde `401`, a interface SHALL levar a `/entrar`,
 - **THEN** a API responde `401` e a página vai para `/entrar`
 
 ### Requirement: Menu da conta
-O chat SHALL ter um menu da conta que mostra o e-mail da conta Google, ou "Conta de demonstração" numa demo, e a opção "Sair".
+O chat SHALL ter um menu da conta que mostra o e-mail da conta Google, ou "Conta de demonstração" numa demo, e as opções "Editar perfil", "Sair" e "Excluir minha conta".
 
 #### Scenario: Conta Google
 - **WHEN** uma conta Google abre o menu da conta
-- **THEN** vê o e-mail dela e a opção "Sair"
+- **THEN** vê o e-mail dela e as opções "Editar perfil", "Sair" e "Excluir minha conta"
 
 #### Scenario: Conta demo
 - **WHEN** uma conta demo abre o menu da conta
-- **THEN** vê "Conta de demonstração" e a opção "Sair"
+- **THEN** vê "Conta de demonstração" e as opções "Editar perfil", "Sair" e "Excluir minha conta"
 
 ### Requirement: Faixa da conta de demonstração
 Numa conta demo, o chat SHALL mostrar uma faixa fixa com o texto "Conta de demonstração. Ela e as conversas são apagadas em 7 dias." e, quando o Google está configurado, o botão "Entrar com Google". Numa conta Google, a faixa MUST NOT aparecer.
@@ -201,3 +183,50 @@ Um endereço com `?sessao=` SHALL ser aceito sem erro e sem abrir a conversa daq
 #### Scenario: Link antigo sem login
 - **WHEN** alguém sem sessão abre `/?sessao=<uuid>`
 - **THEN** é levado a `/entrar`
+
+### Requirement: Resumo do perfil no chat
+O chat SHALL mostrar o perfil da conta como um resumo de uma linha, com o nome e o plano pelo nome oficial separados por " · " (por exemplo "Marmitaria Boa Panela · Plano Misto"), ou só o plano quando não há nome, e o link "Editar perfil", que leva a `/perfil`.
+
+#### Scenario: Demo
+- **WHEN** uma conta demo abre o chat
+- **THEN** vê "Marmitaria Boa Panela · Plano Misto" e o link "Editar perfil"
+
+#### Scenario: Sem nome
+- **WHEN** o perfil da conta tem só o plano Próprio
+- **THEN** o resumo é "Plano Próprio"
+
+### Requirement: Tela de perfil
+A página `/perfil` SHALL ter os campos "Nome do restaurante", "Plano na Rango" (escolha obrigatória entre "Plano Próprio", "Plano Entrega" e "Plano Misto"), "Tipo de cozinha", "Cidade" e "Horário de funcionamento", cada campo de texto com até 60 caracteres, o aviso de privacidade e o botão "Salvar". Salvo o perfil, volta ao chat, e o perfil vale a partir da próxima mensagem.
+
+#### Scenario: Editar o plano
+- **WHEN** a conta troca o plano para Entrega, salva e faz uma pergunta sobre a mensalidade
+- **THEN** a resposta considera o Plano Entrega
+
+#### Scenario: Erro ao salvar
+- **WHEN** a API recusa o perfil com 400
+- **THEN** a página mostra o texto do campo `error` e mantém o que foi digitado
+
+### Requirement: Primeiro acesso pede o perfil
+Uma conta sem plano salvo SHALL ser levada de `/` a `/perfil` antes do chat, com o título "Conte sobre o seu restaurante" e o botão "Salvar e começar", sem o link para voltar ao chat. Só o plano é obrigatório.
+
+#### Scenario: Primeiro login com Google
+- **WHEN** uma conta Google nova abre `/`
+- **THEN** é levada a `/perfil`, e só chega ao chat depois de escolher o plano e salvar
+
+### Requirement: Confirmar a exclusão da conta
+"Excluir minha conta", no menu da conta, SHALL abrir um diálogo com o texto "Excluir sua conta? A conta, o perfil e todas as conversas são apagados na hora e não podem ser recuperados." e os botões "Excluir conta" e "Cancelar". Confirmada a exclusão, a interface MUST encerrar a sessão e ir para `/entrar`.
+
+#### Scenario: Confirmar
+- **WHEN** a pessoa clica em "Excluir conta" no diálogo
+- **THEN** a conta é apagada e a página vai para `/entrar`
+
+#### Scenario: Erro ao excluir
+- **WHEN** a API responde 503 ao pedido de exclusão
+- **THEN** o diálogo mostra o texto do erro, e a sessão continua
+
+### Requirement: Página de privacidade
+A página pública `/privacidade` SHALL mostrar, em linguagem simples, o aviso de privacidade, o que a conta guarda (o identificador e o e-mail do Google, o perfil do restaurante e as conversas), o que não guarda (nome e foto do Google, CNPJ, CPF, endereço, telefone, dados bancários, faturamento e o IP em claro), a tabela de retenção e como excluir a conta. O link "Privacidade" MUST aparecer na tela de entrada, no rodapé do chat e na tela de perfil.
+
+#### Scenario: Tabela de retenção
+- **WHEN** alguém abre `/privacidade`
+- **THEN** vê que a conta demo e as conversas dela somem em 7 dias, a conversa de uma conta Google em 30 dias sem mensagem nova, a conta Google em 180 dias sem acesso, e qualquer conta na hora, por "Excluir minha conta"
