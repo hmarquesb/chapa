@@ -42,7 +42,7 @@ Esta change só começa depois que a `add-google-and-demo-login` estiver mergead
 
 - [ ] 7.1 Ajustar `scripts/chat.ts` e `scripts/eval.ts` (decisão 7). **(autorização)** Verificar com `npm run chat -- --nome "Pizzaria Bella"` uma pergunta respondida, e com `npm run chat -- --sessao <id de uma conversa web do dev>` a mensagem "Esta conversa não existe ou não é do CLI.".
 - [ ] 7.2 Escrever o teste de `checkSessionList` e o dos checks de chat com o `sessionId`, e depois ajustar o `smoke.ts` (decisão 7). **(autorização)** Verificar com `npm run smoke -- --url http://localhost:3000` contra o `npm run dev`: todos os passos ✅.
-- [ ] 7.3 Escrever a ADR 0021, a linha dela no `docs/adr/README.md` e atualizar `AGENTS.md`, `docs/architecture.md`, `docs/business.md`, `docs/development.md`, `docs/qa.md` e `README.md` (decisão 8). Verificar com `git grep -n "link de continuação\|?sessao=\|Continuar depois" -- AGENTS.md README.md docs/architecture.md docs/business.md docs/qa.md` que só sobram menções históricas, cada uma citada no relatório.
+- [x] 7.3 Escrever a ADR 0021, a linha dela no `docs/adr/README.md` e atualizar `AGENTS.md`, `docs/architecture.md`, `docs/business.md`, `docs/development.md`, `docs/qa.md` e `README.md` (decisão 8). Verificar com `git grep -n "link de continuação\|?sessao=\|Continuar depois" -- AGENTS.md README.md docs/architecture.md docs/business.md docs/qa.md` que só sobram menções históricas, cada uma citada no relatório.
 
 ## 8. Produção
 

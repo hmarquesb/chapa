@@ -129,7 +129,7 @@ flowchart LR
     B["Navegador<br/>página única em React"]
     SC["Scripts locais<br/>ingest, chat, eval"]
     subgraph VERCEL["Vercel, região gru1"]
-        RH["Route Handlers<br/>POST /api/chat<br/>GET /api/sessions/[id]/messages<br/>GET /api/health<br/>GET /api/cron/cleanup"]
+        RH["Route Handlers<br/>POST /api/chat<br/>GET /api/sessions<br/>GET /api/sessions/[id]/messages<br/>DELETE /api/sessions/[id]<br/>GET /api/health<br/>GET /api/cron/cleanup"]
         CRON["Vercel Cron<br/>diário"]
         subgraph CORE["src/core"]
             A["Assistente<br/>handleMessage"]
@@ -199,12 +199,12 @@ Uma mensagem faz até 3 gerações (resumo, reescrita e resposta) e 1 embedding.
 | Item | Como funciona |
 |---|---|
 | Conta | A página exige login: Google ou uma conta demo criada a cada clique (7 dias, no máximo 5 por IP por dia). O cookie de sessão é `HttpOnly`, `SameSite=Lax` e vale 30 dias, e cada pedido confirma a conta no banco |
-| Sessão (conversa) | `crypto.randomUUID()` no navegador, guardado no `localStorage`. Ao recarregar, o histórico vem de `GET /api/sessions/[id]/messages` |
+| Conversa | O servidor gera o id e liga a conversa à conta. O navegador não o guarda: a lista de conversas da conta (`GET /api/sessions`) reabre uma conversa, e o histórico vem de `GET /api/sessions/[id]/messages` |
 | Mensagens recentes | Até 16 mensagens desde o último resumo vão inteiras para o modelo; acima disso, as 10 mais recentes |
 | Resumo persistido | Fica em `sessions.summary`, com o id da última mensagem resumida. Cada novo resumo parte do anterior |
 | Perfil do restaurante | Formulário com nome, plano, cozinha, cidade e horário, guardado em `sessions.profile` e enviado no prompt de sistema |
-| Link de continuação | `/?sessao=<id>` abre a mesma conversa em outro navegador. Ele funciona como credencial: a página usa `Referrer-Policy: no-referrer`, e o servidor não loga o id |
-| Expiração | O Vercel Cron diário apaga sessões sem mensagem nova há mais de 7 dias (com as mensagens) as janelas de rate limit com mais de 2 dias, as contas demo vencidas e as contas Google sem acesso há 180 dias |
+| Autorização | Toda consulta de conversa filtra pela conta dona, e a conversa alheia responde `404`, como a inexistente ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)). A página usa `Referrer-Policy: no-referrer`, e o servidor não loga o id |
+| Expiração | O Vercel Cron diário apaga as conversas web sem mensagem nova há mais de 30 dias e as do CLI e do eval após 7 dias (com as mensagens), as janelas de rate limit com mais de 2 dias, as contas demo vencidas e as contas Google sem acesso há 180 dias |
 
 Não há estado em memória entre requisições: histórico e resumo vêm do banco a cada mensagem.
 
@@ -381,7 +381,7 @@ Respostas ruins reais da avaliação, com a causa de cada uma.
 - **RLS sem policies.** O RLS está ligado nas 5 tabelas, sem nenhuma policy. Só o servidor, pelo driver `postgres`, lê e grava. A função de busca não pode ser executada pelos papéis `anon` e `authenticated`.
 - **IP como HMAC.** O rate limit guarda só o HMAC-SHA256 do IP, com o segredo `IP_HASH_SECRET`.
 - **Logs sem conteúdo.** Uma linha por requisição, com rota, status, latência, `accountId`, chamadas, tokens e o nome do erro. Nunca a mensagem, o perfil, o id da sessão, o IP ou o e-mail da conta. O erro do provedor nunca chega ao navegador: a API responde com textos fixos em português.
-- **Link de continuação como credencial.** Quem está logado e tem o link lê a conversa (a conversa passa a pertencer à conta numa próxima mudança). Por isso a página manda `Referrer-Policy: no-referrer`, o servidor não loga o id, e a sessão expira depois de 7 dias sem uso.
+- **Conversa isolada por conta.** O dono entra no `where` de toda consulta ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)), e a conversa expira depois de 30 dias sem uso. A página manda `Referrer-Policy: no-referrer` e o servidor não loga o id.
 - **Planos gratuitos.** Vercel Hobby, Supabase Free (só o `prod`), Neon Free (o `dev`, [ADR 0017](docs/adr/0017-neon-como-banco-dev.md)) e Gemini no plano gratuito. O Supabase pausa um projeto depois de 7 dias com pouca atividade; o cron diário mantém o `prod` ativo.
 - **Cota do Gemini.** Os limites valem por projeto do Google Cloud, não por chave: a demo, o eval e a CLI dividem a mesma cota se as chaves forem do mesmo projeto. O limite diário (RPD) zera à meia-noite do horário do Pacífico. No painel da conta, em 06/11/2026: `gemini-3.5-flash-lite` com 15 por minuto e 500 por dia; `gemini-embedding-001` com 100 por minuto e 1000 por dia. Isso dá perto de 160 mensagens por dia na demo ([`DEPLOY.md`](DEPLOY.md)). Ao estourar, a API responde 429 com um aviso em português.
 - **Uso dos dados pelo provedor.** No plano gratuito, o Google pode usar o conteúdo enviado para melhorar os produtos dele. Por isso a base só tem texto fictício, os testes usam só dados fictícios e a demo não deve receber dados reais.
@@ -395,7 +395,6 @@ Respostas ruins reais da avaliação, com a causa de cada uma.
 - **Fontes = arquivos recuperados.** As fontes mostradas são os arquivos de todos os trechos que passaram do `minScore`, não os que o modelo de fato usou. Na pergunta 122 da `v3`, a resposta sobre a comissão mostra também `02-repasse-financeiro.md`.
 - **Modelo de resposta leve.** O Flash-Lite responde todas as perguntas, por causa da cota ([ADR 0014](docs/adr/0014-flash-lite-como-modelo-de-chat.md)). As perguntas 126 e 134 da `v3` mostram o custo disso: o modelo devolveu o fallback com os trechos certos no contexto.
 - **Guardrails por expressão regular.** Pegam os padrões listados, não intenção. Um dado sensível escrito por extenso passa.
-- **Conversa ainda sem dono.** Qualquer conta logada abre uma conversa pelo UUID do link de continuação. A ligação da conversa à conta é a próxima mudança.
 - **Rate limit local.** Fora da Vercel, sem cabeçalho de IP, todas as requisições caem no mesmo balde.
 
 **Próximos passos**

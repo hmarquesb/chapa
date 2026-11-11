@@ -26,9 +26,8 @@ O público de cadastro (quem ainda não é parceiro) fica fora do escopo ([ADR 0
 |---|---|
 | **Conta Google** | Conta criada no primeiro "Entrar com Google", com só o `sub` e o e-mail verificado. É apagada depois de 180 dias sem login nem mensagem ([ADR 0020](adr/0020-login-google-e-conta-demo.md)). |
 | **Conta de demonstração** | Conta sem e-mail, criada a cada clique em "Testar como demo" e apagada 7 dias depois, com as conversas. No máximo 5 por IP por dia. Uma demo não enxerga dados de outra conta. |
-| **Sessão** | Uma conversa, identificada por um UUID gerado no navegador. Expira depois de 7 dias sem mensagem nova. Não confundir com a sessão de login, que fica num cookie de 30 dias. |
+| **Conversa** | Uma sequência de mensagens que pertence a uma conta, com um UUID gerado no servidor. Só a conta dona a vê, lista e apaga ([ADR 0021](adr/0021-autorizacao-por-conta-no-repositorio.md)). O prazo para apagar as conversas inativas está na [arquitetura](architecture.md#automação). Não confundir com a sessão de login, que fica num cookie de 30 dias. |
 | **Perfil do restaurante** | Nome, plano, cozinha, cidade e horário, preenchidos num formulário (até 60 caracteres cada). Personaliza a resposta, no lugar dos dados que viriam de uma conta logada. |
-| **Link de continuação** | `/?sessao=<id>`. Abre a mesma conversa em outro navegador logado e funciona como credencial: quem está logado e tem o link lê a conversa ([ADR 0010](adr/0010-link-de-continuacao-em-vez-de-login.md), substituído pelo 0020; a conversa passa a pertencer à conta numa próxima mudança). |
 | **Canal** | De onde veio a conversa: `web` (a página), `cli` (`npm run chat`) ou `eval` (`npm run eval`). |
 | **Base de conhecimento** | Os 11 documentos `.md` numerados de `knowledge-base/`, com a política de parceiros da Rango. Todos os números vêm do `knowledge-base/regras.yaml`, que não é ingerido ([ADR 0019](adr/0019-regras-yaml-fonte-unica.md)). |
 | **Trecho** | Um pedaço de um documento da base, com o seu embedding. É o que a busca recupera. |
@@ -61,7 +60,7 @@ Os temas que a base **não** cobre de propósito estão no [`knowledge-base/READ
 2. Escreve a dúvida ou escolhe uma das 3 perguntas de exemplo.
 3. Recebe a resposta com os arquivos usados como fontes, ou o fallback quando a base não cobre o assunto.
 4. Pode continuar a conversa: o assistente entende perguntas que dependem das anteriores ("e no outro plano?").
-5. Pode copiar o link de continuação para retomar em outro navegador, ou começar uma conversa nova.
+5. Vê as conversas anteriores da conta numa lista, reabre uma delas, apaga as que não quer mais ou começa uma conversa nova.
 6. Sai pelo menu da conta. Na demo, uma faixa avisa que a conta e as conversas são apagadas em 7 dias.
 
 ## Fora do escopo
@@ -101,6 +100,7 @@ Os resultados da última rodada estão no [`README.md`](../README.md) e em [`eva
 |---|---|
 | Só restaurantes que já são parceiros | [0011](adr/0011-somente-parceiros-atuais.md) |
 | Login com Google e conta demo isolada por clique | [0020](adr/0020-login-google-e-conta-demo.md) (substitui a [0010](adr/0010-link-de-continuacao-em-vez-de-login.md)) |
+| Conversas por conta, com o acesso autorizado no repositório | [0021](adr/0021-autorizacao-por-conta-no-repositorio.md) |
 | Respostas completas, sem streaming | [0004](adr/0004-sem-streaming.md) |
 | RAG e prompt em vez de fine-tuning | [0012](adr/0012-rag-e-prompt-em-vez-de-fine-tuning.md) |
 | Só o Gemini, no plano gratuito | [0009](adr/0009-somente-gemini.md), [0014](adr/0014-flash-lite-como-modelo-de-chat.md) |

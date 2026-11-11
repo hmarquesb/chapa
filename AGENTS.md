@@ -52,6 +52,7 @@ npm run ingest           # ⚠️ chama a API de embeddings e grava no banco (pa
 npm run chat -- --nome "Pizzaria Bella" --debug        # ⚠️ chama a API
 npm run eval -- --label v2 --preset padrao             # ⚠️ chama a API (60 a 90 chamadas)
 npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada e cria 1 conta demo (5 por IP por dia)
+npm run authz-check                                    # ⚠️ grava no banco `dev` (Neon): verifica o dono das conversas
 npm run db -- db push --remote   # Supabase CLI, no `prod` (único projeto linkado, só no checkpoint)
 # dev (Neon): bootstrap e db push sempre com --remote="$U" num subshell; comandos no DEPLOY.md, "Banco `dev` no Neon"
 npm run spec -- list             # OpenSpec CLI: list, show, validate, status, archive
@@ -76,10 +77,11 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 | Guardrail de entrada ou de saída | `src/core/guardrails.ts`, `src/core/messages.ts` | Bloqueie padrões, nunca palavras soltas. "O repasse cai via Pix?" tem que passar: acrescente o caso nos testes |
 | Memória, resumo ou reescrita | `src/core/memory.ts`, `src/core/rewrite-query.ts` | O contexto do RAG não vai para `messages` |
 | Login e sessão | `src/infra/auth/` (`config.ts`, `callbacks.ts`, `env.ts`, `index.ts`), `src/app/auth-actions.ts`, `src/app/entrar/`, `src/core/accounts.ts`, `src/infra/db/account-repository.ts` | Só `src/infra/auth/` importa `next-auth`. Toda rota protegida confirma a conta no banco (`getAuthenticatedAccount`). Limites em `src/config.ts` (`accounts`) |
+| Conversas da conta | `src/core/conversations.ts`, `src/infra/db/session-repository.ts`, `src/app/api/sessions/`, `src/components/chat/conversation-list.tsx` | Toda porta de conversa recebe o dono (`SessionOwner`): nunca escreva uma consulta sem dono ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)). Mudou uma consulta: rode `npm run authz-check` |
 | Rota de API | `src/app/api/<rota>/route.ts` e o handler em `src/app/api/_lib/handlers.ts` | O `route.ts` só liga o handler ao container. A lógica fica no handler, testado com fakes |
 | Validação, rate limit, logs da API | `src/app/api/_lib/` (`validate.ts`, `rate-limit.ts`, `log.ts`) | Corpo máximo de 4 KB. Mensagens de erro em PT-BR |
 | Campo novo no perfil | `src/lib/types.ts` (`PROFILE_FIELDS`), `src/core/prompts.ts`, `src/components/chat/profile-form.tsx` | O perfil é dado do usuário: não logue |
-| Interface | `src/components/chat/` (entrada em `chat-app.tsx`), `src/app/page.tsx`, `src/lib/` (`chat-state`, `api-client`, `session-id`) | Componentes só importam `src/lib/` |
+| Interface | `src/components/chat/` (entrada em `chat-app.tsx`), `src/app/page.tsx`, `src/lib/` (`chat-state`, `api-client`, `format`) | Componentes só importam `src/lib/` |
 | Schema do banco | Nova migração em `supabase/migrations/` (`npm run db -- migration new <nome>`) | Nunca edite uma migração já aplicada. RLS ligado e sem policies. Aplicar no banco é checkpoint humano |
 | Base de conhecimento | `knowledge-base/NN-*.md` e `knowledge-base/regras.yaml` | Número novo entra primeiro no `regras.yaml`; rode `npm test`. Depois do merge, reingerir no `dev` e no `prod` |
 | Avaliação | `scripts/eval.ts`, `scripts/eval/`, `eval/perguntas.json` | Ids estáveis: não renumere as perguntas existentes |
@@ -131,7 +133,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 - O navegador só fala com a nossa API, nunca com o Gemini nem com o Supabase.
 - No servidor, **não registre** o conteúdo das mensagens, o perfil, o `sessionId`, o IP nem o e-mail da conta. Logar status, latência, tokens, o `accountId` e o nome do erro é permitido.
 - O IP só é guardado como HMAC (`IP_HASH_SECRET`). O RLS fica ligado em todas as tabelas, sem nenhuma policy.
-- O link `/?sessao=<id>` funciona como credencial: não o logue nem o exponha em referrers.
+- Toda consulta de conversa filtra pelo dono ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)): a conversa alheia e a inexistente dão o mesmo `404`. O id da conversa não é credencial, mas continua fora dos logs.
 - O cookie de sessão (`authjs.session-token`) é credencial: `HttpOnly`, `SameSite=Lax`, `Secure` em HTTPS, só com o id e o tipo da conta. Nunca o imprima, nem em scripts como o smoke. Das contas Google, só o `sub` e o e-mail são guardados.
 
 ## Marca e conteúdo
