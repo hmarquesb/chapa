@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  BYPASS_ENV,
   BYPASS_HEADER,
   buildRequestHeaders,
   CHAT_INTERVAL_MS,
@@ -7,12 +8,16 @@ import {
   checkChatAnswered,
   checkChatFallback,
   checkCronUnauthorized,
+  checkDemoSignIn,
   checkHealth,
   checkHistory,
   checkHomePage,
+  checkSignInPage,
+  checkUnauthenticatedChat,
   EXPECTED_HISTORY_LENGTH,
   formatStepLine,
   hintForStatus,
+  mergeCookies,
   parseBaseUrl,
   SMOKE_MESSAGES,
   type SmokeResponse,
@@ -323,5 +328,113 @@ describe("formatStepLine", () => {
     expect(formatStepLine(3, "Passo", { ok: false, reason: "status 500" })).toBe(
       "❌ 3. Passo: status 500",
     )
+  })
+})
+
+describe("mergeCookies", () => {
+  function withCookies(...cookies: string[]): Headers {
+    const headers = new Headers()
+    for (const cookie of cookies) headers.append("set-cookie", cookie)
+    return headers
+  }
+
+  it("turns Set-Cookie headers into a Cookie header, without attributes", () => {
+    expect(
+      mergeCookies("", withCookies("a=1; Path=/; HttpOnly", "b=2; Path=/; SameSite=lax")),
+    ).toBe("a=1; b=2")
+  })
+
+  it("keeps the current cookies and the last value of each name", () => {
+    expect(mergeCookies("a=1; b=2", withCookies("b=3; Path=/", "c=4", "b=5"))).toBe("a=1; b=5; c=4")
+  })
+
+  it("drops a cookie that the server cleared", () => {
+    expect(mergeCookies("a=1; b=2", withCookies("a=; Path=/; Max-Age=0"))).toBe("b=2")
+  })
+
+  it("returns the current header when there is no Set-Cookie", () => {
+    expect(mergeCookies("a=1", new Headers())).toBe("a=1")
+    expect(mergeCookies("", new Headers())).toBe("")
+  })
+})
+
+describe("checkUnauthenticatedChat", () => {
+  it("passes on 401 with an error from our API", () => {
+    expect(
+      checkUnauthenticatedChat(
+        res(401, { error: "Sua sessão terminou. Entre de novo para continuar." }),
+      ),
+    ).toEqual({ ok: true })
+  })
+
+  it("fails when the chat answers without a session", () => {
+    const result = checkUnauthenticatedChat(res(200, { status: "answered" }))
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.reason).toContain("sem login")
+  })
+
+  it("fails on a 401 that did not come from our API", () => {
+    const result = checkUnauthenticatedChat(res(401, "<html>Vercel</html>"))
+    expect(!result.ok && result.reason).toContain(BYPASS_ENV)
+  })
+})
+
+describe("checkSignInPage", () => {
+  it("passes on 200 with the demo button", () => {
+    expect(checkSignInPage(res(200, "<html><button>Testar como demo</button></html>"))).toEqual({
+      ok: true,
+    })
+  })
+
+  it("fails without the demo button or with another status", () => {
+    expect(checkSignInPage(res(200, "<html>outra página</html>")).ok).toBe(false)
+    expect(checkSignInPage(res(307, "")).ok).toBe(false)
+  })
+})
+
+describe("checkDemoSignIn", () => {
+  function signIn(status: number, location: string | null, cookies: string[]): SmokeResponse {
+    const headers = new Headers()
+    if (location !== null) headers.set("location", location)
+    for (const cookie of cookies) headers.append("set-cookie", cookie)
+    return { status, headers, body: "" }
+  }
+
+  it("passes on a redirect out of /entrar with a session cookie", () => {
+    expect(
+      checkDemoSignIn(
+        signIn(302, "http://localhost:3000/", ["authjs.session-token=x; Path=/; HttpOnly"]),
+      ),
+    ).toEqual({ ok: true })
+    expect(
+      checkDemoSignIn(
+        signIn(303, "https://demo.exemplo.com/", [
+          "__Secure-authjs.session-token=x; Path=/; HttpOnly; Secure",
+        ]),
+      ),
+    ).toEqual({ ok: true })
+  })
+
+  it("fails with the limit hint when Auth.js answers code=demo_limit", () => {
+    const result = checkDemoSignIn(
+      signIn(302, "http://localhost:3000/entrar?error=CredentialsSignin&code=demo_limit", []),
+    )
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.reason).toContain("5 contas demo")
+  })
+
+  it("fails on another redirect to /entrar or without the session cookie", () => {
+    expect(
+      checkDemoSignIn(signIn(302, "http://localhost:3000/entrar?error=Configuration", [])).ok,
+    ).toBe(false)
+    expect(checkDemoSignIn(signIn(302, "http://localhost:3000/", ["outro=1"])).ok).toBe(false)
+    expect(checkDemoSignIn(signIn(200, null, [])).ok).toBe(false)
+  })
+
+  it("never echoes the cookie value", () => {
+    const result = checkDemoSignIn(
+      signIn(302, "http://localhost:3000/entrar", ["authjs.session-token=VALOR-SECRETO"]),
+    )
+    expect(JSON.stringify(result)).not.toContain("VALOR-SECRETO")
   })
 })

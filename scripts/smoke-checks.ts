@@ -232,6 +232,96 @@ export function checkHomePage(res: SmokeResponse): CheckResult {
   return { ok: true }
 }
 
+// ---------- login (change add-google-and-demo-login) ----------
+
+function parseCookieHeader(header: string): Map<string, string> {
+  const cookies = new Map<string, string>()
+  for (const part of header.split(";")) {
+    const pair = part.trim()
+    const eq = pair.indexOf("=")
+    if (eq > 0) cookies.set(pair.slice(0, eq), pair.slice(eq + 1))
+  }
+  return cookies
+}
+
+// Joins the Set-Cookie headers into a Cookie header "a=1; b=2", keeping the last value of each
+// name. A cookie cleared by the server (empty value) leaves the header.
+export function mergeCookies(current: string, response: Headers): string {
+  const cookies = parseCookieHeader(current)
+  for (const setCookie of response.getSetCookie()) {
+    const pair = setCookie.split(";")[0]?.trim() ?? ""
+    const eq = pair.indexOf("=")
+    if (eq <= 0) continue
+    const name = pair.slice(0, eq)
+    const value = pair.slice(eq + 1)
+    if (value === "") cookies.delete(name)
+    else cookies.set(name, value)
+  }
+  return [...cookies].map(([name, value]) => `${name}=${value}`).join("; ")
+}
+
+export function checkUnauthenticatedChat(res: SmokeResponse): CheckResult {
+  if (res.status !== 401) {
+    const reason =
+      res.status === 200
+        ? "status 200: o chat respondeu sem login"
+        : `status ${res.status} (esperado 401)`
+    return { ok: false, reason }
+  }
+  if (!isRecord(res.body) || typeof res.body.error !== "string") {
+    return {
+      ok: false,
+      reason:
+        "o 401 não veio da nossa API (provável Deployment Protection da Vercel); " +
+        `exporte ${BYPASS_ENV} no shell antes de rodar o smoke`,
+    }
+  }
+  return { ok: true }
+}
+
+export function checkSignInPage(res: SmokeResponse): CheckResult {
+  if (res.status !== 200) return unexpectedStatus(res.status, 200)
+  if (typeof res.body !== "string" || !res.body.includes("Testar como demo")) {
+    return { ok: false, reason: 'a página não tem o botão "Testar como demo"' }
+  }
+  return { ok: true }
+}
+
+const SESSION_COOKIE = /^(__Secure-)?authjs\.session-token=[^;]+/
+const REDIRECT_STATUSES = new Set([302, 303, 307, 308])
+
+// Answer of POST /api/auth/callback/demo: a redirect out of /entrar and a session cookie.
+// Never returns the cookie value nor the Location query.
+export function checkDemoSignIn(res: SmokeResponse): CheckResult {
+  if (!REDIRECT_STATUSES.has(res.status)) {
+    return { ok: false, reason: `status ${res.status} (esperado um redirecionamento 302)` }
+  }
+  const location = res.headers.get("location") ?? ""
+  let path = ""
+  let code: string | null = null
+  try {
+    const url = new URL(location, "http://smoke.invalid")
+    path = url.pathname
+    code = url.searchParams.get("code")
+  } catch {
+    return { ok: false, reason: "redirecionamento sem Location válido" }
+  }
+  if (path === "/entrar") {
+    if (code === "demo_limit") {
+      return {
+        ok: false,
+        reason:
+          "o IP já criou 5 contas demo hoje (dia UTC); cada rodada do smoke gasta uma. " +
+          "Rode de novo amanhã ou de outra rede",
+      }
+    }
+    return { ok: false, reason: "o login demo voltou para /entrar com erro" }
+  }
+  const hasSession = res.headers.getSetCookie().some((cookie) => SESSION_COOKIE.test(cookie))
+  if (!hasSession) return { ok: false, reason: "o login demo não devolveu o cookie de sessão" }
+  return { ok: true }
+}
+
 export function formatStepLine(step: number, title: string, result: CheckResult): string {
   if (!result.ok) return `❌ ${step}. ${title}: ${result.reason}`
   return result.detail === undefined
