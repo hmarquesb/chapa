@@ -53,9 +53,14 @@ export function Composer({ value, onChange, onSubmit, disabled, sending }: Compo
           rows={2}
           placeholder="Escreva sua dúvida…"
           aria-describedby={hintId}
-          className="max-h-48 min-h-16 min-w-0 flex-1 resize-none"
+          className="max-h-48 min-h-16 min-w-0 flex-1 resize-none rounded-3xl px-4 shadow-soft focus-visible:shadow-raised"
         />
-        <Button type="submit" size="lg" disabled={disabled || value.trim() === ""}>
+        <Button
+          type="submit"
+          size="lg"
+          className="rounded-full px-5"
+          disabled={disabled || value.trim() === ""}
+        >
           Enviar
         </Button>
       </div>

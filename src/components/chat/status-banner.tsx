@@ -14,7 +14,7 @@ export function StatusBanner({ error, notice, onDismiss }: StatusBannerProps) {
   return (
     <div className="flex flex-col gap-2">
       {notice !== null && (
-        <Alert role="status">
+        <Alert role="status" className="rounded-2xl shadow-soft">
           <InfoIcon aria-hidden="true" />
           <AlertDescription className="text-foreground">{notice}</AlertDescription>
           <AlertAction>
@@ -25,7 +25,7 @@ export function StatusBanner({ error, notice, onDismiss }: StatusBannerProps) {
         </Alert>
       )}
       {error !== null && (
-        <Alert>
+        <Alert className="rounded-2xl shadow-soft">
           <CircleAlertIcon aria-hidden="true" />
           <AlertDescription className="text-foreground">{error}</AlertDescription>
           <AlertAction>

@@ -87,7 +87,11 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
   }
 
   return (
-    <form onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5" noValidate>
+    <form
+      onSubmit={(event) => void onSubmit(event)}
+      className="flex flex-col gap-5 rounded-3xl bg-card p-5 shadow-soft"
+      noValidate
+    >
       <p className="text-sm text-muted-foreground">{notice}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {TEXT_FIELDS.map((field) => {

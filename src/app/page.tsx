@@ -1,6 +1,7 @@
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import { signInWithGoogle, signOutOfAccount } from "@/app/auth-actions"
+import { RangoLogo } from "@/components/brand/rango-logo"
+import { SiteFooter } from "@/components/brand/site-footer"
 import { AccountMenu } from "@/components/chat/account-menu"
 import { ChatApp } from "@/components/chat/chat-app"
 import { DemoBanner } from "@/components/chat/demo-banner"
@@ -26,7 +27,8 @@ export default async function Home({
     <div className="mx-auto flex w-full max-w-[62.5rem] flex-1 flex-col gap-6 px-4 py-6 sm:py-10">
       <header className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight">Chapa</h1>
+          <RangoLogo size="sm" />
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight">Chapa</h1>
           <p className="text-sm text-muted-foreground">
             Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações.
           </p>
@@ -38,13 +40,7 @@ export default async function Home({
       <main className="flex flex-1 flex-col">
         <ChatApp />
       </main>
-      <footer className="border-t pt-4 text-xs text-muted-foreground">
-        Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery. As conversas
-        são apagadas depois de 30 dias sem uso. Não envie dados pessoais.{" "}
-        <Link href="/privacidade" className="underline underline-offset-4">
-          Privacidade
-        </Link>
-      </footer>
+      <SiteFooter note="As conversas são apagadas depois de 30 dias sem uso. Não envie dados pessoais." />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { ThinkingIndicator } from "@/components/brand/thinking-indicator"
 import { MessageItem } from "@/components/chat/message-item"
 import type { UiMessage } from "@/lib/chat-state"
 import { cn } from "@/lib/utils"
@@ -14,7 +15,7 @@ type MessageListProps = {
 export function MessageList({ messages, sending, loading }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Keeps the latest message (or the "Digitando…" line) in view.
+  // Keeps the latest message (or the thinking indicator) in view.
   useEffect(() => {
     const element = scrollRef.current
     if (!element || (messages.length === 0 && !sending)) return
@@ -38,7 +39,7 @@ export function MessageList({ messages, sending, loading }: MessageListProps) {
       tabIndex={0}
       className={cn(
         "max-h-[60dvh] overflow-y-auto",
-        idle ? "px-1" : "min-h-40 rounded-xl border bg-muted/30 p-3 sm:p-4",
+        idle ? "px-1" : "min-h-40 rounded-3xl bg-card/60 p-3 sm:p-4",
       )}
     >
       {loading && <p className="text-sm text-muted-foreground">Carregando conversa…</p>}
@@ -54,7 +55,7 @@ export function MessageList({ messages, sending, loading }: MessageListProps) {
           ))}
         </ul>
       )}
-      {sending && <p className="mt-4 animate-pulse text-sm text-muted-foreground">Digitando…</p>}
+      {sending && <ThinkingIndicator />}
     </div>
   )
 }

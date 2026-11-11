@@ -39,14 +39,14 @@ export function ConversationList({
             return (
               <li
                 key={item.id}
-                className={`flex items-center gap-1 rounded-md ${isCurrent ? "bg-muted" : ""}`}
+                className={`flex items-center gap-1 rounded-2xl ${isCurrent ? "bg-accent" : ""}`}
               >
                 <button
                   type="button"
                   onClick={() => onSelect(item.id)}
                   disabled={disabled}
                   aria-current={isCurrent ? "true" : undefined}
-                  className="flex min-w-0 flex-1 touch-manipulation flex-col gap-0.5 rounded-md px-2 py-1.5 text-left outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex min-w-0 flex-1 touch-manipulation flex-col gap-0.5 rounded-2xl px-3 py-2 text-left outline-none hover:bg-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
                 >
                   <span className="truncate text-sm font-medium">{item.title}</span>
                   <span className="text-xs text-muted-foreground">
