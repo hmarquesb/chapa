@@ -55,4 +55,4 @@ Esta change só começa depois que a `scope-conversations-to-accounts` estiver m
 
 ## 10. Verificação final
 
-- [ ] 10.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam e registrar no relatório os critérios de aceite do PRD (§7) que esta change fecha, com a evidência de cada um.
+- [x] 10.1 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build`. Verificar que os quatro passam e registrar no relatório os critérios de aceite do PRD (§7) que esta change fecha, com a evidência de cada um.
