@@ -23,7 +23,7 @@ export default async function Home({
   const label = isDemo ? DEMO_ACCOUNT_LABEL : (account.email ?? DEMO_ACCOUNT_LABEL)
 
   return (
-    <div className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col gap-6 px-4 py-6 sm:py-10">
+    <div className="mx-auto flex w-full max-w-[62.5rem] flex-1 flex-col gap-6 px-4 py-6 sm:py-10">
       <header className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">Chapa</h1>

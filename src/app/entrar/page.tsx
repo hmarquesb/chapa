@@ -25,7 +25,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
   })
 
   return (
-    <main className="relative mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center gap-6 px-4 py-10">
+    <main className="relative mx-auto flex w-full max-w-[26.25rem] flex-1 flex-col justify-center gap-6 px-4 py-10">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>

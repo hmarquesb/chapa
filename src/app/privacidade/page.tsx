@@ -43,7 +43,7 @@ export default function PrivacyPage() {
   ]
 
   return (
-    <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col gap-8 px-4 py-10">
+    <main className="mx-auto flex w-full max-w-[45rem] flex-1 flex-col gap-8 px-4 py-10">
       <header className="flex flex-col gap-2">
         <h1 className="font-heading text-2xl font-semibold tracking-tight">Privacidade</h1>
         <p className="text-sm">{PRIVACY_NOTICE}</p>

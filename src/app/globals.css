@@ -193,7 +193,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* 110% of the browser's size: every rem (text, spacing, widths) grows like a 110% zoom, and a
+     larger size chosen by the person in the browser still applies on top. */
   html {
     @apply font-sans;
+    font-size: 110%;
   }
 }
