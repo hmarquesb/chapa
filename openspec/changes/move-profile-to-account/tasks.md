@@ -29,15 +29,15 @@ Esta change só começa depois que a `scope-conversations-to-accounts` estiver m
 
 - [x] 5.1 Escrever os testes de `saveProfile` e `deleteAccount` no `api-client.test.ts` e ajustar `sendMessage` e `isSessionHistory` (decisão 7). Apagar o `profile-storage.ts` e o teste dele. Verificar com `npm test -- api-client` e com `git grep -n "profile-storage\|localStorage" src/`, que não deve encontrar nada.
 - [x] 5.2 Gerar `src/components/ui/radio-group.tsx` com `npx shadcn@<versão do lockfile> add radio-group`. Verificar com `git diff package.json` que nada mudou.
-- [ ] 5.3 Reescrever o `profile-form.tsx`, criar `src/app/perfil/page.tsx` e o redirecionamento do primeiro acesso em `src/app/page.tsx`, e tirar o perfil do `chat-app.tsx`. Criar o `profile-summary.tsx`. Verificar no `npm run dev` com o `dev` **(autorização)**: a demo mostra "Marmitaria Boa Panela · Plano Misto"; "Editar perfil" abre o formulário preenchido; salvar sem plano não é possível; trocar o plano para Próprio e perguntar "Qual é a comissão do meu plano?" muda a resposta em relação ao Misto.
-- [ ] 5.4 Criar o `delete-account-dialog.tsx` e acrescentar "Editar perfil" e "Excluir minha conta" ao `account-menu.tsx`. Verificar no `npm run dev` **(autorização)**: excluir uma demo leva a `/entrar`, e um `db query --read-only` com `count(*)` mostra que a conta e as conversas dela sumiram.
+- [x] 5.3 Reescrever o `profile-form.tsx`, criar `src/app/perfil/page.tsx` e o redirecionamento do primeiro acesso em `src/app/page.tsx`, e tirar o perfil do `chat-app.tsx`. Criar o `profile-summary.tsx`. Verificar no `npm run dev` com o `dev` **(autorização)**: a demo mostra "Marmitaria Boa Panela · Plano Misto"; "Editar perfil" abre o formulário preenchido; salvar sem plano não é possível; trocar o plano para Próprio e perguntar "Qual é a comissão do meu plano?" muda a resposta em relação ao Misto.
+- [x] 5.4 Criar o `delete-account-dialog.tsx` e acrescentar "Editar perfil" e "Excluir minha conta" ao `account-menu.tsx`. Verificar no `npm run dev` **(autorização)**: excluir uma demo leva a `/entrar`, e um `db query --read-only` com `count(*)` mostra que a conta e as conversas dela sumiram.
 - [x] 5.5 Criar `src/app/privacidade/page.tsx` e os links "Privacidade" na entrada, no rodapé do chat e no perfil. Verificar que `/privacidade` abre sem login e que os prazos mostrados (7, 30, 180 e 7 dias) vêm do `config`.
 - [x] 5.6 Revisar as telas novas com a skill `web-design-guidelines` (o grupo de rádio com legenda, as mensagens de erro ligadas aos campos, o foco do diálogo de exclusão, o contraste). Verificar que cada apontamento foi corrigido ou justificado no relatório.
 
 ## 6. Scripts
 
 - [x] 6.1 Ajustar o `--plano` do `scripts/chat.ts` (decisão 9). **(autorização)** Verificar com `npm run chat -- --nome "Pizzaria Bella" --plano misto` uma resposta que considera o Plano Misto, e com `--plano premium` a mensagem de erro.
-- [ ] 6.2 Escrever o teste de `checkDemoProfile`, tirar o perfil do corpo do chat e acrescentar o passo `GET /api/profile` ao `smoke.ts`. **(autorização)** Verificar com `npm run smoke -- --url http://localhost:3000` contra o `npm run dev`: todos os passos ✅.
+- [x] 6.2 Escrever o teste de `checkDemoProfile`, tirar o perfil do corpo do chat e acrescentar o passo `GET /api/profile` ao `smoke.ts`. **(autorização)** Verificar com `npm run smoke -- --url http://localhost:3000` contra o `npm run dev`: todos os passos ✅.
 
 ## 7. Documentação
 
