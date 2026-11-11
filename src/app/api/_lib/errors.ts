@@ -17,13 +17,5 @@ export const ERROR_MESSAGES = {
   unauthenticated: "Sua sessão terminou. Entre de novo para continuar.",
 } as const
 
-// Motivos de recusa do corpo do POST /api/chat (validate.ts).
-export const VALIDATION_MESSAGES = {
-  notObject: "O pedido precisa ser um objeto JSON.",
-  unknownField: "O pedido tem campos desconhecidos.",
-  sessionId: "O identificador da conversa é inválido.",
-  message: "A mensagem precisa ser um texto.",
-  profile: "O perfil do restaurante é inválido.",
-  profileInAccount: "O perfil agora fica salvo na conta. Recarregue a página.",
-  plan: "Escolha o plano: Próprio, Entrega ou Misto.",
-} as const
+// Os textos de validação ficam em src/lib/validation-messages.ts (o parser do perfil os usa).
+export { VALIDATION_MESSAGES } from "@/lib/validation-messages"
