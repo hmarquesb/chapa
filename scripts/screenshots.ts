@@ -18,6 +18,9 @@ import {
 } from "./screenshots/fixtures"
 import { buildShotPlan, parseScreenshotArgs, type Shot, VIEWPORTS } from "./screenshots/shots"
 
+// Screens that need no account: they are shot without the demo session.
+const PUBLIC_SHOTS: ReadonlySet<string> = new Set(["entrada", "marca"])
+
 type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>
 
 async function assertServerUp(url: string): Promise<void> {
@@ -68,6 +71,9 @@ async function capture(page: Page, shot: Shot, baseUrl: string, responses: { cur
     case "entrada":
       await page.goto(`${baseUrl}/entrar`)
       break
+    case "marca":
+      await page.goto(`${baseUrl}/marca`)
+      break
     case "perfil":
       await page.goto(`${baseUrl}/perfil`)
       break
@@ -103,7 +109,7 @@ async function main(): Promise<void> {
 
   const browser = await chromium.launch()
   try {
-    const needsSession = plan.some((shot) => shot.id !== "entrada")
+    const needsSession = plan.some((shot) => !PUBLIC_SHOTS.has(shot.id))
     const session = needsSession ? await demoSignIn(browser, baseUrl) : undefined
     for (const shot of plan) {
       const viewport = VIEWPORTS[shot.viewport]
@@ -112,7 +118,7 @@ async function main(): Promise<void> {
         isMobile: shot.viewport === "mobile",
         deviceScaleFactor: 1,
         reducedMotion: "reduce",
-        ...(shot.id !== "entrada" && session !== undefined ? { storageState: session } : {}),
+        ...(!PUBLIC_SHOTS.has(shot.id) && session !== undefined ? { storageState: session } : {}),
       })
       try {
         await context.addInitScript(
