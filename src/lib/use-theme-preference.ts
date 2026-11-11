@@ -2,7 +2,6 @@
 
 import { useCallback, useSyncExternalStore } from "react"
 import {
-  applyResolvedTheme,
   applyTheme,
   parseThemePreference,
   THEME_CHANGE_EVENT,
@@ -22,19 +21,15 @@ function readPreference(): ThemePreference {
 
 function subscribe(onChange: () => void): () => void {
   const media = window.matchMedia(DARK_QUERY)
-  // Another tab changed the preference, or the OS theme changed: reapply the stored preference
-  // (with "system", the page follows the operating system while it is open).
-  const onExternalChange = () => {
-    applyResolvedTheme(readPreference())
-    onChange()
-  }
+  // THEME_INIT_SCRIPT already reapplies the theme on OS changes and on other tabs, on every
+  // route. Here the hook only re-renders the controls so the checked option stays right.
   window.addEventListener(THEME_CHANGE_EVENT, onChange)
-  window.addEventListener("storage", onExternalChange)
-  media.addEventListener("change", onExternalChange)
+  window.addEventListener("storage", onChange)
+  media.addEventListener("change", onChange)
   return () => {
     window.removeEventListener(THEME_CHANGE_EVENT, onChange)
-    window.removeEventListener("storage", onExternalChange)
-    media.removeEventListener("change", onExternalChange)
+    window.removeEventListener("storage", onChange)
+    media.removeEventListener("change", onChange)
   }
 }
 

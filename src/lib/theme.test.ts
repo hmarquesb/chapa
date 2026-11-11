@@ -30,19 +30,41 @@ function fakeRoot() {
 
 function runScript(stored: string | null | "throw", systemDark: boolean) {
   const root = fakeRoot()
+  const state = { stored, systemDark }
   const localStorage = {
     getItem: () => {
-      if (stored === "throw") throw new Error("blocked")
-      return stored
+      if (state.stored === "throw") throw new Error("blocked")
+      return state.stored
     },
   }
-  const matchMedia = () => ({ matches: systemDark })
-  new Function("document", "localStorage", "matchMedia", THEME_INIT_SCRIPT)(
+  const mediaListeners: Array<() => void> = []
+  const media = {
+    get matches() {
+      return state.systemDark
+    },
+    addEventListener: (_type: string, listener: () => void) => void mediaListeners.push(listener),
+  }
+  const storageListeners: Array<(event: { key: string | null }) => void> = []
+  const addEventListener = (type: string, listener: (event: { key: string | null }) => void) => {
+    if (type === "storage") storageListeners.push(listener)
+  }
+  new Function("document", "localStorage", "matchMedia", "addEventListener", THEME_INIT_SCRIPT)(
     { documentElement: root },
     localStorage,
-    matchMedia,
+    () => media,
+    addEventListener,
   )
-  return root
+  return {
+    root,
+    changeSystem(dark: boolean) {
+      state.systemDark = dark
+      for (const listener of mediaListeners) listener()
+    },
+    changeStorageFromOtherTab(value: string | null, key: string | null = THEME_STORAGE_KEY) {
+      state.stored = value
+      for (const listener of storageListeners) listener({ key })
+    },
+  }
 }
 
 describe("parseThemePreference", () => {
@@ -74,7 +96,7 @@ describe("THEME_INIT_SCRIPT", () => {
   for (const preference of THEME_PREFERENCES) {
     for (const systemDark of [false, true]) {
       it(`${preference} with system dark=${systemDark} matches resolveTheme`, () => {
-        const root = runScript(preference, systemDark)
+        const { root } = runScript(preference, systemDark)
         const expected = resolveTheme(preference, systemDark)
         expect(root.classes.has("dark")).toBe(expected === "dark")
         expect(root.style.colorScheme).toBe(expected)
@@ -83,13 +105,37 @@ describe("THEME_INIT_SCRIPT", () => {
   }
 
   it("treats an invalid stored value as system", () => {
-    expect(runScript("azul", true).classes.has("dark")).toBe(true)
-    expect(runScript("azul", false).classes.has("dark")).toBe(false)
+    expect(runScript("azul", true).root.classes.has("dark")).toBe(true)
+    expect(runScript("azul", false).root.classes.has("dark")).toBe(false)
   })
 
   it("survives a localStorage that throws", () => {
-    expect(runScript("throw", true).classes.has("dark")).toBe(true)
-    expect(runScript("throw", false).classes.has("dark")).toBe(false)
+    expect(runScript("throw", true).root.classes.has("dark")).toBe(true)
+    expect(runScript("throw", false).root.classes.has("dark")).toBe(false)
+  })
+
+  it("follows the OS theme while the page is open, with system", () => {
+    const page = runScript("system", false)
+    page.changeSystem(true)
+    expect(page.root.classes.has("dark")).toBe(true)
+    expect(page.root.style.colorScheme).toBe("dark")
+    page.changeSystem(false)
+    expect(page.root.classes.has("dark")).toBe(false)
+  })
+
+  it("ignores OS theme changes with a fixed preference", () => {
+    const page = runScript("light", false)
+    page.changeSystem(true)
+    expect(page.root.classes.has("dark")).toBe(false)
+  })
+
+  it("applies a preference changed in another tab", () => {
+    const page = runScript("light", false)
+    page.changeStorageFromOtherTab("dark")
+    expect(page.root.classes.has("dark")).toBe(true)
+    page.changeStorageFromOtherTab("dark", "outra-chave")
+    page.changeStorageFromOtherTab(null, "outra-chave")
+    expect(page.root.classes.has("dark")).toBe(true)
   })
 
   it("uses the same storage key as the app", () => {

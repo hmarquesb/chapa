@@ -32,9 +32,11 @@ export function resolveTheme(
 
 // Keep the logic in sync with parseThemePreference/resolveTheme: theme.test.ts runs this text
 // against both. Every browser API access is guarded: storage can throw (private mode, blocked).
-export const THEME_INIT_SCRIPT = `(function(){try{var p=null;try{p=localStorage.getItem(${JSON.stringify(
+// The script also listens for OS theme changes and for other tabs for the whole life of the page,
+// on every route: a React listener would only exist while a theme control is mounted.
+export const THEME_INIT_SCRIPT = `(function(){try{var k=${JSON.stringify(
   THEME_STORAGE_KEY,
-)})}catch(e){}if(p!=="light"&&p!=="dark")p="system";var d=p==="dark"||(p==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light"}catch(e){}})()`
+)},r=document.documentElement,m=matchMedia("(prefers-color-scheme: dark)");function a(){var p=null;try{p=localStorage.getItem(k)}catch(e){}if(p!=="light"&&p!=="dark")p="system";var d=p==="dark"||(p==="system"&&m.matches);r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light"}a();if(m.addEventListener)m.addEventListener("change",a);addEventListener("storage",function(e){if(e.key===k||e.key===null)a()})}catch(e){}})()`
 
 function systemPrefersDark(): boolean {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
