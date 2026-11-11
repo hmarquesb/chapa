@@ -67,8 +67,15 @@ export function ChatApp() {
     setSessionId(id)
   }, [])
 
+  // Only the latest list request may update the list: an older one could bring back a
+  // conversation deleted meanwhile, or hide one just created.
+  const listRequestRef = useRef(0)
+
   const refreshList = useCallback(async () => {
+    listRequestRef.current += 1
+    const request = listRequestRef.current
     const result = await listSessions()
+    if (request !== listRequestRef.current) return
     if (isSignedOut(result)) {
       window.location.assign(SIGN_IN_PATH)
       return
@@ -187,6 +194,8 @@ export function ChatApp() {
     setPendingDeleteId(null)
     // A 404 means it is already gone, which is what the person asked for.
     if (result.ok || result.status === 404) {
+      // Drops any list still in flight, which may predate the deletion.
+      listRequestRef.current += 1
       removeFromList(id)
       if (id === sessionRef.current) startNewConversation()
     } else {
