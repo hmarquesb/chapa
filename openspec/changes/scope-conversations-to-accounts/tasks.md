@@ -20,15 +20,15 @@ Esta change só começa depois que a `add-google-and-demo-login` estiver mergead
 
 ## 4. Autorização contra o banco
 
-- [ ] 4.1 Criar `scripts/authz-check.ts` e a linha `authz-check` no `package.json` (decisão 7). Verificar com `git diff package.json` que só essa linha mudou.
+- [x] 4.1 Criar `scripts/authz-check.ts` e a linha `authz-check` no `package.json` (decisão 7). Verificar com `git diff package.json` que só essa linha mudou.
 - [ ] 4.2 **(autorização)** Rodar `npm run authz-check` contra o `dev`. Verificar: 9 ✅, saída `0`, a linha `Banco:` com um host `*.neon.tech`, e nenhuma conta de teste sobrando (`db query --read-only` com `count(*)` de `accounts` igual antes e depois).
 
 ## 5. API
 
-- [ ] 5.1 Escrever os testes do `parseChatRequest` (sem `sessionId` é válido; com `sessionId` malformado dá 400 com "O identificador da conversa é inválido."; o campo desconhecido continua dando 400) e depois ajustar `validate.ts`. Verificar com `npm test -- validate`.
-- [ ] 5.2 Escrever os testes do chat com o repositório falso que respeita o dono: sem `sessionId`, a resposta traz um UUID novo; `blocked_input` numa conversa nova traz `sessionId: null`; o `sessionId` de outra conta dá `404` com o texto fixo, sem chamar o assistente; o `SessionNotFoundError` lançado pelo assistente vira `404`. Depois, implementar o fluxo da decisão 4. Verificar com `npm test -- handlers`.
-- [ ] 5.3 Escrever os testes do histórico (conversa de outra conta → `404` com o mesmo corpo de uma inexistente), da lista (só as conversas da conta, ordem, título cortado, `[]`) e do apagar (`204`; outra conta → `404`; id malformado → `400`; sem conta → `401`). Depois, implementar `createListSessionsHandler`, `createDeleteSessionHandler` e o histórico com dono. Verificar com `npm test -- handlers`.
-- [ ] 5.4 Escrever o teste do cron (`deleteInactive` recebe `now - 30 dias` e `now - 7 dias`) e depois ajustar. Criar `src/app/api/sessions/route.ts` e `src/app/api/sessions/[id]/route.ts` e ajustar os `route.ts` existentes. Verificar com `npm run build` sem variáveis de ambiente.
+- [x] 5.1 Escrever os testes do `parseChatRequest` (sem `sessionId` é válido; com `sessionId` malformado dá 400 com "O identificador da conversa é inválido."; o campo desconhecido continua dando 400) e depois ajustar `validate.ts`. Verificar com `npm test -- validate`.
+- [x] 5.2 Escrever os testes do chat com o repositório falso que respeita o dono: sem `sessionId`, a resposta traz um UUID novo; `blocked_input` numa conversa nova traz `sessionId: null`; o `sessionId` de outra conta dá `404` com o texto fixo, sem chamar o assistente; o `SessionNotFoundError` lançado pelo assistente vira `404`. Depois, implementar o fluxo da decisão 4. Verificar com `npm test -- handlers`.
+- [x] 5.3 Escrever os testes do histórico (conversa de outra conta → `404` com o mesmo corpo de uma inexistente), da lista (só as conversas da conta, ordem, título cortado, `[]`) e do apagar (`204`; outra conta → `404`; id malformado → `400`; sem conta → `401`). Depois, implementar `createListSessionsHandler`, `createDeleteSessionHandler` e o histórico com dono. Verificar com `npm test -- handlers`.
+- [x] 5.4 Escrever o teste do cron (`deleteInactive` recebe `now - 30 dias` e `now - 7 dias`) e depois ajustar. Criar `src/app/api/sessions/route.ts` e `src/app/api/sessions/[id]/route.ts` e ajustar os `route.ts` existentes. Verificar com `npm run build` sem variáveis de ambiente.
 
 ## 6. Interface
 

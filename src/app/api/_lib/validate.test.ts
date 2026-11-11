@@ -27,6 +27,22 @@ describe("parseChatRequest", () => {
     })
   })
 
+  it("accepts a request without sessionId (new conversation)", () => {
+    expect(parseChatRequest({ message: "oi" })).toEqual({ ok: true, value: { message: "oi" } })
+    const profile = { name: "Pizzaria Bella" }
+    expect(parseChatRequest({ message: "oi", profile })).toEqual({
+      ok: true,
+      value: { message: "oi", profile },
+    })
+  })
+
+  it("refuses a malformed sessionId with the fixed text", () => {
+    expect(parseChatRequest({ sessionId: "abc", message: "oi" })).toEqual({
+      ok: false,
+      error: "O identificador da conversa é inválido.",
+    })
+  })
+
   it("accepts a profile with known string fields", () => {
     const profile = { name: "Pizzaria Bella", plan: "Básico", city: "" }
     expect(parseChatRequest({ sessionId: SESSION_ID, message: "oi", profile })).toEqual({
@@ -52,7 +68,6 @@ describe("parseChatRequest", () => {
     ["a non-object body", "texto"],
     ["null", null],
     ["an array", [SESSION_ID, "oi"]],
-    ["a missing sessionId", { message: "oi" }],
     ["an invalid sessionId", { sessionId: "abc", message: "oi" }],
     ["a numeric sessionId", { sessionId: 1, message: "oi" }],
     ["a missing message", { sessionId: SESSION_ID }],

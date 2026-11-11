@@ -39,12 +39,18 @@ export function parseChatRequest(
   if (Object.keys(body).some((key) => !CHAT_REQUEST_FIELDS.includes(key))) {
     return { ok: false, error: VALIDATION_MESSAGES.unknownField }
   }
-  const { sessionId, message } = body
-  if (!isUuid(sessionId)) return { ok: false, error: VALIDATION_MESSAGES.sessionId }
+  const { message } = body
+  // Absent sessionId: a new conversation (the server generates the id).
+  let sessionId: string | undefined
+  if ("sessionId" in body) {
+    if (!isUuid(body.sessionId)) return { ok: false, error: VALIDATION_MESSAGES.sessionId }
+    sessionId = body.sessionId
+  }
   if (typeof message !== "string") return { ok: false, error: VALIDATION_MESSAGES.message }
-  if (!("profile" in body)) return { ok: true, value: { sessionId, message } }
+  const base = sessionId === undefined ? { message } : { sessionId, message }
+  if (!("profile" in body)) return { ok: true, value: base }
 
   const profile = parseProfile(body.profile)
   if (profile === null) return { ok: false, error: VALIDATION_MESSAGES.profile }
-  return { ok: true, value: { sessionId, message, profile } }
+  return { ok: true, value: { ...base, profile } }
 }

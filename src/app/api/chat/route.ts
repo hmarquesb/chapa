@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 const handler = createLazyHandler({ route: "/api/chat", method: "POST" }, () => {
-  const { assistant, rateLimits, accounts, config } = getContainer()
+  const { assistant, sessions, rateLimits, accounts, config } = getContainer()
   return createChatHandler({
     assistant,
+    sessions,
     rateLimits,
     accounts,
     authenticate: () => getAuthenticatedAccount(),
