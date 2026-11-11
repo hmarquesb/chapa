@@ -1116,6 +1116,36 @@ describe("createProfileHandlers", () => {
     expect(accounts.updates).toEqual([])
   })
 
+  it("PUT answers 400 with the field for a refused text, logs only the reason and does not save", async () => {
+    const { put, accounts, logs } = profileSetup()
+    const res = await put(profileRequest("PUT", { plan: "misto", name: "M3rd@ Burguer" }))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      error: "Esse nome tem um termo que não é permitido. Escolha outro.",
+      field: "name",
+    })
+    expect(accounts.updates).toEqual([])
+    expect(logs[0]).toMatchObject({ status: 400, profileRejected: "termo_inadequado" })
+    const line = JSON.stringify(logs[0]).toLowerCase()
+    for (const piece of ["m3rd", "burguer", "rd@"]) expect(line).not.toContain(piece)
+  })
+
+  it("PUT answers 400 with the cuisine field for a forbidden character", async () => {
+    const { put, logs } = profileSetup()
+    const res = await put(profileRequest("PUT", { plan: "proprio", cuisine: "<b>pizza</b>" }))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toMatchObject({ field: "cuisine" })
+    expect(logs[0]).toMatchObject({ profileRejected: "caractere" })
+    expect(JSON.stringify(logs[0])).not.toContain("pizza")
+  })
+
+  it("PUT answers 400 without field when the plan is missing, even with a refused name", async () => {
+    const { put, logs } = profileSetup()
+    const res = await put(profileRequest("PUT", { name: "M3rd@ Burguer" }))
+    expect(await res.json()).toEqual({ error: "Escolha o plano: Próprio, Entrega ou Misto." })
+    expect(logs[0]).not.toHaveProperty("profileRejected")
+  })
+
   it("PUT answers 413 for a body over the limit, 415 for a non-JSON type and 400 for broken JSON", async () => {
     const { put, accounts } = profileSetup()
     expect(

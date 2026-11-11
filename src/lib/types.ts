@@ -1,3 +1,5 @@
+import type { ProfileTextField } from "@/lib/moderation/profile-text"
+
 export type ReplyStatus = "answered" | "fallback" | "blocked_input" | "blocked_output"
 
 export type Channel = "web" | "cli" | "eval"
@@ -73,4 +75,6 @@ export type HealthResponse = {
 // Qualquer resposta de erro da API
 export type ApiErrorResponse = {
   error: string
+  // Campo do perfil recusado pelo filtro de texto (400 do PUT /api/profile).
+  field?: ProfileTextField
 }

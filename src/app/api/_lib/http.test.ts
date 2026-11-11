@@ -41,6 +41,11 @@ describe("HttpError", () => {
     expect(error.status).toBe(413)
     expect(error.publicMessage).toBe("Grande demais")
     expect(error.name).toBe("HttpError")
+    expect(error.field).toBeUndefined()
+  })
+
+  it("keeps the optional field", () => {
+    expect(new HttpError(400, "Troque o nome", "name").field).toBe("name")
   })
 })
 
