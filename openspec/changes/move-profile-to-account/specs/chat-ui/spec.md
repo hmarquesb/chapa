@@ -54,6 +54,10 @@ A página pública `/privacidade` SHALL mostrar, em linguagem simples, o aviso d
 ### Requirement: Página única em PT-BR
 A interface do chat SHALL ser uma página só, em `/`, aberta só com sessão válida e perfil com plano (ver `auth`), em PT-BR (`lang="pt-BR"`), com o título "Chapa", a linha "Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações.", o menu da conta, a lista de conversas, o botão "Nova conversa", o resumo do perfil, a conversa, a caixa de mensagem e o rodapé com o link "Privacidade" e o texto "Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery. As conversas são apagadas depois de 30 dias sem uso. Não envie dados pessoais."
 
+#### Scenario: Textos fixos
+- **WHEN** alguém logado, com o perfil salvo, abre a página
+- **THEN** o subtítulo é "Tire dúvidas sobre taxas, repasse, cancelamentos, cardápio e avaliações." e o rodapé é "Projeto de estudo, não oficial e sem afiliação com nenhuma empresa de delivery. As conversas são apagadas depois de 30 dias sem uso. Não envie dados pessoais.", seguido do link "Privacidade"
+
 #### Scenario: Primeira visita
 - **WHEN** alguém logado, com o perfil salvo, abre a página pela primeira vez
 - **THEN** vê o título, o menu da conta, a lista de conversas vazia, o resumo do perfil, a dica "Faça uma pergunta sobre a operação do seu restaurante ou escolha um exemplo abaixo.", as perguntas de exemplo, a caixa de mensagem e o rodapé com o aviso de não afiliação
