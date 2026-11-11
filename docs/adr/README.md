@@ -15,7 +15,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0007](0007-pasta-knowledge-base.md) | Chamar a pasta de fontes do RAG de knowledge-base/ | Aceito |
 | [0008](0008-vitest-e-tsx.md) | Usar Vitest e tsx nos testes e nos scripts locais | Aceito |
 | [0009](0009-somente-gemini.md) | Usar o Gemini como único provedor de LLM, pelo @google/genai | Aceito |
-| [0010](0010-link-de-continuacao-em-vez-de-login.md) | Usar um link de continuação da sessão em vez de login | Aceito |
+| [0010](0010-link-de-continuacao-em-vez-de-login.md) | Usar um link de continuação da sessão em vez de login | Substituído por 0020 |
 | [0011](0011-somente-parceiros-atuais.md) | Restringir o assistente a restaurantes que já são parceiros | Aceito |
 | [0012](0012-rag-e-prompt-em-vez-de-fine-tuning.md) | Personalizar com RAG e engenharia de prompt, não com fine-tuning | Aceito |
 | [0013](0013-fluxo-de-branch-por-spec.md) | Uma branch, um worktree e um PR por spec | Aceito |
@@ -25,6 +25,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0017](0017-neon-como-banco-dev.md) | Usar o Neon como banco dev e o Supabase só no prod | Aceito |
 | [0018](0018-empresa-ficticia-rango.md) | Usar a empresa fictícia Rango no lugar de fontes públicas | Aceito |
 | [0019](0019-regras-yaml-fonte-unica.md) | Usar o regras.yaml como fonte única dos números | Aceito |
+| [0020](0020-login-google-e-conta-demo.md) | Exigir login com Google, com uma conta demo isolada por clique | Aceito |
 
 ## Modelo
 
