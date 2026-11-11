@@ -14,7 +14,7 @@ O Chapa é o assistente de parceiros da **Rango**, uma empresa de delivery fict�
 
 | Ator | O que faz |
 |---|---|
-| **Restaurante parceiro** | Único usuário da interface. Preenche o perfil, se quiser, e conversa com o assistente. Não tem login. |
+| **Restaurante parceiro** | Único usuário da interface. Entra com Google ou testa como demo, preenche o perfil, se quiser, e conversa com o assistente. |
 | **Pessoa mantenedora** | Mantém a base de conhecimento, roda a ingestão, as rodadas de avaliação e os deploys. Aprova as mudanças. |
 | **Agentes de código** | Propõem e implementam mudanças seguindo o `AGENTS.md` e o fluxo do OpenSpec. |
 
@@ -24,9 +24,11 @@ O público de cadastro (quem ainda não é parceiro) fica fora do escopo ([ADR 0
 
 | Conceito | Significado |
 |---|---|
-| **Sessão** | Uma conversa anônima, identificada por um UUID gerado no navegador. Expira depois de 7 dias sem mensagem nova. |
+| **Conta Google** | Conta criada no primeiro "Entrar com Google", com só o `sub` e o e-mail verificado. É apagada depois de 180 dias sem login nem mensagem ([ADR 0020](adr/0020-login-google-e-conta-demo.md)). |
+| **Conta de demonstração** | Conta sem e-mail, criada a cada clique em "Testar como demo" e apagada 7 dias depois, com as conversas. No máximo 5 por IP por dia. Uma demo não enxerga dados de outra conta. |
+| **Sessão** | Uma conversa, identificada por um UUID gerado no navegador. Expira depois de 7 dias sem mensagem nova. Não confundir com a sessão de login, que fica num cookie de 30 dias. |
 | **Perfil do restaurante** | Nome, plano, cozinha, cidade e horário, preenchidos num formulário (até 60 caracteres cada). Personaliza a resposta, no lugar dos dados que viriam de uma conta logada. |
-| **Link de continuação** | `/?sessao=<id>`. Abre a mesma conversa em outro navegador e funciona como credencial: quem tem o link lê a conversa ([ADR 0010](adr/0010-link-de-continuacao-em-vez-de-login.md)). |
+| **Link de continuação** | `/?sessao=<id>`. Abre a mesma conversa em outro navegador logado e funciona como credencial: quem está logado e tem o link lê a conversa ([ADR 0010](adr/0010-link-de-continuacao-em-vez-de-login.md), substituído pelo 0020; a conversa passa a pertencer à conta numa próxima mudança). |
 | **Canal** | De onde veio a conversa: `web` (a página), `cli` (`npm run chat`) ou `eval` (`npm run eval`). |
 | **Base de conhecimento** | Os 11 documentos `.md` numerados de `knowledge-base/`, com a política de parceiros da Rango. Todos os números vêm do `knowledge-base/regras.yaml`, que não é ingerido ([ADR 0019](adr/0019-regras-yaml-fonte-unica.md)). |
 | **Trecho** | Um pedaço de um documento da base, com o seu embedding. É o que a busca recupera. |
@@ -55,11 +57,12 @@ Os temas que a base **não** cobre de propósito estão no [`knowledge-base/READ
 
 ## Como o restaurante usa
 
-1. Abre a página e, se quiser, preenche o perfil.
+1. Abre a página e entra: "Testar como demo" (um clique, sem preencher nada) ou "Entrar com Google". Depois, se quiser, preenche o perfil.
 2. Escreve a dúvida ou escolhe uma das 3 perguntas de exemplo.
 3. Recebe a resposta com os arquivos usados como fontes, ou o fallback quando a base não cobre o assunto.
 4. Pode continuar a conversa: o assistente entende perguntas que dependem das anteriores ("e no outro plano?").
 5. Pode copiar o link de continuação para retomar em outro navegador, ou começar uma conversa nova.
+6. Sai pelo menu da conta. Na demo, uma faixa avisa que a conta e as conversas são apagadas em 7 dias.
 
 ## Fora do escopo
 
@@ -67,7 +70,7 @@ Os temas que a base **não** cobre de propósito estão no [`knowledge-base/READ
 - Executar ações (mudar plano, pausar a loja, contestar um pedido). O assistente explica como fazer, não faz.
 - Receber ou devolver dado sensível: CPF, número de cartão e senha são bloqueados por padrão.
 - Responder fora da base: receitas, dados de concorrentes, opiniões e conselhos gerais.
-- Login, contas e dados reais do restaurante.
+- Dados reais do restaurante, e-mail e senha, link mágico, outros provedores de login, papéis (Dono, Gerente, Operador) e várias lojas por conta.
 
 ## Regras de conteúdo
 
@@ -97,7 +100,7 @@ Os resultados da última rodada estão no [`README.md`](../README.md) e em [`eva
 | Decisão | ADR |
 |---|---|
 | Só restaurantes que já são parceiros | [0011](adr/0011-somente-parceiros-atuais.md) |
-| Link de continuação em vez de login | [0010](adr/0010-link-de-continuacao-em-vez-de-login.md) |
+| Login com Google e conta demo isolada por clique | [0020](adr/0020-login-google-e-conta-demo.md) (substitui a [0010](adr/0010-link-de-continuacao-em-vez-de-login.md)) |
 | Respostas completas, sem streaming | [0004](adr/0004-sem-streaming.md) |
 | RAG e prompt em vez de fine-tuning | [0012](adr/0012-rag-e-prompt-em-vez-de-fine-tuning.md) |
 | Só o Gemini, no plano gratuito | [0009](adr/0009-somente-gemini.md), [0014](adr/0014-flash-lite-como-modelo-de-chat.md) |

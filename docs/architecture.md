@@ -4,7 +4,7 @@
 
 Assistente web para restaurantes que **já são parceiros** da Rango, uma empresa de delivery fictícia. Ele responde dúvidas operacionais com RAG sobre a base em `knowledge-base/`, cita as fontes e encaminha ao suporte quando não sabe a resposta. Cadastro de novos parceiros fica fora do escopo. É um projeto de estudo, não oficial.
 
-Não tem login. Cada navegador tem a própria sessão anônima, e o perfil do restaurante (nome, plano, cozinha, cidade, horário) vem de um formulário, no lugar dos dados que viriam de uma conta logada.
+O chat na web exige login: com Google ou numa conta de demonstração criada a cada clique ([ADR 0020](adr/0020-login-google-e-conta-demo.md)). O perfil do restaurante (nome, plano, cozinha, cidade, horário) ainda vem de um formulário. O CLI e a avaliação não passam pelo login.
 
 ## Arquitetura do projeto
 
@@ -20,7 +20,7 @@ src/
 ├── app/            páginas e Route Handlers
 ├── components/     ui/ (shadcn) e chat/
 ├── core/           assistente, RAG, memória, guardrails, prompts
-├── infra/          cliente de LLM e repositórios Postgres
+├── infra/          cliente de LLM, repositórios Postgres e auth/ (Auth.js)
 ├── lib/            utilitários e tipos usados pelo cliente
 └── config.ts       modelos e parâmetros do RAG
 scripts/            ingest.ts, chat.ts, eval.ts, smoke.ts
@@ -32,7 +32,16 @@ docs/               arquitetura, negócio, desenvolvimento, QA e adr/ (decisões
 openspec/           specs vivas (specs/) e mudanças (changes/) do OpenSpec
 ```
 
-`components/` nunca importa `core/` nem `infra/`.
+`components/` nunca importa `core/` nem `infra/`. Só `src/infra/auth/` importa o `next-auth`; as páginas e as Server Actions de `src/app/` usam `@/infra/auth`.
+
+## Autenticação
+
+- **Entrada:** `/entrar` mostra "Testar como demo" e, quando as duas credenciais do Google estão configuradas, "Entrar com Google". Os botões chamam as Server Actions de `src/app/auth-actions.ts`, que chamam o `signIn` do Auth.js v5 (`next-auth@5.0.0-beta.32`, JWT, sem adapter).
+- **Demo:** o provedor `Credentials` (`id: "demo"`) chama `createDemoAccount` (`src/core/accounts.ts`), que conta a tentativa no bucket `demo_day` do `rate_limits` (HMAC do IP, dia UTC) e cria a conta só até a 5ª do dia. A conta expira em 7 dias.
+- **Google:** no primeiro login, cria a conta com o `sub` e o e-mail verificado; nos seguintes, encontra a conta pelo `sub` e atualiza o e-mail e o `last_seen_at`. Nome e foto não são guardados.
+- **Cookie:** `authjs.session-token` (com o prefixo `__Secure-` em HTTPS), `HttpOnly`, `SameSite=Lax`, válido por 30 dias, com só o id e o tipo da conta.
+- **Cada pedido protegido:** `getAuthenticatedAccount()` (`src/infra/auth/index.ts`) lê o cookie com `auth()` e confirma no banco (`accounts.findActive`) que a conta existe e não venceu. A página `/` leva a `/entrar` sem conta; as rotas de conversa respondem `401`, e a interface vai para `/entrar`.
+- **Sair:** o `signOut` apaga o cookie e leva a `/entrar`.
 
 ## Front-end
 
@@ -67,13 +76,16 @@ Rotas:
 - `GET /api/sessions/[id]/messages`
 - `GET /api/health`
 - `GET /api/cron/cleanup`, protegida por `CRON_SECRET`
+- `GET|POST /api/auth/*`, do Auth.js (csrf, callbacks do Google e da demo, sessão, saída)
+
+`POST /api/chat` e `GET /api/sessions/[id]/messages` exigem sessão (`401` sem ela, antes de ler o corpo e de contar o rate limit). `GET /api/health` e o cron não exigem.
 
 Regras:
 - Nomes de modelo e parâmetros do RAG ficam só em `src/config.ts`.
 - Toda chamada de chat ou embedding passa por `src/infra/llm/`, que aplica retry e conta tokens. Nenhum outro módulo importa o SDK.
 - O guardrail de entrada bloqueia padrões (CPF, cartão, "minha senha é", pedido de senha), não palavras soltas. "O repasse cai via Pix?" tem que passar.
 - Rate limit por IP no Postgres, guardando o HMAC do IP. Corpo máximo de 4 KB.
-- Logue status, latência e tokens. Nunca logue o conteúdo das mensagens.
+- Logue status, latência, tokens e o `accountId`. Nunca logue o conteúdo das mensagens nem o e-mail da conta.
 - `core/` e `infra/` importam `server-only`.
 
 Scripts locais (rodam com `tsx`, fora da Vercel): `ingest`, `chat`, `eval` e `smoke`.
@@ -82,7 +94,7 @@ Scripts locais (rodam com `tsx`, fora da Vercel): `ingest`, `chat`, `eval` e `sm
 
 Supabase: PostgreSQL com `pgvector` e busca textual com o dicionário `portuguese`.
 
-- Tabelas: `sessions` (perfil, resumo, canal), `messages`, `document_chunks` e `rate_limits`.
+- Tabelas: `accounts` (tipo `google` ou `demo`, `google_sub`, e-mail, `last_seen_at`, `expires_at`), `sessions` (perfil, resumo, canal), `messages`, `document_chunks` e `rate_limits` (buckets `minute`, `day`, `demo_day` e `account_day`).
 - `document_chunks` tem `embedding_model` e `chunk_config`, e toda busca filtra pelos dois. Nunca compare vetores de modelos ou de fatiamentos diferentes.
 - Busca híbrida: o SQL devolve `semantic` e `keyword` por trecho, e uma função pura em TS combina os dois com `alpha`, filtra por `minScore` e corta em `topK`.
 - As mensagens são ordenadas por `id`, não por `created_at`.
@@ -97,13 +109,13 @@ Supabase: PostgreSQL com `pgvector` e busca textual com o dicionário `portugues
 - **Neon:** o `dev`, usado no local e no preview, em `aws-sa-east-1` ([ADR 0017](adr/0017-neon-como-banco-dev.md)).
 - **Gemini (Google AI Studio, sem cartão):** único provedor, para chat e embeddings.
 
-Variáveis: `GEMINI_API_KEY`, `DATABASE_URL`, `IP_HASH_SECRET`, `CRON_SECRET` e `*_MODEL` (opcionais). Nenhuma variável secreta usa o prefixo `NEXT_PUBLIC_`.
+Variáveis: `GEMINI_API_KEY`, `DATABASE_URL`, `IP_HASH_SECRET`, `CRON_SECRET`, `AUTH_SECRET`, `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` (opcionais, sempre juntas) e `*_MODEL` (opcionais). Nenhuma variável secreta usa o prefixo `NEXT_PUBLIC_`.
 
 ## Automação
 
 - **GitHub Actions** em todo push e PR: `lint`, `typecheck`, `test` e `build`. Sem chamadas de API nem de banco.
 - **Vercel:** um deploy de preview por PR e produção na `main`.
-- **Vercel Cron** diário em `/api/cron/cleanup`: apaga sessões sem atividade há mais de 7 dias e limpa `rate_limits`.
+- **Vercel Cron** diário em `/api/cron/cleanup`: apaga sessões sem atividade há mais de 7 dias, limpa `rate_limits` e apaga as contas demo vencidas e as contas Google sem acesso há 180 dias.
 - **Manual, de propósito:** ingestão, rodadas de eval, migrações e o merge dos PRs na `main`.
 
 O passo a passo do deploy está no [`DEPLOY.md`](../DEPLOY.md).

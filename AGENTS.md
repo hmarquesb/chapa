@@ -4,7 +4,7 @@ Instruções para qualquer agente de código (Claude Code, Codex, Cursor, subage
 
 ## O que é o projeto
 
-Assistente web para restaurantes que **já são parceiros** da Rango, uma empresa de delivery fictícia. Ele responde dúvidas operacionais (taxas e planos, repasse, cancelamentos, cardápio, horários, avaliações, embalagem) com **RAG híbrido** sobre a base em `knowledge-base/`, cita as fontes, guarda a memória por sessão e recusa o que está fora do escopo ou é sensível. Cadastro de novos restaurantes fica fora do escopo.
+Assistente web para restaurantes que **já são parceiros** da Rango, uma empresa de delivery fictícia. O chat na web exige login (Google ou uma conta demo por clique, [ADR 0020](docs/adr/0020-login-google-e-conta-demo.md)). Ele responde dúvidas operacionais (taxas e planos, repasse, cancelamentos, cardápio, horários, avaliações, embalagem) com **RAG híbrido** sobre a base em `knowledge-base/`, cita as fontes, guarda a memória por sessão e recusa o que está fora do escopo ou é sensível. Cadastro de novos restaurantes fica fora do escopo.
 
 - Documentação do projeto, em [`docs/`](docs/):
 
@@ -29,6 +29,7 @@ Assistente web para restaurantes que **já são parceiros** da Rango, uma empres
 - **Tailwind CSS + shadcn/ui** na interface. **Biome** para lint e formatação.
 - **Supabase (Postgres + pgvector + busca textual em português)**, acessado pelo driver `postgres` no pooler em modo transação. `prod` no Supabase; `dev` num Postgres do Neon ([ADR 0017](docs/adr/0017-neon-como-banco-dev.md)).
 - **Gemini** pelo SDK `@google/genai`, para chat e embeddings. Único provedor.
+- **Auth.js v5** (`next-auth@5.0.0-beta.32`, versão fixada) para o login com Google e a conta demo, com sessão em JWT e sem adapter. As contas ficam na tabela `accounts`, com SQL puro.
 - **Vitest** para testes e **tsx** para os scripts locais (`ingest`, `chat`, `eval`, `smoke`).
 - Node 24.
 
@@ -36,7 +37,7 @@ Assistente web para restaurantes que **já são parceiros** da Rango, uma empres
 
 ```bash
 npm install
-npm run dev              # http://localhost:3000
+npm run dev              # http://localhost:3000 (pede AUTH_SECRET; sem AUTH_GOOGLE_*, só a demo)
 npm run build
 npm run lint             # biome check .
 npm run format           # biome check --write .
@@ -45,14 +46,14 @@ npm test                 # vitest run, sem rede, sem banco e sem chave
 npm run ingest           # ⚠️ chama a API de embeddings e grava no banco (padrão: preset padrao)
 npm run chat -- --nome "Pizzaria Bella" --debug        # ⚠️ chama a API
 npm run eval -- --label v2 --preset padrao             # ⚠️ chama a API (60 a 90 chamadas)
-npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada
+npm run smoke -- --url https://<deploy>                # ⚠️ chama a demo publicada e cria 1 conta demo (5 por IP por dia)
 npm run db -- db push --remote   # Supabase CLI, no `prod` (único projeto linkado, só no checkpoint)
 # dev (Neon): bootstrap e db push sempre com --remote="$U" num subshell; comandos no DEPLOY.md, "Banco `dev` no Neon"
 npm run spec -- list             # OpenSpec CLI: list, show, validate, status, archive
 npm run changes          # changes ativas do OpenSpec em todos os worktrees (o `spec -- list` só vê o checkout atual)
 ```
 
-As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts locais usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis já definidas no shell.
+As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API_KEY`, `DATABASE_URL`, `IP_HASH_SECRET`, `CRON_SECRET`, `AUTH_SECRET` e as opcionais `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` (sempre juntas). Os scripts locais usam `--env-file-if-exists=.env.local`, que não sobrescreve variáveis já definidas no shell.
 
 ## Onde mexer
 
@@ -69,6 +70,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts 
 | Prompt de sistema ou do RAG | `src/core/prompts.ts` | O fallback no prompt vem de `FALLBACK_MESSAGE`. Rodar a avaliação |
 | Guardrail de entrada ou de saída | `src/core/guardrails.ts`, `src/core/messages.ts` | Bloqueie padrões, nunca palavras soltas. "O repasse cai via Pix?" tem que passar: acrescente o caso nos testes |
 | Memória, resumo ou reescrita | `src/core/memory.ts`, `src/core/rewrite-query.ts` | O contexto do RAG não vai para `messages` |
+| Login e sessão | `src/infra/auth/` (`config.ts`, `callbacks.ts`, `env.ts`, `index.ts`), `src/app/auth-actions.ts`, `src/app/entrar/`, `src/core/accounts.ts`, `src/infra/db/account-repository.ts` | Só `src/infra/auth/` importa `next-auth`. Toda rota protegida confirma a conta no banco (`getAuthenticatedAccount`). Limites em `src/config.ts` (`accounts`) |
 | Rota de API | `src/app/api/<rota>/route.ts` e o handler em `src/app/api/_lib/handlers.ts` | O `route.ts` só liga o handler ao container. A lógica fica no handler, testado com fakes |
 | Validação, rate limit, logs da API | `src/app/api/_lib/` (`validate.ts`, `rate-limit.ts`, `log.ts`) | Corpo máximo de 4 KB. Mensagens de erro em PT-BR |
 | Campo novo no perfil | `src/lib/types.ts` (`PROFILE_FIELDS`), `src/core/prompts.ts`, `src/components/chat/profile-form.tsx` | O perfil é dado do usuário: não logue |
@@ -85,7 +87,9 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts 
 | `src/core/` | `src/core/`, `src/lib/types`, `src/config` | `src/infra/`, `next`, `@google/genai`, `postgres` |
 | `src/infra/llm/` | `@google/genai`, `src/core/` (tipos e erros), `src/config` | `postgres` |
 | `src/infra/db/` | `postgres`, `src/core/` (tipos), `src/lib/types` | `@google/genai` |
-| `src/app/api/` | `src/infra/container`, `src/core/` (tipos e erros), `src/lib/` | SDKs direto |
+| `src/infra/auth/` | `next-auth`, `src/core/`, `src/infra/` (container, env), `src/lib/`, `src/config` | `@google/genai`, `postgres` |
+| `src/app/` (páginas e Server Actions) | `src/infra/auth`, `src/components/`, `src/lib/` | `next-auth` e `@auth/*` direto |
+| `src/app/api/` | `src/infra/container`, `src/infra/auth`, `src/core/` (tipos e erros), `src/lib/` | SDKs direto, `next-auth` |
 | `scripts/` | `src/core/`, `src/infra/`, `src/config` | — |
 
 - `src/core/` define as portas (`LlmClient`, `ChunkRepository`, `SessionRepository`, `RateLimitRepository`) e recebe as implementações por parâmetro. Os testes passam fakes.
@@ -120,9 +124,10 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas. Os scripts 
 - **Nunca leia, imprima nem copie** `../api-key.md`, `.env` ou `.env.*` (exceto `.env.example`). As chaves vêm só de `process.env`.
 - Nunca escreva chaves em código, logs, testes ou commits. Nenhuma variável secreta usa o prefixo `NEXT_PUBLIC_`.
 - O navegador só fala com a nossa API, nunca com o Gemini nem com o Supabase.
-- No servidor, **não registre** o conteúdo das mensagens, o perfil, o `sessionId` nem o IP. Logar status, latência, tokens e o nome do erro é permitido.
+- No servidor, **não registre** o conteúdo das mensagens, o perfil, o `sessionId`, o IP nem o e-mail da conta. Logar status, latência, tokens, o `accountId` e o nome do erro é permitido.
 - O IP só é guardado como HMAC (`IP_HASH_SECRET`). O RLS fica ligado em todas as tabelas, sem nenhuma policy.
 - O link `/?sessao=<id>` funciona como credencial: não o logue nem o exponha em referrers.
+- O cookie de sessão (`authjs.session-token`) é credencial: `HttpOnly`, `SameSite=Lax`, `Secure` em HTTPS, só com o id e o tipo da conta. Nunca o imprima, nem em scripts como o smoke. Das contas Google, só o `sub` e o e-mail são guardados.
 
 ## Marca e conteúdo
 
