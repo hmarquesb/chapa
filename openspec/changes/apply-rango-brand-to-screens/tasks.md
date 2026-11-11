@@ -26,8 +26,8 @@ Change 2 de 3 da identidade visual da Rango. Só começa depois que a `add-rango
 ## 5. Verificação manual (orquestrador)
 
 - [x] 5.1 **(orquestrador)** `npx playwright install chromium` e, com o `npm run dev` contra o `dev`, `npm run screenshots -- --url http://localhost:3000`. Verificar que saem as 24 imagens em `.screenshots/`, que nenhuma mostra erro, e que nenhum pedido chegou ao `/api/chat` real (o log do servidor não mostra `POST /api/chat`).
-- [ ] 5.2 **(orquestrador)** No `npm run dev`: mandar uma pergunta real e ver o indicador com os pontos e a entrada da resposta; repetir com movimento reduzido ligado no sistema (texto estático, sem animação); navegar só pelo teclado da entrada ao chat e ao menu da conta, com o anel de foco visível nos dois temas; ler a resposta com o VoiceOver e conferir que "Chapa" não é lido duas vezes.
-- [ ] 5.3 **(pessoa)** Revisar as 24 screenshots, o logo e o ícone do Chapa e preencher no PR o checklist de originalidade do `docs/qa.md`.
+- [x] 5.2 **(orquestrador)** No `npm run dev`: mandar uma pergunta real e ver o indicador com os pontos e a entrada da resposta; repetir com movimento reduzido ligado no sistema (texto estático, sem animação); navegar só pelo teclado da entrada ao chat e ao menu da conta, com o anel de foco visível nos dois temas; ler a resposta com o VoiceOver e conferir que "Chapa" não é lido duas vezes.
+- [x] 5.3 **(pessoa)** Revisar as 24 screenshots, o logo e o ícone do Chapa e preencher no PR o checklist de originalidade do `docs/qa.md`.
 
 ## 6. Verificação final
 
