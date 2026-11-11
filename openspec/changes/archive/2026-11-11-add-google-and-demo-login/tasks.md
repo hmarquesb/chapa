@@ -58,7 +58,7 @@ As tarefas **(pessoa)** dependem de conta, de segredo ou do painel da Vercel. O 
 
 - [x] 9.1 **(pessoa)** Criar na Vercel o `AUTH_SECRET` (Production e Preview) e o `AUTH_GOOGLE_ID` e o `AUTH_GOOGLE_SECRET` (só Production), e cadastrar o redirecionamento de produção no cliente OAuth.
 - [x] 9.2 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Verificar com um `db query --read-only` o RLS ligado e 0 policies em `accounts`.
-- [ ] 9.3 **(pessoa)** Depois do merge, entrar com Google em produção e rodar o smoke contra a produção (ou autorizar o orquestrador a rodar).
+- [x] 9.3 **(pessoa)** Depois do merge, entrar com Google em produção e rodar o smoke contra a produção (ou autorizar o orquestrador a rodar).
 
 ## 10. Verificação final
 
