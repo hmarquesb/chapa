@@ -20,8 +20,6 @@ export const SMOKE_MESSAGES = {
   blocked: "Meu CPF é 123.456.789-09",
 } as const
 
-export const SMOKE_PROFILE = { name: "Restaurante Fictício da Fumaça" } as const
-
 // Header da Protection Bypass for Automation da Vercel, para deploys com Deployment Protection
 // (normalmente os previews). O valor vem de VERCEL_AUTOMATION_BYPASS_SECRET, no shell.
 export const BYPASS_HEADER = "x-vercel-protection-bypass"
@@ -195,7 +193,7 @@ export function checkHistory(res: SmokeResponse, sessionId: string): CheckResult
   if (res.status !== 200) return unexpectedStatus(res.status, 200)
   const body = res.body
   if (!isRecord(body) || !Array.isArray(body.messages)) {
-    return { ok: false, reason: "o corpo não segue o contrato { sessionId, profile, messages }" }
+    return { ok: false, reason: "o corpo não segue o contrato { sessionId, messages }" }
   }
   if (body.sessionId !== sessionId) {
     return { ok: false, reason: "sessionId diferente do enviado" }
@@ -327,6 +325,19 @@ const REDIRECT_STATUSES = new Set([302, 303, 307, 308])
 
 // Answer of POST /api/auth/callback/demo: a redirect out of /entrar and a session cookie.
 // Never returns the cookie value nor the Location query.
+// O perfil da conta demo recém-criada (DEMO_PROFILE): a API devolve o plano Misto.
+export function checkDemoProfile(res: SmokeResponse): CheckResult {
+  if (res.status !== 200) return unexpectedStatus(res.status, 200)
+  const body = res.body
+  if (!isRecord(body) || !isRecord(body.profile)) {
+    return { ok: false, reason: "o corpo não segue o contrato { profile }" }
+  }
+  if (body.profile.plan !== "misto") {
+    return { ok: false, reason: "o plano do perfil demo não é misto" }
+  }
+  return { ok: true }
+}
+
 export function checkDemoSignIn(res: SmokeResponse): CheckResult {
   if (!REDIRECT_STATUSES.has(res.status)) {
     return { ok: false, reason: `status ${res.status} (esperado um redirecionamento 302)` }

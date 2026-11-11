@@ -8,6 +8,7 @@ import {
   checkChatAnswered,
   checkChatFallback,
   checkCronUnauthorized,
+  checkDemoProfile,
   checkDemoSignIn,
   checkHealth,
   checkHistory,
@@ -34,7 +35,6 @@ function res(status: number, body: unknown, headers: Record<string, string> = {}
 function history(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
   return {
     sessionId: SESSION_ID,
-    profile: { name: "Restaurante Fictício" },
     messages: [
       { id: 1, role: "user", content: SMOKE_MESSAGES.inScope, status: null, sources: [] },
       {
@@ -513,5 +513,25 @@ describe("checkDemoSignIn", () => {
       signIn(302, "http://localhost:3000/entrar", ["authjs.session-token=VALOR-SECRETO"]),
     )
     expect(JSON.stringify(result)).not.toContain("VALOR-SECRETO")
+  })
+})
+
+describe("checkDemoProfile", () => {
+  it("passes on 200 with the Misto plan", () => {
+    expect(
+      checkDemoProfile(res(200, { profile: { name: "Marmitaria Boa Panela", plan: "misto" } })),
+    ).toEqual({
+      ok: true,
+    })
+  })
+
+  it("fails on another status", () => {
+    expect(checkDemoProfile(res(401, { error: "Faça login." })).ok).toBe(false)
+  })
+
+  it("fails when the plan is missing or not misto", () => {
+    expect(checkDemoProfile(res(200, { profile: {} })).ok).toBe(false)
+    expect(checkDemoProfile(res(200, { profile: { plan: "proprio" } })).ok).toBe(false)
+    expect(checkDemoProfile(res(200, { ok: true })).ok).toBe(false)
   })
 })
