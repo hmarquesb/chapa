@@ -65,6 +65,10 @@ Regras:
 - Cores, fontes, raio, sombras e movimento são tokens em `src/app/globals.css`; `src/lib/palette.ts` espelha as cores em JS e o `palette.test.ts` mantém os dois iguais e confere o contraste ([ADR 0022](adr/0022-identidade-visual-sobre-tokens-do-shadcn.md)).
 - O tema é a classe `dark` no `<html>`, escolhida entre Claro, Escuro e Sistema e guardada no `localStorage`. Um script no `<head>` (`THEME_INIT_SCRIPT`, em `src/lib/theme.ts`) a aplica antes da primeira pintura. O botão fica no menu da conta e em `/entrar`.
 
+- `/marca` é pública (sem login) e é o guia visual da identidade: princípios, paleta com o contraste de cada par, tipografia, os componentes reais (`BrandShowcase`) e o logo. O texto dela fica em `src/lib/brand-guide.ts`, e as cores vêm de `PALETTE`.
+- A imagem de compartilhamento (`src/app/opengraph-image.tsx` e `twitter-image.tsx`) e o `apple-icon.tsx` são rotas estáticas do `next/og`, geradas no build com as fontes de `assets/fonts/`. O favicon é o `src/app/icon.svg`. O `metadata` do `layout.tsx` define o título (`template`), a descrição e o Open Graph; o `metadataBase` não é fixado, e o Next usa o endereço da Vercel.
+- `public/brand/` guarda os logos em SVG (claro, escuro e uma cor), o avatar do Chapa, a `og.png` e um `README.md`. Todos são gerados pelo `npm run brand:export` (menos a `og.png`) e commitados.
+
 Streaming, idioma, marca e o que o navegador pode chamar seguem as regras do [`AGENTS.md`](../AGENTS.md).
 
 ## Back-end
