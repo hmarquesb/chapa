@@ -30,7 +30,6 @@ export type ProfileUpdateRequest = Omit<RestaurantProfile, "plan"> & { plan: Pla
 export type ChatRequest = {
   sessionId?: string // absent: new conversation
   message: string
-  profile?: RestaurantProfile
 }
 
 export type ChatResponse = {
@@ -61,7 +60,6 @@ export type HistoryMessage = {
 
 export type SessionHistoryResponse = {
   sessionId: string
-  profile: RestaurantProfile
   messages: HistoryMessage[]
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isUuid, parseChatRequest } from "@/app/api/_lib/validate"
+import { isUuid, parseChatRequest, parseProfileUpdate } from "@/app/api/_lib/validate"
 
 const SESSION_ID = "0b7c9a52-3f0e-4d4f-9a55-2a1f3c1d9e10"
 
@@ -20,19 +20,14 @@ describe("isUuid", () => {
 })
 
 describe("parseChatRequest", () => {
-  it("accepts a request without profile", () => {
+  it("accepts a request without sessionId (new conversation)", () => {
+    expect(parseChatRequest({ message: "oi" })).toEqual({ ok: true, value: { message: "oi" } })
+  })
+
+  it("accepts a request with sessionId and message", () => {
     expect(parseChatRequest({ sessionId: SESSION_ID, message: "Quando cai o repasse?" })).toEqual({
       ok: true,
       value: { sessionId: SESSION_ID, message: "Quando cai o repasse?" },
-    })
-  })
-
-  it("accepts a request without sessionId (new conversation)", () => {
-    expect(parseChatRequest({ message: "oi" })).toEqual({ ok: true, value: { message: "oi" } })
-    const profile = { name: "Pizzaria Bella" }
-    expect(parseChatRequest({ message: "oi", profile })).toEqual({
-      ok: true,
-      value: { message: "oi", profile },
     })
   })
 
@@ -43,11 +38,19 @@ describe("parseChatRequest", () => {
     })
   })
 
-  it("accepts a profile with known string fields", () => {
-    const profile = { name: "Pizzaria Bella", plan: "Básico", city: "" }
-    expect(parseChatRequest({ sessionId: SESSION_ID, message: "oi", profile })).toEqual({
-      ok: true,
-      value: { sessionId: SESSION_ID, message: "oi", profile },
+  it("refuses any profile with the profileInAccount text", () => {
+    const error = "O perfil agora fica salvo na conta. Recarregue a página."
+    expect(parseChatRequest({ message: "oi", profile: { plan: "misto" } })).toEqual({
+      ok: false,
+      error,
+    })
+    expect(parseChatRequest({ message: "oi", profile: { city: "x".repeat(61) } })).toEqual({
+      ok: false,
+      error,
+    })
+    expect(parseChatRequest({ sessionId: SESSION_ID, message: "oi", profile: null })).toEqual({
+      ok: false,
+      error,
     })
   })
 
@@ -55,13 +58,6 @@ describe("parseChatRequest", () => {
     const message = "x".repeat(5000)
     expect(parseChatRequest({ sessionId: SESSION_ID, message: "" }).ok).toBe(true)
     expect(parseChatRequest({ sessionId: SESSION_ID, message }).ok).toBe(true)
-  })
-
-  it("does not keep a reference to the caller's profile object", () => {
-    const profile = { name: "Pizzaria Bella" }
-    const result = parseChatRequest({ sessionId: SESSION_ID, message: "oi", profile })
-    if (!result.ok) throw new Error("expected ok")
-    expect(result.value.profile).not.toBe(profile)
   })
 
   it.each([
@@ -73,29 +69,76 @@ describe("parseChatRequest", () => {
     ["a missing message", { sessionId: SESSION_ID }],
     ["a non-string message", { sessionId: SESSION_ID, message: 42 }],
     ["an unknown top-level key", { sessionId: SESSION_ID, message: "oi", extra: true }],
-    ["a null profile", { sessionId: SESSION_ID, message: "oi", profile: null }],
-    ["an array profile", { sessionId: SESSION_ID, message: "oi", profile: ["Bella"] }],
-    ["a string profile", { sessionId: SESSION_ID, message: "oi", profile: "Bella" }],
-    [
-      "an unknown profile key",
-      { sessionId: SESSION_ID, message: "oi", profile: { name: "Bella", cpf: "x" } },
-    ],
-    [
-      "a non-string profile value",
-      { sessionId: SESSION_ID, message: "oi", profile: { name: 123 } },
-    ],
-    [
-      "a profile value longer than 60 chars",
-      { sessionId: SESSION_ID, message: "oi", profile: { name: "x".repeat(61) } },
-    ],
   ])("rejects %s", (_label, body) => {
     const result = parseChatRequest(body)
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error).toMatch(/\S/)
   })
+})
 
-  it("accepts a profile value with exactly 60 chars", () => {
-    const profile = { name: "x".repeat(60) }
-    expect(parseChatRequest({ sessionId: SESSION_ID, message: "oi", profile }).ok).toBe(true)
+describe("parseProfileUpdate", () => {
+  const PLAN_ERROR = "Escolha o plano: Próprio, Entrega ou Misto."
+  const PROFILE_ERROR = "O perfil do restaurante é inválido."
+  const UNKNOWN_ERROR = "O pedido tem campos desconhecidos."
+
+  it("trims values and drops empty fields", () => {
+    expect(parseProfileUpdate({ name: "  Pizzaria Bella ", plan: "entrega", city: "" })).toEqual({
+      ok: true,
+      value: { name: "Pizzaria Bella", plan: "entrega" },
+    })
+  })
+
+  it("accepts every field", () => {
+    const body = { name: "A", plan: "misto", cuisine: "B", city: "C", hours: "D" }
+    expect(parseProfileUpdate(body)).toEqual({ ok: true, value: body })
+  })
+
+  it("accepts a value with exactly 60 chars", () => {
+    expect(parseProfileUpdate({ plan: "proprio", name: "x".repeat(60) }).ok).toBe(true)
+  })
+
+  it.each([
+    ["a missing plan", { name: "Bella" }],
+    ["an unknown plan", { plan: "premium" }],
+    ["a text plan label", { plan: "Plano Misto" }],
+    ["a non-string plan", { plan: 3 }],
+  ])("refuses %s with the plan text", (_label, body) => {
+    expect(parseProfileUpdate(body)).toEqual({ ok: false, error: PLAN_ERROR })
+  })
+
+  it.each([
+    ["a value longer than 60 chars", { plan: "misto", city: "x".repeat(61) }],
+    ["a non-string value", { plan: "misto", name: 123 }],
+  ])("refuses %s with the profile text", (_label, body) => {
+    expect(parseProfileUpdate(body)).toEqual({ ok: false, error: PROFILE_ERROR })
+  })
+
+  it("refuses unknown fields with the unknown-field text", () => {
+    expect(parseProfileUpdate({ plan: "misto", cnpj: "1" })).toEqual({
+      ok: false,
+      error: UNKNOWN_ERROR,
+    })
+  })
+
+  it("checks the unknown field before the plan, and the plan before the other fields", () => {
+    expect(parseProfileUpdate({ plan: "premium", cnpj: "1" })).toEqual({
+      ok: false,
+      error: UNKNOWN_ERROR,
+    })
+    expect(parseProfileUpdate({ plan: "premium", city: "x".repeat(61) })).toEqual({
+      ok: false,
+      error: PLAN_ERROR,
+    })
+  })
+
+  it.each([
+    ["a string", "texto"],
+    ["null", null],
+    ["an array", [1]],
+  ])("refuses %s body", (_label, body) => {
+    expect(parseProfileUpdate(body)).toEqual({
+      ok: false,
+      error: "O pedido precisa ser um objeto JSON.",
+    })
   })
 })

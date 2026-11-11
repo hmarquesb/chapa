@@ -2,14 +2,16 @@ import { describe, expect, it } from "vitest"
 import {
   createChatHandler,
   createCleanupHandler,
+  createDeleteAccountHandler,
   createDeleteSessionHandler,
   createHealthHandler,
   createHistoryHandler,
   createLazyHandler,
   createListSessionsHandler,
+  createProfileHandlers,
 } from "@/app/api/_lib/handlers"
 import type { LogEntry } from "@/app/api/_lib/log"
-import { chunkConfigKey, config } from "@/config"
+import { type AppConfig, chunkConfigKey, config } from "@/config"
 import {
   LlmQuotaError,
   LlmRequestError,
@@ -32,6 +34,7 @@ import type {
   SessionRepository,
   StoredMessage,
 } from "@/core/types"
+import type { RestaurantProfile } from "@/lib/types"
 
 const SESSION_ID = "0b7c9a52-3f0e-4d4f-9a55-2a1f3c1d9e10"
 const OTHER_ID = "5f1d2c3b-4a59-4e6f-8a7b-9c0d1e2f3a4b"
@@ -122,7 +125,11 @@ class FakeAssistant implements Assistant {
 }
 
 function chatSetup(
-  overrides: { secret?: () => string; authenticate?: () => Promise<AccountRecord | null> } = {},
+  overrides: {
+    secret?: () => string
+    authenticate?: () => Promise<AccountRecord | null>
+    config?: AppConfig
+  } = {},
 ) {
   const assistant = new FakeAssistant()
   const sessions = new FakeSessions()
@@ -142,7 +149,7 @@ function chatSetup(
         authCalls += 1
         return ACCOUNT
       }),
-    config,
+    config: overrides.config ?? config,
     ipHashSecret:
       overrides.secret ??
       (() => {
@@ -203,7 +210,7 @@ describe("createChatHandler", () => {
     const { handler, rateLimits, accounts, authCalls } = chatSetup()
     expect((await handler(chatRequest(VALID))).status).toBe(200)
     expect(accounts.touched).toEqual([ACCOUNT.id])
-    expect(rateLimits.order).toEqual(["hit", "hit", "touchLastSeen"])
+    expect(rateLimits.order).toEqual(["hit", "hit", "hit", "touchLastSeen"])
     expect(authCalls()).toBe(1)
   })
 
@@ -225,8 +232,7 @@ describe("createChatHandler", () => {
 
   it("answers a valid request with exactly status, answer, sources and sessionId", async () => {
     const { handler, assistant } = chatSetup()
-    const profile = { name: "Pizzaria Bella", city: "Recife" }
-    const res = await handler(chatRequest({ ...VALID, profile }))
+    const res = await handler(chatRequest(VALID))
     expect(res.status).toBe(200)
     const body = (await res.json()) as Record<string, unknown>
     expect(Object.keys(body).sort()).toEqual(["answer", "sessionId", "sources", "status"])
@@ -236,7 +242,67 @@ describe("createChatHandler", () => {
       sources: REPLY.sources,
       sessionId: SESSION_ID,
     })
-    expect(assistant.inputs).toEqual([{ ...VALID, profile, channel: "web", accountId: ACCOUNT.id }])
+    expect(assistant.inputs).toEqual([
+      { ...VALID, channel: "web", accountId: ACCOUNT.id, accountProfile: {} },
+    ])
+  })
+
+  it("passes the profile of the authenticated account to the assistant", async () => {
+    const profile = { name: "Pizzaria Bella", plan: "entrega" as const }
+    const { handler, assistant } = chatSetup({
+      authenticate: async () => ({ ...ACCOUNT, profile }),
+    })
+    expect((await handler(chatRequest(VALID))).status).toBe(200)
+    expect(assistant.inputs[0]?.accountProfile).toEqual(profile)
+    expect(assistant.inputs[0]).not.toHaveProperty("profile")
+  })
+
+  it("refuses a profile in the body with 400, before the rate limit", async () => {
+    const { handler, assistant, rateLimits } = chatSetup()
+    const res = await handler(chatRequest({ ...VALID, profile: { plan: "misto" } }))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      error: "O perfil agora fica salvo na conta. Recarregue a página.",
+    })
+    expect(assistant.inputs).toEqual([])
+    expect(rateLimits.hits).toBe(0)
+  })
+
+  it("denies the message over the account daily limit with the text of the account kind", async () => {
+    const limited: AppConfig = {
+      ...config,
+      limits: { ...config.limits, messagesPerAccountPerDay: { google: 2, demo: 1 } },
+    }
+    const google = chatSetup({ config: limited })
+    expect((await google.handler(chatRequest(VALID))).status).toBe(200)
+    expect((await google.handler(chatRequest(VALID))).status).toBe(200)
+    const res = await google.handler(chatRequest(VALID))
+    expect(res.status).toBe(429)
+    expect(res.headers.get("retry-after")).toBe(String(12 * 3600 - 15))
+    expect(await res.json()).toEqual({
+      error: "Você chegou ao limite de mensagens de hoje nesta conta. Volte amanhã.",
+    })
+    expect(google.assistant.inputs).toHaveLength(2)
+    expect(google.accounts.touched).toHaveLength(2)
+
+    const demo = chatSetup({
+      config: limited,
+      authenticate: async () => ({ ...ACCOUNT, kind: "demo", email: null }),
+    })
+    expect((await demo.handler(chatRequest(VALID))).status).toBe(200)
+    const demoRes = await demo.handler(chatRequest(VALID))
+    expect(demoRes.status).toBe(429)
+    expect(await demoRes.json()).toEqual({
+      error:
+        "A conta de demonstração chegou ao limite de mensagens de hoje. Entre com Google para continuar.",
+    })
+  })
+
+  it("counts the account daily limit by account id, and not the requests refused by the IP", async () => {
+    const { handler, rateLimits } = chatSetup()
+    for (let i = 1; i <= 11; i += 1) await handler(chatRequest(VALID))
+    const key = `${ACCOUNT.id}|account_day|2026-11-06T00:00:00.000Z`
+    expect(rateLimits.counts.get(key)).toBe(10)
   })
 
   it("starts a new conversation with a fresh UUID when sessionId is absent", async () => {
@@ -251,6 +317,7 @@ describe("createChatHandler", () => {
         message: "Quando cai o repasse?",
         channel: "web",
         accountId: ACCOUNT.id,
+        accountProfile: {},
       },
     ])
     expect(sessions.calls).toEqual([])
@@ -312,12 +379,6 @@ describe("createChatHandler", () => {
     expect(res.status).toBe(400)
     expect(assistant.inputs).toEqual([])
     expect(rateLimits.hits).toBe(0)
-  })
-
-  it("refuses a profile with an unknown key with 400", async () => {
-    const { handler } = chatSetup()
-    const res = await handler(chatRequest({ ...VALID, profile: { name: "Bella", cpf: "1" } }))
-    expect(res.status).toBe(400)
   })
 
   it("refuses invalid JSON with 400", async () => {
@@ -464,12 +525,10 @@ describe("request logs", () => {
   })
 
   it("never contain the message, the profile, the sessionId or the IP", async () => {
-    const { handler, assistant, logs } = chatSetup()
-    const body = {
-      sessionId: SESSION_ID,
-      message: "MARCADOR-SECRETO-123",
-      profile: { name: "MARCADOR-PERFIL" },
-    }
+    const { handler, assistant, logs } = chatSetup({
+      authenticate: async () => ({ ...ACCOUNT, profile: { name: "MARCADOR-PERFIL" } }),
+    })
+    const body = { sessionId: SESSION_ID, message: "MARCADOR-SECRETO-123" }
     await handler(chatRequest(body))
     await handler(chatRequest({ ...body, sessionId: "MARCADOR-SECRETO-123" }))
     assistant.failWith = new Error("MARCADOR-SECRETO-123")
@@ -505,7 +564,7 @@ const SESSION: SessionRecord = {
   id: SESSION_ID,
   channel: "web",
   accountId: ACCOUNT.id,
-  profile: { name: "Pizzaria Bella", plan: "Básico" },
+  profile: { name: "Pizzaria Bella", plan: "misto" },
   summary: "RESUMO-INTERNO",
   summaryUntilId: null,
   createdAt: new Date("2026-11-06T11:00:00.000Z"),
@@ -634,13 +693,12 @@ describe("createHistoryHandler", () => {
     expect(logs[0]?.accountId).toBe(ACCOUNT.id)
   })
 
-  it("returns the profile and every message in order, with ISO dates", async () => {
+  it("returns every message in order, with ISO dates and no profile", async () => {
     const { res, sessions, logs } = historyCall(SESSION_ID)
     const response = await res
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
       sessionId: SESSION_ID,
-      profile: SESSION.profile,
       messages: [
         {
           id: 7,
@@ -981,5 +1039,162 @@ describe("createLazyHandler", () => {
       params: Promise.resolve({ id: "7" }),
     })
     expect(await res.text()).toBe("7")
+  })
+})
+
+// ---------- GET e PUT /api/profile ----------
+
+class FakeProfileAccounts {
+  updates: Array<{ id: string; profile: RestaurantProfile }> = []
+  failWith: unknown = null
+
+  async updateProfile(id: string, profile: RestaurantProfile) {
+    if (this.failWith !== null) throw this.failWith
+    this.updates.push({ id, profile })
+    return profile
+  }
+}
+
+function profileSetup(authenticate: () => Promise<AccountRecord | null> = async () => ACCOUNT) {
+  const accounts = new FakeProfileAccounts()
+  const logs: LogEntry[] = []
+  const handlers = createProfileHandlers({
+    accounts,
+    authenticate,
+    config,
+    log: (entry) => logs.push(entry),
+  })
+  return { accounts, logs, ...handlers }
+}
+
+function profileRequest(
+  method: string,
+  body?: unknown,
+  init: { contentType?: string; raw?: string } = {},
+): Request {
+  return new Request("http://localhost/api/profile", {
+    method,
+    headers: { "content-type": init.contentType ?? "application/json" },
+    body: method === "GET" ? undefined : (init.raw ?? JSON.stringify(body)),
+  })
+}
+
+describe("createProfileHandlers", () => {
+  it("GET returns the profile of the account", async () => {
+    const profile = { name: "Pizzaria Bella", plan: "misto" as const }
+    const { get, logs } = profileSetup(async () => ({ ...ACCOUNT, profile }))
+    const res = await get(profileRequest("GET"))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ profile })
+    expect(logs).toEqual([
+      expect.objectContaining({ route: "/api/profile", method: "GET", status: 200 }),
+    ])
+    expect(logs[0]?.accountId).toBe(ACCOUNT.id)
+  })
+
+  it("PUT trims, drops empty fields, saves on the account and answers the saved profile", async () => {
+    const { put, accounts, logs } = profileSetup()
+    const res = await put(
+      profileRequest("PUT", { name: "  Pizzaria Bella ", plan: "entrega", city: "" }),
+    )
+    expect(res.status).toBe(200)
+    const profile = { name: "Pizzaria Bella", plan: "entrega" }
+    expect(await res.json()).toEqual({ profile })
+    expect(accounts.updates).toEqual([{ id: ACCOUNT.id, profile }])
+    expect(logs[0]).toMatchObject({ route: "/api/profile", method: "PUT", status: 200 })
+  })
+
+  it("PUT answers 400 for a missing or invalid plan and an unknown field, without saving", async () => {
+    const { put, accounts } = profileSetup()
+    const noPlan = await put(profileRequest("PUT", { name: "Bella" }))
+    expect(noPlan.status).toBe(400)
+    expect(await noPlan.json()).toEqual({ error: "Escolha o plano: Próprio, Entrega ou Misto." })
+    expect((await put(profileRequest("PUT", { plan: "premium" }))).status).toBe(400)
+    const unknown = await put(profileRequest("PUT", { plan: "misto", cnpj: "1" }))
+    expect(unknown.status).toBe(400)
+    expect(await unknown.json()).toEqual({ error: "O pedido tem campos desconhecidos." })
+    expect(accounts.updates).toEqual([])
+  })
+
+  it("PUT answers 413 for a body over the limit, 415 for a non-JSON type and 400 for broken JSON", async () => {
+    const { put, accounts } = profileSetup()
+    expect(
+      (await put(profileRequest("PUT", { plan: "misto", name: "x".repeat(5 * 1024) }))).status,
+    ).toBe(413)
+    expect((await put(profileRequest("PUT", {}, { contentType: "text/plain" }))).status).toBe(415)
+    expect((await put(profileRequest("PUT", null, { raw: "{oops" }))).status).toBe(400)
+    expect(accounts.updates).toEqual([])
+  })
+
+  it("answers 401 without a session, without reading the body", async () => {
+    const { get, put, accounts } = profileSetup(async () => null)
+    expect((await get(profileRequest("GET"))).status).toBe(401)
+    const req = profileRequest("PUT", { plan: "misto" }, { contentType: "text/plain" })
+    const res = await put(req)
+    expect(res.status).toBe(401)
+    expect(await res.json()).toEqual({ error: UNAUTHENTICATED })
+    expect(req.bodyUsed).toBe(false)
+    expect(accounts.updates).toEqual([])
+  })
+
+  it("PUT maps a database failure to 503", async () => {
+    const { put, accounts } = profileSetup()
+    accounts.failWith = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" })
+    expect((await put(profileRequest("PUT", { plan: "misto" }))).status).toBe(503)
+  })
+})
+
+// ---------- DELETE /api/account ----------
+
+describe("createDeleteAccountHandler", () => {
+  function deleteSetup(authenticate: () => Promise<AccountRecord | null> = async () => ACCOUNT) {
+    const deleted: string[] = []
+    const logs: LogEntry[] = []
+    let failWith: unknown = null
+    const handler = createDeleteAccountHandler({
+      accounts: {
+        async delete(id: string) {
+          if (failWith !== null) throw failWith
+          deleted.push(id)
+          return true
+        },
+      },
+      authenticate,
+      log: (entry) => logs.push(entry),
+    })
+    return {
+      handler,
+      deleted,
+      logs,
+      failWith: (error: unknown) => {
+        failWith = error
+      },
+    }
+  }
+  const request = () => new Request("http://localhost/api/account", { method: "DELETE" })
+
+  it("deletes the account, answers 204 without a body and no-store", async () => {
+    const { handler, deleted, logs } = deleteSetup()
+    const res = await handler(request())
+    expect(res.status).toBe(204)
+    expect(await res.text()).toBe("")
+    expect(res.headers.get("cache-control")).toBe("no-store")
+    expect(deleted).toEqual([ACCOUNT.id])
+    expect(logs[0]).toMatchObject({ route: "/api/account", method: "DELETE", status: 204 })
+    expect(logs[0]?.accountId).toBe(ACCOUNT.id)
+  })
+
+  it("answers 401 without a session and deletes nothing", async () => {
+    const { handler, deleted } = deleteSetup(async () => null)
+    const res = await handler(request())
+    expect(res.status).toBe(401)
+    expect(await res.json()).toEqual({ error: UNAUTHENTICATED })
+    expect(deleted).toEqual([])
+  })
+
+  it("maps a database failure to 503", async () => {
+    const { handler, failWith } = deleteSetup()
+    failWith(Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }))
+    expect((await handler(request())).status).toBe(503)
   })
 })

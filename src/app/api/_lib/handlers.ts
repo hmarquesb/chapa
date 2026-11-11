@@ -2,8 +2,8 @@ import { randomUUID, timingSafeEqual } from "node:crypto"
 import { ERROR_MESSAGES } from "@/app/api/_lib/errors"
 import { HttpError, json, readJsonBody } from "@/app/api/_lib/http"
 import { type LogEntry, logRequest } from "@/app/api/_lib/log"
-import { checkRateLimit } from "@/app/api/_lib/rate-limit"
-import { isUuid, parseChatRequest } from "@/app/api/_lib/validate"
+import { checkAccountDailyLimit, checkRateLimit } from "@/app/api/_lib/rate-limit"
+import { isUuid, parseChatRequest, parseProfileUpdate } from "@/app/api/_lib/validate"
 import { type AppConfig, chunkConfigKey } from "@/config"
 import { conversationTitle, sessionCleanupCutoffs } from "@/core/conversations"
 import { LlmQuotaError, LlmUnavailableError, SessionNotFoundError } from "@/core/errors"
@@ -23,6 +23,7 @@ import type {
   ConversationListItem,
   HealthResponse,
   HistoryMessage,
+  ProfileResponse,
   SessionHistoryResponse,
   SessionListResponse,
 } from "@/lib/types"
@@ -38,6 +39,8 @@ const RATE_LIMIT_RETENTION_DAYS = 2
 
 const ROUTES = {
   chat: "/api/chat",
+  profile: "/api/profile",
+  account: "/api/account",
   history: "/api/sessions/[id]/messages", // the template, never the real path with the id
   sessions: "/api/sessions",
   session: "/api/sessions/[id]",
@@ -173,11 +176,26 @@ export function createChatHandler(deps: {
           "Retry-After": String(limit.retryAfterSeconds),
         })
       }
+      const accountLimit = await checkAccountDailyLimit({
+        accountId: account.id,
+        kind: account.kind,
+        now: now(),
+        repo: deps.rateLimits,
+        limits: limits.messagesPerAccountPerDay,
+      })
+      if (!accountLimit.allowed) {
+        finish({ status: 429 })
+        const message =
+          account.kind === "demo" ? ERROR_MESSAGES.demoDailyLimit : ERROR_MESSAGES.accountDailyLimit
+        return errorResponse(429, message, {
+          "Retry-After": String(accountLimit.retryAfterSeconds),
+        })
+      }
       await deps.accounts.touchLastSeen(account.id)
 
       // Without sessionId the server creates the id; with one, it must belong to the account
       // (a foreign id answers like an unknown one: 404).
-      const { sessionId: requestedId, ...rest } = parsed.value
+      const { sessionId: requestedId, message } = parsed.value
       const isNew = requestedId === undefined
       if (!isNew && (await deps.sessions.get(requestedId, { accountId: account.id })) === null) {
         throw new HttpError(404, ERROR_MESSAGES.sessionNotFound)
@@ -185,10 +203,12 @@ export function createChatHandler(deps: {
       const sessionId = requestedId ?? randomUUID()
 
       const reply = await deps.assistant.handleMessage({
-        ...rest,
         sessionId,
+        message,
         channel: "web",
         accountId: account.id,
+        // The profile comes from the account the database just returned, never from the body.
+        accountProfile: account.profile,
       })
       finish({
         status: 200,
@@ -248,10 +268,79 @@ export function createHistoryHandler(deps: {
       finish({ status: 200 })
       const body: SessionHistoryResponse = {
         sessionId: session.id,
-        profile: session.profile,
         messages: messages.map(toHistoryMessage),
       }
       return json(body)
+    } catch (error) {
+      return failed(error, finish)
+    }
+  }
+}
+
+// ---------- GET e PUT /api/profile ----------
+
+function requireJson(req: Request): void {
+  const contentType = req.headers.get("content-type") ?? ""
+  if (!contentType.toLowerCase().startsWith("application/json")) {
+    throw new HttpError(415, ERROR_MESSAGES.unsupportedMediaType)
+  }
+}
+
+export function createProfileHandlers(deps: {
+  accounts: Pick<AccountRepository, "updateProfile">
+  authenticate: Authenticate
+  config: AppConfig
+  log?: Log
+}): { get: (req: Request) => Promise<Response>; put: (req: Request) => Promise<Response> } {
+  const log = deps.log ?? logRequest
+
+  return {
+    get: async () => {
+      const finish = startRequest(ROUTES.profile, "GET", log)
+      try {
+        const account = await requireAccount(deps.authenticate, finish)
+        finish({ status: 200 })
+        const body: ProfileResponse = { profile: account.profile }
+        return json(body)
+      } catch (error) {
+        return failed(error, finish)
+      }
+    },
+    put: async (req) => {
+      const finish = startRequest(ROUTES.profile, "PUT", log)
+      try {
+        // Without a session the body is never read.
+        const account = await requireAccount(deps.authenticate, finish)
+        requireJson(req)
+        const parsed = parseProfileUpdate(await readJsonBody(req, deps.config.limits.maxBodyBytes))
+        if (!parsed.ok) throw new HttpError(400, parsed.error)
+        const profile = await deps.accounts.updateProfile(account.id, parsed.value)
+        finish({ status: 200 })
+        const body: ProfileResponse = { profile }
+        return json(body)
+      } catch (error) {
+        return failed(error, finish)
+      }
+    },
+  }
+}
+
+// ---------- DELETE /api/account ----------
+
+export function createDeleteAccountHandler(deps: {
+  accounts: Pick<AccountRepository, "delete">
+  authenticate: Authenticate
+  log?: Log
+}): (req: Request) => Promise<Response> {
+  const log = deps.log ?? logRequest
+
+  return async () => {
+    const finish = startRequest(ROUTES.account, "DELETE", log)
+    try {
+      const account = await requireAccount(deps.authenticate, finish)
+      await deps.accounts.delete(account.id)
+      finish({ status: 204 })
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
     } catch (error) {
       return failed(error, finish)
     }
