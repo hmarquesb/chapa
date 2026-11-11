@@ -26,6 +26,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0018](0018-empresa-ficticia-rango.md) | Usar a empresa fictícia Rango no lugar de fontes públicas | Aceito |
 | [0019](0019-regras-yaml-fonte-unica.md) | Usar o regras.yaml como fonte única dos números | Aceito |
 | [0020](0020-login-google-e-conta-demo.md) | Exigir login com Google, com uma conta demo isolada por clique | Aceito |
+| [0021](0021-autorizacao-por-conta-no-repositorio.md) | Autorizar o acesso às conversas por conta, no repositório | Aceito |
 
 ## Modelo
 

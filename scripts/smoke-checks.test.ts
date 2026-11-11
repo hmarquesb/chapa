@@ -12,6 +12,7 @@ import {
   checkHealth,
   checkHistory,
   checkHomePage,
+  checkSessionList,
   checkSignInPage,
   checkUnauthenticatedChat,
   EXPECTED_HISTORY_LENGTH,
@@ -19,6 +20,7 @@ import {
   hintForStatus,
   mergeCookies,
   parseBaseUrl,
+  readChatSessionId,
   SMOKE_MESSAGES,
   type SmokeResponse,
 } from "./smoke-checks"
@@ -140,19 +142,28 @@ describe("checkHealth", () => {
 describe("checkChatAnswered", () => {
   it("passes with answered and at least one source", () => {
     const result = checkChatAnswered(
-      res(200, { status: "answered", answer: "x", sources: ["03-repasse.md"] }),
+      res(200, {
+        status: "answered",
+        answer: "x",
+        sources: ["03-repasse.md"],
+        sessionId: SESSION_ID,
+      }),
     )
     expect(result.ok).toBe(true)
   })
 
   it("fails without sources", () => {
-    expect(checkChatAnswered(res(200, { status: "answered", answer: "x", sources: [] })).ok).toBe(
-      false,
-    )
+    expect(
+      checkChatAnswered(
+        res(200, { status: "answered", answer: "x", sources: [], sessionId: SESSION_ID }),
+      ).ok,
+    ).toBe(false)
   })
 
   it("fails with another status", () => {
-    const result = checkChatAnswered(res(200, { status: "fallback", answer: "x", sources: [] }))
+    const result = checkChatAnswered(
+      res(200, { status: "fallback", answer: "x", sources: [], sessionId: SESSION_ID }),
+    )
     expect(result.ok).toBe(false)
     expect(!result.ok && result.reason).toContain("fallback")
   })
@@ -166,22 +177,84 @@ describe("checkChatAnswered", () => {
 
   it("does not echo the answer text on success", () => {
     const result = checkChatAnswered(
-      res(200, { status: "answered", answer: "TEXTO-DA-RESPOSTA", sources: ["a.md"] }),
+      res(200, {
+        status: "answered",
+        answer: "TEXTO-DA-RESPOSTA",
+        sources: ["a.md"],
+        sessionId: SESSION_ID,
+      }),
     )
     expect(result.ok && result.detail).not.toContain("TEXTO-DA-RESPOSTA")
   })
 })
 
+describe("chat contract with sessionId", () => {
+  it("accepts a null sessionId and rejects a missing or non-string one", () => {
+    const body = { status: "fallback", answer: "x", sources: [] }
+    expect(checkChatFallback(res(200, { ...body, sessionId: null })).ok).toBe(true)
+    expect(checkChatFallback(res(200, body)).ok).toBe(false)
+    expect(checkChatFallback(res(200, { ...body, sessionId: 7 })).ok).toBe(false)
+  })
+
+  it("never echoes the sessionId", () => {
+    const result = checkChatAnswered(
+      res(200, { status: "answered", answer: "x", sources: ["a.md"], sessionId: SESSION_ID }),
+    )
+    expect(result.ok && result.detail).not.toContain(SESSION_ID)
+  })
+})
+
+describe("readChatSessionId", () => {
+  it("returns the id of a 200 reply", () => {
+    expect(readChatSessionId(res(200, { sessionId: SESSION_ID }))).toBe(SESSION_ID)
+  })
+
+  it("returns null for errors, null ids and malformed bodies", () => {
+    expect(readChatSessionId(res(429, { sessionId: SESSION_ID }))).toBeNull()
+    expect(readChatSessionId(res(200, { sessionId: null }))).toBeNull()
+    expect(readChatSessionId(res(200, { sessionId: "not-a-uuid" }))).toBeNull()
+    expect(readChatSessionId(res(200, "text"))).toBeNull()
+  })
+})
+
+describe("checkSessionList", () => {
+  const item = { id: SESSION_ID, title: "Pergunta", lastActivityAt: "2026-11-10T14:05:00Z" }
+
+  it("passes when the list has the conversation", () => {
+    const result = checkSessionList(res(200, { sessions: [item] }), SESSION_ID)
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.detail).not.toContain(SESSION_ID)
+  })
+
+  it("fails when the conversation is missing from the list", () => {
+    const other = { ...item, id: "11111111-2222-4333-8444-555555555555" }
+    expect(checkSessionList(res(200, { sessions: [other] }), SESSION_ID).ok).toBe(false)
+    expect(checkSessionList(res(200, { sessions: [] }), SESSION_ID).ok).toBe(false)
+  })
+
+  it("fails on an HTTP error or a body outside the contract", () => {
+    expect(checkSessionList(res(401, { error: "x" }), SESSION_ID).ok).toBe(false)
+    expect(checkSessionList(res(200, { foo: 1 }), SESSION_ID).ok).toBe(false)
+    expect(checkSessionList(res(200, { sessions: [{ id: SESSION_ID }] }), SESSION_ID).ok).toBe(
+      false,
+    )
+  })
+})
+
 describe("checkChatFallback", () => {
   it("passes with fallback", () => {
-    expect(checkChatFallback(res(200, { status: "fallback", answer: "x", sources: [] })).ok).toBe(
-      true,
-    )
+    expect(
+      checkChatFallback(
+        res(200, { status: "fallback", answer: "x", sources: [], sessionId: SESSION_ID }),
+      ).ok,
+    ).toBe(true)
   })
 
   it("fails with answered", () => {
     expect(
-      checkChatFallback(res(200, { status: "answered", answer: "x", sources: ["a.md"] })).ok,
+      checkChatFallback(
+        res(200, { status: "answered", answer: "x", sources: ["a.md"], sessionId: SESSION_ID }),
+      ).ok,
     ).toBe(false)
   })
 })
@@ -189,13 +262,17 @@ describe("checkChatFallback", () => {
 describe("checkBlockedInput", () => {
   it("passes with blocked_input", () => {
     expect(
-      checkBlockedInput(res(200, { status: "blocked_input", answer: "x", sources: [] })).ok,
+      checkBlockedInput(
+        res(200, { status: "blocked_input", answer: "x", sources: [], sessionId: SESSION_ID }),
+      ).ok,
     ).toBe(true)
   })
 
   it("fails with answered or an HTTP error", () => {
     expect(
-      checkBlockedInput(res(200, { status: "answered", answer: "x", sources: ["a.md"] })).ok,
+      checkBlockedInput(
+        res(200, { status: "answered", answer: "x", sources: ["a.md"], sessionId: SESSION_ID }),
+      ).ok,
     ).toBe(false)
     expect(checkBlockedInput(res(400, { error: "x" })).ok).toBe(false)
   })

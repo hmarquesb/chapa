@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { formatSourceLabel, formatTime } from "@/lib/format"
+import { formatActivity, formatSourceLabel, formatTime } from "@/lib/format"
 
 describe("formatTime", () => {
   it("formats hours and minutes in pt-BR with two digits", () => {
@@ -39,5 +39,27 @@ describe("formatSourceLabel", () => {
 
   it("falls back to the original name when nothing is left", () => {
     expect(formatSourceLabel("01.md")).toBe("01.md")
+  })
+})
+
+describe("formatActivity", () => {
+  const now = new Date("2026-11-10T18:00:00Z")
+
+  it("shows the time when the activity is on the same calendar day", () => {
+    expect(formatActivity("2026-11-10T14:05:00Z", now, "UTC")).toBe("14:05")
+  })
+
+  it("shows day/month for another day", () => {
+    expect(formatActivity("2026-11-09T14:05:00Z", now, "UTC")).toBe("09/11")
+    expect(formatActivity("2026-10-10T14:05:00Z", now, "UTC")).toBe("10/10")
+  })
+
+  it("compares calendar days in the given time zone", () => {
+    // 02:00Z on the 10th is still the 9th in São Paulo, while now is the 10th there.
+    expect(formatActivity("2026-11-10T02:00:00Z", now, "America/Sao_Paulo")).toBe("09/11")
+  })
+
+  it("returns an empty string for an invalid date", () => {
+    expect(formatActivity("not a date", now, "UTC")).toBe("")
   })
 })

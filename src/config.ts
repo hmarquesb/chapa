@@ -32,7 +32,12 @@ export type AppConfig = {
     rateLimitPerMinute: number
     rateLimitPerDay: number
   }
-  sessionTtlDays: number
+  sessionTtlDays: number // vale só para conversas do cli e do eval
+  conversations: {
+    webTtlDays: number // conversas web sem atividade são apagadas
+    listLimit: number // conversas mais recentes na lista da conta
+    titleMaxChars: number // corte do título (primeira pergunta)
+  }
   accounts: {
     sessionMaxAgeDays: number // validade do cookie de sessão
     demoTtlDays: number // vida da conta demo
@@ -128,6 +133,11 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       rateLimitPerDay: 100,
     },
     sessionTtlDays: 7,
+    conversations: {
+      webTtlDays: 30,
+      listLimit: 50,
+      titleMaxChars: 60,
+    },
     accounts: {
       sessionMaxAgeDays: 30,
       demoTtlDays: 7,

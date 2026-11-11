@@ -1,11 +1,12 @@
-import { timingSafeEqual } from "node:crypto"
+import { randomUUID, timingSafeEqual } from "node:crypto"
 import { ERROR_MESSAGES } from "@/app/api/_lib/errors"
 import { HttpError, json, readJsonBody } from "@/app/api/_lib/http"
 import { type LogEntry, logRequest } from "@/app/api/_lib/log"
 import { checkRateLimit } from "@/app/api/_lib/rate-limit"
 import { isUuid, parseChatRequest } from "@/app/api/_lib/validate"
 import { type AppConfig, chunkConfigKey } from "@/config"
-import { LlmQuotaError, LlmUnavailableError } from "@/core/errors"
+import { conversationTitle, sessionCleanupCutoffs } from "@/core/conversations"
+import { LlmQuotaError, LlmUnavailableError, SessionNotFoundError } from "@/core/errors"
 import { getClientIp, hashIp } from "@/core/request-limits"
 import type {
   AccountRecord,
@@ -19,9 +20,11 @@ import type {
 import type {
   ApiErrorResponse,
   ChatResponse,
+  ConversationListItem,
   HealthResponse,
   HistoryMessage,
   SessionHistoryResponse,
+  SessionListResponse,
 } from "@/lib/types"
 
 type Log = (entry: LogEntry) => void
@@ -36,6 +39,8 @@ const RATE_LIMIT_RETENTION_DAYS = 2
 const ROUTES = {
   chat: "/api/chat",
   history: "/api/sessions/[id]/messages", // the template, never the real path with the id
+  sessions: "/api/sessions",
+  session: "/api/sessions/[id]",
   health: "/api/health",
   cleanup: "/api/cron/cleanup",
 } as const
@@ -76,6 +81,9 @@ function errorName(error: unknown): string {
 // Only fixed PT-BR texts leave the server: never the provider's message nor a stack trace.
 function toPublicError(error: unknown): { status: number; message: string } {
   if (error instanceof HttpError) return { status: error.status, message: error.publicMessage }
+  if (error instanceof SessionNotFoundError) {
+    return { status: 404, message: ERROR_MESSAGES.sessionNotFound }
+  }
   if (error instanceof LlmQuotaError) return { status: 429, message: ERROR_MESSAGES.llmQuota }
   if (error instanceof LlmUnavailableError || isDbUnavailable(error)) {
     return { status: 503, message: ERROR_MESSAGES.unavailable }
@@ -125,6 +133,7 @@ function failed(error: unknown, finish: Finish): Response {
 
 export function createChatHandler(deps: {
   assistant: Assistant
+  sessions: Pick<SessionRepository, "get">
   rateLimits: RateLimitRepository
   accounts: Pick<AccountRepository, "touchLastSeen">
   authenticate: Authenticate
@@ -166,7 +175,21 @@ export function createChatHandler(deps: {
       }
       await deps.accounts.touchLastSeen(account.id)
 
-      const reply = await deps.assistant.handleMessage({ ...parsed.value, channel: "web" })
+      // Without sessionId the server creates the id; with one, it must belong to the account
+      // (a foreign id answers like an unknown one: 404).
+      const { sessionId: requestedId, ...rest } = parsed.value
+      const isNew = requestedId === undefined
+      if (!isNew && (await deps.sessions.get(requestedId, { accountId: account.id })) === null) {
+        throw new HttpError(404, ERROR_MESSAGES.sessionNotFound)
+      }
+      const sessionId = requestedId ?? randomUUID()
+
+      const reply = await deps.assistant.handleMessage({
+        ...rest,
+        sessionId,
+        channel: "web",
+        accountId: account.id,
+      })
       finish({
         status: 200,
         replyStatus: reply.status,
@@ -179,6 +202,8 @@ export function createChatHandler(deps: {
         status: reply.status,
         answer: reply.answer,
         sources: reply.sources,
+        // A new conversation blocked at the input is never saved: there is no id to adopt.
+        sessionId: isNew && reply.status === "blocked_input" ? null : sessionId,
       }
       return json(body)
     } catch (error) {
@@ -210,14 +235,15 @@ export function createHistoryHandler(deps: {
   return async (_req, ctx) => {
     const finish = startRequest(ROUTES.history, "GET", log)
     try {
-      // The owner of the conversation is checked in the change scope-conversations-to-accounts.
-      await requireAccount(deps.authenticate, finish)
+      const account = await requireAccount(deps.authenticate, finish)
       const { id } = await ctx.params
       if (!isUuid(id)) throw new HttpError(400, ERROR_MESSAGES.invalidSessionId)
+      // Another account's conversation answers exactly like an unknown one.
       // Read-only: get and listMessages never update last_activity_at.
-      const session = await deps.sessions.get(id)
+      const owner = { accountId: account.id }
+      const session = await deps.sessions.get(id, owner)
       if (session === null) throw new HttpError(404, ERROR_MESSAGES.sessionNotFound)
-      const messages = await deps.sessions.listMessages(session.id)
+      const messages = await deps.sessions.listMessages(session.id, owner)
 
       finish({ status: 200 })
       const body: SessionHistoryResponse = {
@@ -226,6 +252,61 @@ export function createHistoryHandler(deps: {
         messages: messages.map(toHistoryMessage),
       }
       return json(body)
+    } catch (error) {
+      return failed(error, finish)
+    }
+  }
+}
+
+// ---------- GET /api/sessions ----------
+
+export function createListSessionsHandler(deps: {
+  sessions: SessionRepository
+  authenticate: Authenticate
+  config: AppConfig
+  log?: Log
+}): (req: Request) => Promise<Response> {
+  const log = deps.log ?? logRequest
+  const { listLimit, titleMaxChars } = deps.config.conversations
+
+  return async () => {
+    const finish = startRequest(ROUTES.sessions, "GET", log)
+    try {
+      const account = await requireAccount(deps.authenticate, finish)
+      const records = await deps.sessions.listForAccount(account.id, listLimit)
+      const items: ConversationListItem[] = records.map((record) => ({
+        id: record.id,
+        title: conversationTitle(record.firstQuestion, titleMaxChars),
+        lastActivityAt: record.lastActivityAt.toISOString(),
+      }))
+      finish({ status: 200 })
+      const body: SessionListResponse = { sessions: items }
+      return json(body)
+    } catch (error) {
+      return failed(error, finish)
+    }
+  }
+}
+
+// ---------- DELETE /api/sessions/[id] ----------
+
+export function createDeleteSessionHandler(deps: {
+  sessions: SessionRepository
+  authenticate: Authenticate
+  log?: Log
+}): (req: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response> {
+  const log = deps.log ?? logRequest
+
+  return async (_req, ctx) => {
+    const finish = startRequest(ROUTES.session, "DELETE", log)
+    try {
+      const account = await requireAccount(deps.authenticate, finish)
+      const { id } = await ctx.params
+      if (!isUuid(id)) throw new HttpError(400, ERROR_MESSAGES.invalidSessionId)
+      const deleted = await deps.sessions.deleteForAccount(id, account.id)
+      if (!deleted) throw new HttpError(404, ERROR_MESSAGES.sessionNotFound)
+      finish({ status: 204 })
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
     } catch (error) {
       return failed(error, finish)
     }
@@ -292,7 +373,7 @@ export function createCleanupHandler(deps: {
 
       const current = now().getTime()
       const deletedSessions = await deps.sessions.deleteInactive(
-        new Date(current - deps.config.sessionTtlDays * DAY_MS),
+        sessionCleanupCutoffs(new Date(current), deps.config),
       )
       const deletedRateLimits = await deps.rateLimits.deleteBefore(
         new Date(current - RATE_LIMIT_RETENTION_DAYS * DAY_MS),

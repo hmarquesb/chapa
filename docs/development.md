@@ -28,7 +28,7 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 
 - A página do chat (`src/app/page.tsx`) e a tela de entrada (`src/app/entrar/page.tsx`), com os componentes do chat em `src/components/chat/`, os da entrada em `src/components/auth/` e os do shadcn em `src/components/ui/`. As Server Actions de login ficam em `src/app/auth-actions.ts` e chegam aos componentes por props.
 - Para adicionar um componente, use `npx shadcn add <componente>` (skill `shadcn`). Prefira as variantes prontas e as cores semânticas (`bg-primary`, `text-muted-foreground`).
-- Estado do chat em `src/lib/chat-state.ts`, chamadas à API em `src/lib/api-client.ts` e o `sessionId` em `src/lib/session-id.ts`. O navegador só fala com a nossa API.
+- Estado do chat em `src/lib/chat-state.ts`, chamadas à API em `src/lib/api-client.ts` e a lista de conversas em `src/lib/` (`format.ts` formata as datas). O navegador não guarda o id da conversa: ele vem da API. O navegador só fala com a nossa API.
 - Acessibilidade e responsividade fazem parte do pronto. Revise com a skill `web-design-guidelines`.
 
 ## Login no ambiente local
@@ -38,7 +38,7 @@ A tabela "Onde mexer", com o arquivo e os cuidados de cada tipo de mudança, fic
 
 ## Scripts locais
 
-`scripts/` roda fora da Vercel, com `tsx`, e pode importar `src/core/`, `src/infra/` e `src/config`. As flags são lidas por `scripts/lib/args.ts`. Mensagens de erro e de uso ficam em PT-BR. Todo script que chama API ou banco leva o aviso ⚠️ no `AGENTS.md`.
+`scripts/` roda fora da Vercel, com `tsx`, e pode importar `src/core/`, `src/infra/` e `src/config`. As flags são lidas por `scripts/lib/args.ts`. Mensagens de erro e de uso ficam em PT-BR. Todo script que chama API ou banco leva o aviso ⚠️ no `AGENTS.md`. O `npm run authz-check` confere, no banco `dev`, que toda consulta de conversa respeita o dono ([ADR 0021](adr/0021-autorizacao-por-conta-no-repositorio.md)): rode-o quando mexer em `src/infra/db/session-repository.ts` e acrescente um caso a cada consulta nova de conversa.
 
 ## Idioma
 

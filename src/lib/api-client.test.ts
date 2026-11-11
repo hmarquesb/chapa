@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { fetchHistory, NETWORK_ERROR_MESSAGE, sendMessage } from "@/lib/api-client"
-import type { ChatResponse, SessionHistoryResponse } from "@/lib/types"
+import {
+  deleteSession,
+  fetchHistory,
+  listSessions,
+  NETWORK_ERROR_MESSAGE,
+  sendMessage,
+} from "@/lib/api-client"
+import type { ChatResponse, SessionHistoryResponse, SessionListResponse } from "@/lib/types"
 
 const ID = "3f1c2b8e-9a4d-4c1e-8f7a-1b2c3d4e5f60"
 
@@ -24,7 +30,12 @@ function json(body: unknown, status = 200): Response {
 }
 
 describe("sendMessage", () => {
-  const reply: ChatResponse = { status: "answered", answer: "Sim.", sources: ["02-repasse.md"] }
+  const reply: ChatResponse = {
+    status: "answered",
+    answer: "Sim.",
+    sources: ["02-repasse.md"],
+    sessionId: ID,
+  }
 
   it("posts JSON to /api/chat and returns the reply", async () => {
     const { fn, calls } = fakeFetch(json(reply))
@@ -134,6 +145,85 @@ describe("fetchHistory", () => {
   it("maps a network failure to status 0", async () => {
     const { fn } = fakeFetch(new TypeError("Failed to fetch"))
     expect(await fetchHistory(ID, fn)).toEqual({
+      ok: false,
+      status: 0,
+      error: NETWORK_ERROR_MESSAGE,
+    })
+  })
+})
+
+describe("sendMessage sessionId", () => {
+  const base = { status: "blocked_input", answer: "Não posso.", sources: [] }
+
+  it("accepts a null sessionId", async () => {
+    const { fn } = fakeFetch(json({ ...base, sessionId: null }))
+    expect((await sendMessage({ message: "Oi" }, fn)).ok).toBe(true)
+  })
+
+  it("rejects a reply without sessionId or with a non-string one", async () => {
+    expect((await sendMessage({ message: "Oi" }, fakeFetch(json(base)).fn)).ok).toBe(false)
+    expect(
+      (await sendMessage({ message: "Oi" }, fakeFetch(json({ ...base, sessionId: 3 })).fn)).ok,
+    ).toBe(false)
+  })
+})
+
+describe("listSessions", () => {
+  const list: SessionListResponse = {
+    sessions: [{ id: ID, title: "O repasse cai via Pix?", lastActivityAt: "2026-11-10T14:05:00Z" }],
+  }
+
+  it("gets /api/sessions without cache and returns the list", async () => {
+    const { fn, calls } = fakeFetch(json(list))
+    expect(await listSessions(fn)).toEqual({ ok: true, data: list })
+    expect(calls[0]?.url).toBe("/api/sessions")
+    expect(calls[0]?.init?.method).toBe("GET")
+    expect(calls[0]?.init?.cache).toBe("no-store")
+  })
+
+  it("accepts an empty list", async () => {
+    const { fn } = fakeFetch(json({ sessions: [] }))
+    expect(await listSessions(fn)).toEqual({ ok: true, data: { sessions: [] } })
+  })
+
+  it("returns the 401 status", async () => {
+    const { fn } = fakeFetch(json({ error: "Entre para continuar." }, 401))
+    expect(await listSessions(fn)).toEqual({
+      ok: false,
+      status: 401,
+      error: "Entre para continuar.",
+    })
+  })
+
+  it("rejects an unexpected body", async () => {
+    expect((await listSessions(fakeFetch(json({ sessions: [{ id: ID }] })).fn)).ok).toBe(false)
+    expect((await listSessions(fakeFetch(json({})).fn)).ok).toBe(false)
+  })
+})
+
+describe("deleteSession", () => {
+  it("sends DELETE to /api/sessions/<id> and treats 204 as ok", async () => {
+    const { fn, calls } = fakeFetch(new Response(null, { status: 204 }))
+    expect(await deleteSession(ID, fn)).toEqual({ ok: true, data: null })
+    expect(calls[0]?.url).toBe(`/api/sessions/${ID}`)
+    expect(calls[0]?.init?.method).toBe("DELETE")
+  })
+
+  it("returns the 401 status", async () => {
+    const { fn } = fakeFetch(json({ error: "Entre para continuar." }, 401))
+    const result = await deleteSession(ID, fn)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(401)
+  })
+
+  it("rejects an unexpected body on a 2xx other than 204", async () => {
+    const { fn } = fakeFetch(json({ ok: true }, 200))
+    expect((await deleteSession(ID, fn)).ok).toBe(false)
+  })
+
+  it("maps a network failure to status 0", async () => {
+    const { fn } = fakeFetch(new TypeError("Failed to fetch"))
+    expect(await deleteSession(ID, fn)).toEqual({
       ok: false,
       status: 0,
       error: NETWORK_ERROR_MESSAGE,

@@ -3,6 +3,7 @@ import type {
   AccountKind,
   AccountRecord,
   ChunkCandidate,
+  ConversationSummaryRecord,
   SessionRecord,
   StoredMessage,
 } from "@/core/types"
@@ -17,10 +18,17 @@ type Timestamp = Date | string
 export type SessionRow = {
   id: string
   channel: string
+  account_id: string | null
   profile: unknown
   summary: string | null
   summary_until_id: Numeric | null
   created_at: Timestamp
+  last_activity_at: Timestamp
+}
+
+export type ConversationRow = {
+  id: string
+  first_question: string
   last_activity_at: Timestamp
 }
 
@@ -77,10 +85,19 @@ export function toSessionRecord(row: SessionRow): SessionRecord {
     id: row.id,
     // The check constraint on sessions.channel guarantees a valid Channel.
     channel: row.channel as Channel,
+    accountId: row.account_id,
     profile: toProfile(row.profile),
     summary: row.summary,
     summaryUntilId: row.summary_until_id === null ? null : toNumber(row.summary_until_id),
     createdAt: toDate(row.created_at),
+    lastActivityAt: toDate(row.last_activity_at),
+  }
+}
+
+export function toConversationSummaryRecord(row: ConversationRow): ConversationSummaryRecord {
+  return {
+    id: row.id,
+    firstQuestion: row.first_question,
     lastActivityAt: toDate(row.last_activity_at),
   }
 }

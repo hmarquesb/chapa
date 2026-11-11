@@ -11,7 +11,7 @@ O chat na web exige login: com Google ou numa conta de demonstração criada a c
 - Um projeto Next.js só, com front e API juntos, publicado na Vercel.
 - A lógica do assistente fica em `src/core/` e não importa nada do Next. A API, o eval e a CLI chamam o mesmo `handleMessage`.
 - O `core/` recebe o cliente de LLM e os repositórios por parâmetro. Os testes usam fakes e nunca acessam a rede.
-- Fluxo de uma mensagem: guardrail de entrada → histórico + resumo da sessão → reescrita da pergunta → embedding → busca híbrida → geração → guardrail de saída → salvar.
+- Fluxo de uma mensagem: dono da conversa (a conta logada; o servidor gera o id da conversa nova) → guardrail de entrada → histórico + resumo da sessão → reescrita da pergunta → embedding → busca híbrida → geração → guardrail de saída → salvar.
 - Se nenhum trecho passa do `minScore`, a resposta é a mensagem de fallback, sem chamar o LLM.
 - Só a pergunta original e a resposta final são salvas. Os trechos recuperados nunca vão para o banco.
 
@@ -55,9 +55,9 @@ Stack:
 
 Regras:
 - Uma página só, com o chat, as fontes em `Badge` embaixo de cada resposta, 3 perguntas de exemplo, o formulário de perfil do restaurante e um rodapé com o aviso de projeto não oficial.
-- O `sessionId` é gerado com `crypto.randomUUID()` e salvo no `localStorage`. Ao recarregar a página, o histórico vem da API.
-- Botão "Continuar depois": mostra e copia o link `/?sessao=<sessionId>`. Ao abrir a página com `?sessao=`, a página adota esse id no `localStorage`, carrega o histórico e limpa o parâmetro da URL. Se a sessão não existe mais, avisa e começa uma conversa nova.
-- Botão "Nova conversa": gera outro `sessionId` e limpa a tela.
+- O id da conversa é gerado no servidor: o primeiro `POST /api/chat` vai sem `sessionId` e a resposta o devolve. O navegador o guarda só em memória, não no `localStorage` nem na URL. Recarregar a página abre uma conversa nova.
+- A lista de conversas da conta (um painel lateral em telas pequenas) vem de `GET /api/sessions`, com o título cortado da primeira pergunta, e é atualizada depois de cada resposta. Clicar numa conversa carrega o histórico por `GET /api/sessions/[id]/messages`; apagar pede confirmação e usa `DELETE /api/sessions/[id]`.
+- Botão "Nova conversa": limpa a tela e esquece o id, e o servidor gera outro no próximo chat.
 - Datas com `Intl.DateTimeFormat`.
 
 Streaming, idioma, marca e o que o navegador pode chamar seguem as regras do [`AGENTS.md`](../AGENTS.md).
@@ -72,12 +72,14 @@ Stack:
 
 Rotas:
 - `POST /api/chat`
+- `GET /api/sessions`, com as conversas da conta, da mais recente para a mais antiga
 - `GET /api/sessions/[id]/messages`
+- `DELETE /api/sessions/[id]`
 - `GET /api/health`
 - `GET /api/cron/cleanup`, protegida por `CRON_SECRET`
 - `GET|POST /api/auth/*`, do Auth.js (csrf, callbacks do Google e da demo, sessão, saída)
 
-`POST /api/chat` e `GET /api/sessions/[id]/messages` exigem sessão (`401` sem ela, antes de ler o corpo e de contar o rate limit). `GET /api/health` e o cron não exigem.
+As rotas de chat e de conversas exigem sessão (`401` sem ela, antes de ler o corpo e de contar o rate limit). `GET /api/health` e o cron não exigem. Toda consulta de conversa filtra pela conta logada, e a conversa alheia responde `404`, como a inexistente ([ADR 0021](adr/0021-autorizacao-por-conta-no-repositorio.md)).
 
 O rate limit por IP fica no Postgres, com o HMAC do IP. As regras de IA e RAG, de logs, de camadas e de `server-only` estão no [`AGENTS.md`](../AGENTS.md).
 
@@ -87,7 +89,7 @@ Scripts locais (rodam com `tsx`, fora da Vercel): `ingest`, `chat`, `eval` e `sm
 
 Supabase: PostgreSQL com `pgvector` e busca textual com o dicionário `portuguese`.
 
-- Tabelas: `accounts` (tipo `google` ou `demo`, `google_sub`, e-mail, `last_seen_at`, `expires_at`), `sessions` (perfil, resumo, canal), `messages`, `document_chunks` e `rate_limits` (buckets `minute`, `day`, `demo_day` e `account_day`).
+- Tabelas: `accounts` (tipo `google` ou `demo`, `google_sub`, e-mail, `last_seen_at`, `expires_at`), `sessions` (perfil, resumo, canal e `account_id`, nulo só no CLI e no eval), `messages`, `document_chunks` e `rate_limits` (buckets `minute`, `day`, `demo_day` e `account_day`).
 - `document_chunks` tem `embedding_model` e `chunk_config`, e toda busca filtra pelos dois. Nunca compare vetores de modelos ou de fatiamentos diferentes.
 - Busca híbrida: o SQL devolve `semantic` e `keyword` por trecho, e uma função pura em TS combina os dois com `alpha`, filtra por `minScore` e corta em `topK`.
 - As mensagens são ordenadas por `id`, não por `created_at`.
@@ -108,7 +110,7 @@ As variáveis de ambiente estão no [`.env.example`](../.env.example), e os valo
 
 - **GitHub Actions** em todo push e PR: `lint`, `typecheck`, `test` e `build`. Sem chamadas de API nem de banco.
 - **Vercel:** um deploy de preview por PR e produção na `main`.
-- **Vercel Cron** diário em `/api/cron/cleanup`: apaga sessões sem atividade há mais de 7 dias, limpa `rate_limits` e apaga as contas demo vencidas e as contas Google sem acesso há 180 dias.
+- **Vercel Cron** diário em `/api/cron/cleanup`: apaga as conversas web sem atividade há mais de 30 dias (e as web sem conta) e as do CLI e do eval após 7 dias, limpa `rate_limits` e apaga as contas demo vencidas e as contas Google sem acesso há 180 dias.
 - **Manual, de propósito:** ingestão, rodadas de eval, migrações e o merge dos PRs na `main`.
 
 O passo a passo do deploy está no [`DEPLOY.md`](../DEPLOY.md).

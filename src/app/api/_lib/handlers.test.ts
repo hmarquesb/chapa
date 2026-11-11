@@ -2,22 +2,32 @@ import { describe, expect, it } from "vitest"
 import {
   createChatHandler,
   createCleanupHandler,
+  createDeleteSessionHandler,
   createHealthHandler,
   createHistoryHandler,
   createLazyHandler,
+  createListSessionsHandler,
 } from "@/app/api/_lib/handlers"
 import type { LogEntry } from "@/app/api/_lib/log"
 import { chunkConfigKey, config } from "@/config"
-import { LlmQuotaError, LlmRequestError, LlmUnavailableError, MissingEnvError } from "@/core/errors"
+import {
+  LlmQuotaError,
+  LlmRequestError,
+  LlmUnavailableError,
+  MissingEnvError,
+  SessionNotFoundError,
+} from "@/core/errors"
 import type {
   AccountRecord,
   Assistant,
   AssistantReply,
   ChunkRepository,
   ChunkSetKey,
+  ConversationSummaryRecord,
   HandleMessageInput,
   RateLimitBucket,
   RateLimitRepository,
+  SessionOwner,
   SessionRecord,
   SessionRepository,
   StoredMessage,
@@ -36,6 +46,9 @@ const ACCOUNT: AccountRecord = {
   lastSeenAt: new Date("2026-11-06T11:00:00.000Z"),
   expiresAt: null,
 }
+const OTHER_ACCOUNT: AccountRecord = { ...ACCOUNT, id: "3c9d8e7f-6a5b-4c4d-8e3f-2a1b0c9d8e7f" }
+const NOT_FOUND = "Esta conversa não existe mais. Começamos uma nova."
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const UNAUTHENTICATED = "Sua sessão terminou. Entre de novo para continuar."
 
 // ---------- fakes ----------
@@ -99,11 +112,12 @@ const REPLY: AssistantReply = {
 class FakeAssistant implements Assistant {
   inputs: HandleMessageInput[] = []
   failWith: unknown = null
+  reply: AssistantReply = REPLY
 
   async handleMessage(input: HandleMessageInput): Promise<AssistantReply> {
     this.inputs.push(input)
     if (this.failWith !== null) throw this.failWith
-    return REPLY
+    return this.reply
   }
 }
 
@@ -111,6 +125,7 @@ function chatSetup(
   overrides: { secret?: () => string; authenticate?: () => Promise<AccountRecord | null> } = {},
 ) {
   const assistant = new FakeAssistant()
+  const sessions = new FakeSessions()
   const rateLimits = new MemoryRateLimits()
   const accounts = new FakeAccounts(rateLimits.order)
   const logs: LogEntry[] = []
@@ -118,6 +133,7 @@ function chatSetup(
   let authCalls = 0
   const handler = createChatHandler({
     assistant,
+    sessions,
     rateLimits,
     accounts,
     authenticate:
@@ -139,6 +155,7 @@ function chatSetup(
   return {
     handler,
     assistant,
+    sessions,
     rateLimits,
     accounts,
     logs,
@@ -206,15 +223,71 @@ describe("createChatHandler", () => {
     expect(rateLimits.hits).toBe(0)
   })
 
-  it("answers a valid request with exactly status, answer and sources", async () => {
+  it("answers a valid request with exactly status, answer, sources and sessionId", async () => {
     const { handler, assistant } = chatSetup()
     const profile = { name: "Pizzaria Bella", city: "Recife" }
     const res = await handler(chatRequest({ ...VALID, profile }))
     expect(res.status).toBe(200)
     const body = (await res.json()) as Record<string, unknown>
-    expect(Object.keys(body).sort()).toEqual(["answer", "sources", "status"])
-    expect(body).toEqual({ status: REPLY.status, answer: REPLY.answer, sources: REPLY.sources })
-    expect(assistant.inputs).toEqual([{ ...VALID, profile, channel: "web" }])
+    expect(Object.keys(body).sort()).toEqual(["answer", "sessionId", "sources", "status"])
+    expect(body).toEqual({
+      status: REPLY.status,
+      answer: REPLY.answer,
+      sources: REPLY.sources,
+      sessionId: SESSION_ID,
+    })
+    expect(assistant.inputs).toEqual([{ ...VALID, profile, channel: "web", accountId: ACCOUNT.id }])
+  })
+
+  it("starts a new conversation with a fresh UUID when sessionId is absent", async () => {
+    const { handler, assistant, sessions } = chatSetup()
+    const res = await handler(chatRequest({ message: "Quando cai o repasse?" }))
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { sessionId: string }
+    expect(body.sessionId).toMatch(UUID_PATTERN)
+    expect(assistant.inputs).toEqual([
+      {
+        sessionId: body.sessionId,
+        message: "Quando cai o repasse?",
+        channel: "web",
+        accountId: ACCOUNT.id,
+      },
+    ])
+    expect(sessions.calls).toEqual([])
+  })
+
+  it("answers sessionId null when a new conversation is blocked at the input", async () => {
+    const { handler, assistant } = chatSetup()
+    assistant.reply = { ...REPLY, status: "blocked_input", sources: [] }
+    const res = await handler(chatRequest({ message: "meu cpf é 123" }))
+    expect(res.status).toBe(200)
+    expect(((await res.json()) as { sessionId: unknown }).sessionId).toBeNull()
+  })
+
+  it("keeps the sessionId when an existing conversation is blocked at the input", async () => {
+    const { handler, assistant } = chatSetup()
+    assistant.reply = { ...REPLY, status: "blocked_input", sources: [] }
+    const res = await handler(chatRequest(VALID))
+    expect(((await res.json()) as { sessionId: unknown }).sessionId).toBe(SESSION_ID)
+  })
+
+  it("answers 404 for the sessionId of another account, without calling the assistant", async () => {
+    const { handler, assistant, sessions } = chatSetup({
+      authenticate: async () => OTHER_ACCOUNT,
+    })
+    const res = await handler(chatRequest(VALID))
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: NOT_FOUND })
+    expect(assistant.inputs).toEqual([])
+    expect(sessions.calls).toEqual(["get"])
+  })
+
+  it("maps a SessionNotFoundError thrown by the assistant to 404", async () => {
+    const { handler, assistant } = chatSetup()
+    assistant.failWith = new SessionNotFoundError("outro dono")
+    const res = await handler(chatRequest(VALID))
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: NOT_FOUND })
   })
 
   it("never exposes retrieved chunks, the search query or usage", async () => {
@@ -431,6 +504,7 @@ describe("request logs", () => {
 const SESSION: SessionRecord = {
   id: SESSION_ID,
   channel: "web",
+  accountId: ACCOUNT.id,
   profile: { name: "Pizzaria Bella", plan: "Básico" },
   summary: "RESUMO-INTERNO",
   summaryUntilId: null,
@@ -457,25 +531,46 @@ const MESSAGES: StoredMessage[] = [
   },
 ]
 
+const SUMMARIES: ConversationSummaryRecord[] = [
+  {
+    id: SESSION_ID,
+    firstQuestion: "  Quando   cai o repasse?  ",
+    lastActivityAt: new Date("2026-11-06T11:05:00.000Z"),
+  },
+  {
+    id: OTHER_ID,
+    firstQuestion: "x".repeat(80),
+    lastActivityAt: new Date("2026-11-05T09:00:00.000Z"),
+  },
+]
+
+// Respects the owner like the real repository: SESSION_ID belongs to ACCOUNT, the rest to nobody.
 class FakeSessions implements SessionRepository {
   calls: string[] = []
   listArgs: unknown[] = []
-  deleteInactiveArgs: Date[] = []
+  listForAccountArgs: Array<[string, number]> = []
+  deleteForAccountArgs: Array<[string, string]> = []
+  deleteInactiveArgs: Array<{ webBefore: Date; otherBefore: Date }> = []
   failWith: unknown = null
+  summaries: ConversationSummaryRecord[] = SUMMARIES
 
-  async get(id: string) {
+  private owns(id: string, owner: SessionOwner) {
+    return id === SESSION_ID && owner.accountId === ACCOUNT.id
+  }
+
+  async get(id: string, owner: SessionOwner) {
     this.calls.push("get")
     if (this.failWith !== null) throw this.failWith
-    return id === SESSION_ID ? SESSION : null
+    return this.owns(id, owner) ? SESSION : null
   }
   async touch(): Promise<SessionRecord> {
     this.calls.push("touch")
     return SESSION
   }
-  async listMessages(sessionId: string, opts?: { afterId?: number }) {
+  async listMessages(sessionId: string, owner: SessionOwner, opts?: { afterId?: number }) {
     this.calls.push("listMessages")
-    this.listArgs.push([sessionId, opts])
-    return MESSAGES
+    this.listArgs.push([sessionId, owner, opts])
+    return this.owns(sessionId, owner) ? MESSAGES : []
   }
   async appendTurn() {
     this.calls.push("appendTurn")
@@ -483,9 +578,20 @@ class FakeSessions implements SessionRepository {
   async saveSummary() {
     this.calls.push("saveSummary")
   }
-  async deleteInactive(olderThan: Date) {
+  async listForAccount(accountId: string, limit: number) {
+    this.calls.push("listForAccount")
+    this.listForAccountArgs.push([accountId, limit])
+    if (this.failWith !== null) throw this.failWith
+    return accountId === ACCOUNT.id ? this.summaries : []
+  }
+  async deleteForAccount(id: string, accountId: string) {
+    this.calls.push("deleteForAccount")
+    this.deleteForAccountArgs.push([id, accountId])
+    return id === SESSION_ID && accountId === ACCOUNT.id
+  }
+  async deleteInactive(input: { webBefore: Date; otherBefore: Date }) {
     this.calls.push("deleteInactive")
-    this.deleteInactiveArgs.push(olderThan)
+    this.deleteInactiveArgs.push(input)
     return 3
   }
 }
@@ -554,7 +660,7 @@ describe("createHistoryHandler", () => {
         },
       ],
     })
-    expect(sessions.listArgs).toEqual([[SESSION_ID, undefined]])
+    expect(sessions.listArgs).toEqual([[SESSION_ID, { accountId: ACCOUNT.id }, undefined]])
     expect(sessions.calls).not.toContain("touch")
     expect(logs).toEqual([
       expect.objectContaining({ route: "/api/sessions/[id]/messages", method: "GET", status: 200 }),
@@ -564,9 +670,15 @@ describe("createHistoryHandler", () => {
   it("answers 404 with the PT-BR text for an unknown session", async () => {
     const response = await historyCall(OTHER_ID).res
     expect(response.status).toBe(404)
-    expect(await response.json()).toEqual({
-      error: "Esta conversa não existe mais. Começamos uma nova.",
-    })
+    expect(await response.json()).toEqual({ error: NOT_FOUND })
+  })
+
+  it("answers a conversation of another account exactly like an unknown one", async () => {
+    const foreign = await historyCall(SESSION_ID, new FakeSessions(), async () => OTHER_ACCOUNT).res
+    const unknown = await historyCall(OTHER_ID).res
+    expect(foreign.status).toBe(404)
+    expect(foreign.status).toBe(unknown.status)
+    expect(await foreign.text()).toBe(await unknown.text())
   })
 
   it("answers 400 for an id that is not a UUID, without touching the database", async () => {
@@ -581,6 +693,119 @@ describe("createHistoryHandler", () => {
     const { res, logs } = historyCall(SESSION_ID, sessions)
     expect((await res).status).toBe(503)
     expect(logs[0]).toMatchObject({ status: 503, error: "Error" })
+  })
+})
+
+// ---------- GET /api/sessions ----------
+
+function listCall(
+  sessions = new FakeSessions(),
+  authenticate: () => Promise<AccountRecord | null> = async () => ACCOUNT,
+) {
+  const logs: LogEntry[] = []
+  const handler = createListSessionsHandler({
+    sessions,
+    authenticate,
+    config,
+    log: (entry) => logs.push(entry),
+  })
+  const res = handler(new Request("http://localhost/api/sessions"))
+  return { res, sessions, logs }
+}
+
+describe("createListSessionsHandler", () => {
+  it("answers 401 without an account, without touching the database", async () => {
+    const { res, sessions } = listCall(new FakeSessions(), async () => null)
+    const response = await res
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: UNAUTHENTICATED })
+    expect(sessions.calls).toEqual([])
+  })
+
+  it("lists only the conversations of the account, in order, with a cut title", async () => {
+    const { res, sessions, logs } = listCall()
+    const response = await res
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      sessions: [
+        {
+          id: SESSION_ID,
+          title: "Quando cai o repasse?",
+          lastActivityAt: "2026-11-06T11:05:00.000Z",
+        },
+        { id: OTHER_ID, title: `${"x".repeat(60)}…`, lastActivityAt: "2026-11-05T09:00:00.000Z" },
+      ],
+    })
+    expect(sessions.listForAccountArgs).toEqual([[ACCOUNT.id, config.conversations.listLimit]])
+    expect(logs[0]?.accountId).toBe(ACCOUNT.id)
+  })
+
+  it("answers an empty list for an account without conversations", async () => {
+    const { res } = listCall(new FakeSessions(), async () => OTHER_ACCOUNT)
+    const response = await res
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ sessions: [] })
+  })
+
+  it("answers 503 when the database is unreachable", async () => {
+    const sessions = new FakeSessions()
+    sessions.failWith = Object.assign(new Error("timeout"), { code: "CONNECT_TIMEOUT" })
+    expect((await listCall(sessions).res).status).toBe(503)
+  })
+})
+
+// ---------- DELETE /api/sessions/[id] ----------
+
+function deleteCall(
+  id: string,
+  authenticate: () => Promise<AccountRecord | null> = async () => ACCOUNT,
+) {
+  const sessions = new FakeSessions()
+  const logs: LogEntry[] = []
+  const handler = createDeleteSessionHandler({
+    sessions,
+    authenticate,
+    log: (entry) => logs.push(entry),
+  })
+  const res = handler(new Request(`http://localhost/api/sessions/${id}`, { method: "DELETE" }), {
+    params: Promise.resolve({ id }),
+  })
+  return { res, sessions, logs }
+}
+
+describe("createDeleteSessionHandler", () => {
+  it("answers 204 without a body and with no-store when the owner deletes", async () => {
+    const { res, sessions, logs } = deleteCall(SESSION_ID)
+    const response = await res
+    expect(response.status).toBe(204)
+    expect(await response.text()).toBe("")
+    expect(response.headers.get("cache-control")).toBe("no-store")
+    expect(sessions.deleteForAccountArgs).toEqual([[SESSION_ID, ACCOUNT.id]])
+    expect(logs).toEqual([
+      expect.objectContaining({ route: "/api/sessions/[id]", method: "DELETE", status: 204 }),
+    ])
+  })
+
+  it("answers 404 for a conversation of another account", async () => {
+    const response = await deleteCall(SESSION_ID, async () => OTHER_ACCOUNT).res
+    expect(response.status).toBe(404)
+    expect(await response.json()).toEqual({ error: NOT_FOUND })
+  })
+
+  it("answers 404 for an unknown conversation", async () => {
+    expect((await deleteCall(OTHER_ID).res).status).toBe(404)
+  })
+
+  it("answers 400 for an id that is not a UUID, without touching the database", async () => {
+    const { res, sessions } = deleteCall("nao-e-uuid")
+    expect((await res).status).toBe(400)
+    expect(sessions.calls).toEqual([])
+  })
+
+  it("answers 401 without an account, before validating the id", async () => {
+    const { res, sessions } = deleteCall("nao-e-uuid", async () => null)
+    expect((await res).status).toBe(401)
+    expect(sessions.calls).toEqual([])
   })
 })
 
@@ -682,7 +907,7 @@ describe("createCleanupHandler", () => {
     expect(logs).toEqual([expect.objectContaining({ route: "/api/cron/cleanup", status: 401 })])
   })
 
-  it("deletes sessions idle for sessionTtlDays and rate limits older than 2 days", async () => {
+  it("deletes web sessions idle for 30 days, cli and eval for 7, and rate limits older than 2 days", async () => {
     const { call, sessions, rateLimits } = cleanupSetup()
     const res = await call("Bearer segredo-do-cron")
     expect(res.status).toBe(200)
@@ -691,7 +916,12 @@ describe("createCleanupHandler", () => {
       deletedRateLimits: 4,
       deletedAccounts: 2,
     })
-    expect(sessions.deleteInactiveArgs).toEqual([new Date("2026-10-30T12:00:15.000Z")])
+    expect(sessions.deleteInactiveArgs).toEqual([
+      {
+        webBefore: new Date("2026-10-07T12:00:15.000Z"),
+        otherBefore: new Date("2026-10-30T12:00:15.000Z"),
+      },
+    ])
     expect(rateLimits.deletedBefore).toEqual([new Date("2026-11-04T12:00:15.000Z")])
   })
 

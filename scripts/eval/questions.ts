@@ -293,6 +293,7 @@ export async function runQuestions(
           sessionId,
           message,
           channel: "eval",
+          accountId: null,
           profile: question.perfil,
         })
         usages.push(reply.usage)

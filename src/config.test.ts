@@ -49,6 +49,14 @@ describe("loadConfig defaults (RF1)", () => {
     })
   })
 
+  it("returns the conversation defaults", () => {
+    expect(loadConfig({}).conversations).toEqual({
+      webTtlDays: 30,
+      listLimit: 50,
+      titleMaxChars: 60,
+    })
+  })
+
   it("does not share the rag object with the preset", () => {
     const cfg = loadConfig({})
     expect(cfg.rag).not.toBe(RAG_PRESETS.padrao)

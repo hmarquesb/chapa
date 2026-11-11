@@ -4,7 +4,6 @@
 // autorização. Nunca imprime o cookie de sessão nem o csrfToken.
 // npm run smoke -- --url https://<deploy>.vercel.app
 // Deploy com Deployment Protection (preview): exporte VERCEL_AUTOMATION_BYPASS_SECRET no shell.
-import { randomUUID } from "node:crypto"
 import { setTimeout as sleep } from "node:timers/promises"
 import { parseArgs } from "./lib/args"
 import {
@@ -20,11 +19,13 @@ import {
   checkHealth,
   checkHistory,
   checkHomePage,
+  checkSessionList,
   checkSignInPage,
   checkUnauthenticatedChat,
   formatStepLine,
   mergeCookies,
   parseBaseUrl,
+  readChatSessionId,
   SMOKE_MESSAGES,
   SMOKE_PROFILE,
   type SmokeResponse,
@@ -90,7 +91,8 @@ async function main(): Promise<void> {
 
   const bypassSecret = process.env[BYPASS_ENV]
   const commonHeaders = buildRequestHeaders(bypassSecret)
-  const sessionId = randomUUID()
+  // O servidor gera o id: o primeiro chat vai sem ele e guarda o da resposta.
+  let sessionId: string | null = null
   const at = (path: string) => `${base.url}${path}`
 
   // Sem cookie: os passos 1 a 3 (e o 7) rodam como um visitante anônimo.
@@ -104,7 +106,11 @@ async function main(): Promise<void> {
       {
         method: "POST",
         headers: { ...commonHeaders, "content-type": "application/json" },
-        body: JSON.stringify({ sessionId, message, profile: SMOKE_PROFILE }),
+        body: JSON.stringify({
+          ...(sessionId === null ? {} : { sessionId }),
+          message,
+          profile: SMOKE_PROFILE,
+        }),
         timeoutMs: CHAT_TIMEOUT_MS,
       },
       jar,
@@ -152,7 +158,15 @@ async function main(): Promise<void> {
     },
     {
       title: "POST /api/chat no escopo → answered com fontes",
-      run: async () => checkChatAnswered(await chat(SMOKE_MESSAGES.inScope)),
+      run: async () => {
+        const res = await chat(SMOKE_MESSAGES.inScope)
+        const result = checkChatAnswered(res)
+        if (result.ok) {
+          sessionId = readChatSessionId(res)
+          if (sessionId === null) return { ok: false, reason: "a resposta não trouxe sessionId" }
+        }
+        return result
+      },
     },
     {
       title: "POST /api/chat fora do escopo → fallback",
@@ -170,8 +184,17 @@ async function main(): Promise<void> {
     },
     {
       title: "GET /api/sessions/{id}/messages → 4 mensagens",
-      run: async () =>
-        checkHistory(await get(`/api/sessions/${sessionId}/messages`, signedIn), sessionId),
+      run: async () => {
+        if (sessionId === null) return { ok: false, reason: "sem sessionId do primeiro chat" }
+        return checkHistory(await get(`/api/sessions/${sessionId}/messages`, signedIn), sessionId)
+      },
+    },
+    {
+      title: "GET /api/sessions → lista com a conversa",
+      run: async () => {
+        if (sessionId === null) return { ok: false, reason: "sem sessionId do primeiro chat" }
+        return checkSessionList(await get("/api/sessions", signedIn), sessionId)
+      },
     },
     {
       title: "GET /api/cron/cleanup sem Authorization → 401",

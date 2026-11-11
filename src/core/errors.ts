@@ -16,3 +16,7 @@ export class LlmRequestError extends Error {
 export class MissingEnvError extends Error {
   override name = "MissingEnvError"
 }
+// Conversa inexistente ou de outro dono. A API responde 404 com o texto de conversa inexistente.
+export class SessionNotFoundError extends Error {
+  override name = "SessionNotFoundError"
+}

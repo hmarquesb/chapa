@@ -3,6 +3,7 @@ import { MissingEnvError } from "@/core/errors"
 import {
   toAccountRecord,
   toChunkCandidate,
+  toConversationSummaryRecord,
   toProfile,
   toSessionRecord,
   toStoredMessage,
@@ -91,6 +92,7 @@ describe("toSessionRecord", () => {
     const row = {
       id: "5f0c1d7e-0000-4000-8000-000000000001",
       channel: "web",
+      account_id: "a1b2c3d4-0000-4000-8000-00000000000a",
       profile: { name: "Pizzaria Bella", plan: 1, extra: "drop" },
       summary: "Falou sobre repasse.",
       summary_until_id: "42",
@@ -100,6 +102,7 @@ describe("toSessionRecord", () => {
     expect(toSessionRecord(row)).toEqual({
       id: "5f0c1d7e-0000-4000-8000-000000000001",
       channel: "web",
+      accountId: "a1b2c3d4-0000-4000-8000-00000000000a",
       profile: { name: "Pizzaria Bella" },
       summary: "Falou sobre repasse.",
       summaryUntilId: 42,
@@ -112,6 +115,7 @@ describe("toSessionRecord", () => {
     const record = toSessionRecord({
       id: "5f0c1d7e-0000-4000-8000-000000000002",
       channel: "cli",
+      account_id: null,
       profile: {},
       summary: null,
       summary_until_id: null,
@@ -121,6 +125,23 @@ describe("toSessionRecord", () => {
     expect(record.summary).toBeNull()
     expect(record.summaryUntilId).toBeNull()
     expect(record.profile).toEqual({})
+    expect(record.accountId).toBeNull()
+  })
+})
+
+describe("toConversationSummaryRecord", () => {
+  it("maps the list columns to camelCase", () => {
+    expect(
+      toConversationSummaryRecord({
+        id: "5f0c1d7e-0000-4000-8000-000000000003",
+        first_question: "Quando cai o repasse?",
+        last_activity_at: ACTIVE.toISOString(),
+      }),
+    ).toEqual({
+      id: "5f0c1d7e-0000-4000-8000-000000000003",
+      firstQuestion: "Quando cai o repasse?",
+      lastActivityAt: ACTIVE,
+    })
   })
 })
 

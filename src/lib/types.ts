@@ -15,7 +15,7 @@ export const PROFILE_FIELD_MAX_CHARS = 60
 
 // POST /api/chat
 export type ChatRequest = {
-  sessionId: string
+  sessionId?: string // absent: new conversation
   message: string
   profile?: RestaurantProfile
 }
@@ -24,7 +24,17 @@ export type ChatResponse = {
   status: ReplyStatus
   answer: string
   sources: string[]
+  sessionId: string | null // null when no conversation was created
 }
+
+// GET /api/sessions
+export type ConversationListItem = {
+  id: string
+  title: string
+  lastActivityAt: string // ISO 8601
+}
+
+export type SessionListResponse = { sessions: ConversationListItem[] }
 
 // GET /api/sessions/[id]/messages
 export type HistoryMessage = {

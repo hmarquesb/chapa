@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { type AppConfig, config, withRag } from "@/config"
 import { createAssistant } from "@/core/assistant"
-import { LlmUnavailableError } from "@/core/errors"
+import { LlmUnavailableError, SessionNotFoundError } from "@/core/errors"
 import {
   BLOCKED_INPUT_MESSAGES,
   BLOCKED_OUTPUT_MESSAGE,
@@ -12,15 +12,17 @@ import { REWRITE_PROMPT, SUMMARY_PROMPT } from "@/core/prompts"
 import type {
   ChunkCandidate,
   ChunkRepository,
+  ConversationSummaryRecord,
   EmbedInput,
   GenerateInput,
   LlmClient,
+  SessionOwner,
   SessionRecord,
   SessionRepository,
   StoredMessage,
   Usage,
 } from "@/core/types"
-import type { RestaurantProfile } from "@/lib/types"
+import type { Channel, RestaurantProfile } from "@/lib/types"
 
 const SESSION_ID = "0b7c9a52-3f0e-4d4f-9a55-2a1f3c1d9e10"
 
@@ -113,17 +115,27 @@ class FakeSessions implements SessionRepository {
   sessions = new Map<string, SessionRecord>()
   messages: Array<StoredMessage & { sessionId: string }> = []
   touchInputs: Array<Parameters<SessionRepository["touch"]>[0]> = []
+  ownerArgs: Array<{ call: string; accountId: string | null }> = []
   savedSummaries: Array<{ sessionId: string; summary: string; untilId: number }> = []
   private nextId = 1
 
-  async get(id: string): Promise<SessionRecord | null> {
+  // Conversa existente de outro dono; sem registro, qualquer dono passa (mensagens pré-carregadas).
+  private foreign(id: string, owner: SessionOwner): boolean {
+    const existing = this.sessions.get(id)
+    return existing !== undefined && existing.accountId !== owner.accountId
+  }
+
+  async get(id: string, owner: SessionOwner): Promise<SessionRecord | null> {
     this.calls.push("get")
-    return this.sessions.get(id) ?? null
+    this.ownerArgs.push({ call: "get", accountId: owner.accountId })
+    return this.foreign(id, owner) ? null : (this.sessions.get(id) ?? null)
   }
 
   async touch(input: Parameters<SessionRepository["touch"]>[0]): Promise<SessionRecord> {
     this.calls.push("touch")
     this.touchInputs.push(input)
+    this.ownerArgs.push({ call: "touch", accountId: input.owner.accountId })
+    if (this.foreign(input.id, input.owner)) throw new SessionNotFoundError("outro dono")
     const now = new Date("2026-11-05T12:00:00Z")
     const existing = this.sessions.get(input.id)
     const record: SessionRecord = existing
@@ -131,6 +143,7 @@ class FakeSessions implements SessionRepository {
       : {
           id: input.id,
           channel: input.channel,
+          accountId: input.owner.accountId,
           profile: input.profile ?? {},
           summary: null,
           summaryUntilId: null,
@@ -141,8 +154,14 @@ class FakeSessions implements SessionRepository {
     return record
   }
 
-  async listMessages(sessionId: string, opts?: { afterId?: number }): Promise<StoredMessage[]> {
+  async listMessages(
+    sessionId: string,
+    owner: SessionOwner,
+    opts?: { afterId?: number },
+  ): Promise<StoredMessage[]> {
     this.calls.push("listMessages")
+    this.ownerArgs.push({ call: "listMessages", accountId: owner.accountId })
+    if (this.foreign(sessionId, owner)) return []
     const afterId = opts?.afterId ?? 0
     return this.messages
       .filter((message) => message.sessionId === sessionId && message.id > afterId)
@@ -151,9 +170,12 @@ class FakeSessions implements SessionRepository {
 
   async appendTurn(
     sessionId: string,
-    turn: Parameters<SessionRepository["appendTurn"]>[1],
+    owner: SessionOwner,
+    turn: Parameters<SessionRepository["appendTurn"]>[2],
   ): Promise<void> {
     this.calls.push("appendTurn")
+    this.ownerArgs.push({ call: "appendTurn", accountId: owner.accountId })
+    if (this.foreign(sessionId, owner)) throw new SessionNotFoundError("outro dono")
     const createdAt = new Date("2026-11-05T12:00:00Z")
     this.messages.push(
       {
@@ -177,11 +199,26 @@ class FakeSessions implements SessionRepository {
     )
   }
 
-  async saveSummary(sessionId: string, summary: string, untilId: number): Promise<void> {
+  async saveSummary(
+    sessionId: string,
+    owner: SessionOwner,
+    summary: string,
+    untilId: number,
+  ): Promise<void> {
     this.calls.push("saveSummary")
+    this.ownerArgs.push({ call: "saveSummary", accountId: owner.accountId })
+    if (this.foreign(sessionId, owner)) return
     this.savedSummaries.push({ sessionId, summary, untilId })
     const session = this.sessions.get(sessionId)
     if (session) this.sessions.set(sessionId, { ...session, summary, summaryUntilId: untilId })
+  }
+
+  async listForAccount(): Promise<ConversationSummaryRecord[]> {
+    throw new Error("listForAccount não deveria ser chamado")
+  }
+
+  async deleteForAccount(): Promise<boolean> {
+    throw new Error("deleteForAccount não deveria ser chamado")
   }
 
   async deleteInactive(): Promise<number> {
@@ -221,8 +258,16 @@ function setup(appConfig: AppConfig = config) {
     },
   })
   const send = (message: string, profile?: RestaurantProfile) =>
-    assistant.handleMessage({ sessionId: SESSION_ID, message, channel: "cli", profile })
-  return { llm, chunks, sessions, assistant, send }
+    assistant.handleMessage({
+      sessionId: SESSION_ID,
+      message,
+      channel: "cli",
+      accountId: null,
+      profile,
+    })
+  const sendAs = (accountId: string | null, channel: Channel, message = "Quando cai o repasse?") =>
+    assistant.handleMessage({ sessionId: SESSION_ID, message, channel, accountId })
+  return { llm, chunks, sessions, assistant, send, sendAs }
 }
 
 describe("createAssistant().handleMessage", () => {
@@ -427,6 +472,7 @@ describe("createAssistant().handleMessage", () => {
     expect(sessions.touchInputs[0]).toEqual({
       id: SESSION_ID,
       channel: "cli",
+      owner: { accountId: null },
       profile: { name: "Pizzaria Bella", plan: "Plano Básico" },
     })
     const system = llm.answerCalls()[0]?.system ?? ""
@@ -440,7 +486,12 @@ describe("createAssistant().handleMessage", () => {
     await send("Quando cai o repasse?", { name: "Pizzaria Bella" })
     await send("E a taxa?")
 
-    expect(sessions.touchInputs[1]).toEqual({ id: SESSION_ID, channel: "cli", profile: undefined })
+    expect(sessions.touchInputs[1]).toEqual({
+      id: SESSION_ID,
+      channel: "cli",
+      owner: { accountId: null },
+      profile: undefined,
+    })
     expect(llm.answerCalls()[1]?.system).toContain("Nome: Pizzaria Bella")
   })
 
@@ -459,6 +510,54 @@ describe("createAssistant().handleMessage", () => {
       outputTokens:
         SUMMARY_USAGE.outputTokens + REWRITE_USAGE.outputTokens + ANSWER_USAGE.outputTokens,
     })
+  })
+
+  it("passes the owner to touch, listMessages and appendTurn", async () => {
+    const { sessions, sendAs } = setup()
+    await sendAs("conta-a", "web")
+    expect(sessions.ownerArgs.length).toBeGreaterThanOrEqual(3)
+    expect(sessions.ownerArgs.map((entry) => entry.call)).toEqual(
+      expect.arrayContaining(["touch", "listMessages", "appendTurn"]),
+    )
+    for (const entry of sessions.ownerArgs) expect(entry.accountId).toBe("conta-a")
+    expect(sessions.sessions.get(SESSION_ID)?.accountId).toBe("conta-a")
+  })
+
+  it("passes the owner to saveSummary", async () => {
+    const { sessions, sendAs } = setup()
+    sessions.seed(17)
+    await sendAs(null, "cli", "E sobre cancelamentos?")
+    expect(sessions.savedSummaries).toHaveLength(1)
+    const saved = sessions.ownerArgs.find((entry) => entry.call === "saveSummary")
+    expect(saved?.accountId).toBeNull()
+  })
+
+  it("throws when the channel is web without an account", async () => {
+    const { sessions, sendAs } = setup()
+    await expect(sendAs(null, "web")).rejects.toThrow("channel and accountId disagree")
+    expect(sessions.calls).toEqual([])
+  })
+
+  it("throws when the channel is cli or eval with an account", async () => {
+    const { sessions, sendAs } = setup()
+    await expect(sendAs("conta-a", "cli")).rejects.toThrow("channel and accountId disagree")
+    await expect(sendAs("conta-a", "eval")).rejects.toThrow("channel and accountId disagree")
+    expect(sessions.calls).toEqual([])
+  })
+
+  it("does not call touch for blocked input on the web", async () => {
+    const { sessions, sendAs } = setup()
+    const reply = await sendAs("conta-a", "web", "Meu CPF é 123.456.789-09, pode verificar?")
+    expect(reply.status).toBe("blocked_input")
+    expect(sessions.calls).toEqual([])
+  })
+
+  it("propagates SessionNotFoundError when the conversation belongs to another account", async () => {
+    const { sessions, sendAs } = setup()
+    await sendAs("conta-a", "web")
+    const before = sessions.messages.length
+    await expect(sendAs("conta-b", "web")).rejects.toBeInstanceOf(SessionNotFoundError)
+    expect(sessions.messages).toHaveLength(before)
   })
 
   it("propagates generation errors without persisting anything", async () => {

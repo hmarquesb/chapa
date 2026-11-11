@@ -85,6 +85,8 @@ export function hintForStatus(status: number): string | undefined {
   }
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
@@ -125,9 +127,13 @@ function checkChatStatus(
     !isRecord(body) ||
     typeof body.status !== "string" ||
     typeof body.answer !== "string" ||
-    !Array.isArray(body.sources)
+    !Array.isArray(body.sources) ||
+    (body.sessionId !== null && typeof body.sessionId !== "string")
   ) {
-    return { ok: false, reason: "o corpo não segue o contrato { status, answer, sources }" }
+    return {
+      ok: false,
+      reason: "o corpo não segue o contrato { status, answer, sources, sessionId }",
+    }
   }
   if (body.status !== expected) {
     return { ok: false, reason: `status "${body.status}" (esperado "${expected}")` }
@@ -147,6 +153,35 @@ export function checkChatFallback(res: SmokeResponse): CheckResult {
 
 export function checkBlockedInput(res: SmokeResponse): CheckResult {
   return checkChatStatus(res, "blocked_input", false)
+}
+
+// O id que o servidor gerou para a conversa nova. Nunca vai para a saída do smoke.
+export function readChatSessionId(res: SmokeResponse): string | null {
+  if (res.status !== 200 || !isRecord(res.body)) return null
+  const id = res.body.sessionId
+  return typeof id === "string" && UUID_PATTERN.test(id) ? id : null
+}
+
+export function checkSessionList(res: SmokeResponse, sessionId: string): CheckResult {
+  if (res.status !== 200) return unexpectedStatus(res.status, 200)
+  const body = res.body
+  if (!isRecord(body) || !Array.isArray(body.sessions)) {
+    return { ok: false, reason: "o corpo não segue o contrato { sessions }" }
+  }
+  const items: unknown[] = body.sessions
+  const valid = items.every(
+    (item) =>
+      isRecord(item) &&
+      typeof item.id === "string" &&
+      typeof item.title === "string" &&
+      typeof item.lastActivityAt === "string",
+  )
+  if (!valid)
+    return { ok: false, reason: "um item da lista não segue { id, title, lastActivityAt }" }
+  if (!items.some((item) => isRecord(item) && item.id === sessionId)) {
+    return { ok: false, reason: "a conversa criada pelo chat não está na lista" }
+  }
+  return { ok: true, detail: `${items.length} ${items.length === 1 ? "conversa" : "conversas"}` }
 }
 
 const EXPECTED_TURNS: ReadonlyArray<{ role: "user" | "assistant"; status: ReplyStatus | null }> = [
