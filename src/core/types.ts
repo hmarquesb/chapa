@@ -170,7 +170,10 @@ export type HandleMessageInput = {
   message: string
   channel: Channel
   accountId: string | null // obrigatório na web e nulo no CLI e no eval
+  // cli e eval: substitui o perfil salvo na conversa. Proibido na web.
   profile?: RestaurantProfile
+  // web: o perfil da conta, usado no prompt e nunca gravado na conversa. Proibido em cli e eval.
+  accountProfile?: RestaurantProfile
 }
 
 export type AssistantReply = {

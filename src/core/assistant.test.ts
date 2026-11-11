@@ -15,6 +15,7 @@ import type {
   ConversationSummaryRecord,
   EmbedInput,
   GenerateInput,
+  HandleMessageInput,
   LlmClient,
   SessionOwner,
   SessionRecord,
@@ -266,8 +267,21 @@ function setup(appConfig: AppConfig = config) {
       profile,
     })
   const sendAs = (accountId: string | null, channel: Channel, message = "Quando cai o repasse?") =>
-    assistant.handleMessage({ sessionId: SESSION_ID, message, channel, accountId })
-  return { llm, chunks, sessions, assistant, send, sendAs }
+    assistant.handleMessage({
+      sessionId: SESSION_ID,
+      message,
+      channel,
+      accountId,
+      accountProfile: channel === "web" ? {} : undefined,
+    })
+  const sendRaw = (input: Partial<HandleMessageInput> & Pick<HandleMessageInput, "channel">) =>
+    assistant.handleMessage({
+      sessionId: SESSION_ID,
+      message: "Quando cai o repasse?",
+      accountId: input.channel === "web" ? "conta-a" : null,
+      ...input,
+    })
+  return { llm, chunks, sessions, assistant, send, sendAs, sendRaw }
 }
 
 describe("createAssistant().handleMessage", () => {
@@ -493,6 +507,37 @@ describe("createAssistant().handleMessage", () => {
       profile: undefined,
     })
     expect(llm.answerCalls()[1]?.system).toContain("Nome: Pizzaria Bella")
+  })
+
+  it("uses the account profile on the web and never saves it in the conversation", async () => {
+    const { llm, sessions, sendRaw } = setup()
+    await sendRaw({
+      channel: "web",
+      accountProfile: { name: " Marmitaria Boa Panela ", plan: "misto", city: " " },
+    })
+
+    expect(sessions.touchInputs[0]).toEqual({
+      id: SESSION_ID,
+      channel: "web",
+      owner: { accountId: "conta-a" },
+    })
+    expect("profile" in (sessions.touchInputs[0] ?? {})).toBe(false)
+    const system = llm.answerCalls()[0]?.system ?? ""
+    expect(system).toContain("Nome: Marmitaria Boa Panela")
+    expect(system).toContain("Plano: Plano Misto")
+    expect(system).not.toContain("Cidade:")
+  })
+
+  it("throws when the profile source disagrees with the channel", async () => {
+    const { sessions, sendRaw } = setup()
+    const message = "profile source disagrees with channel"
+    await expect(sendRaw({ channel: "web", accountProfile: {}, profile: {} })).rejects.toThrow(
+      message,
+    )
+    await expect(sendRaw({ channel: "web" })).rejects.toThrow(message)
+    await expect(sendRaw({ channel: "cli", accountProfile: {} })).rejects.toThrow(message)
+    await expect(sendRaw({ channel: "eval", accountProfile: {} })).rejects.toThrow(message)
+    expect(sessions.calls).toEqual([])
   })
 
   it("returns the sum of every call's usage", async () => {
