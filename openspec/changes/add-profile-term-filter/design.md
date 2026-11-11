@@ -31,6 +31,7 @@ export function profileTextMessage(field: ProfileTextField, reason: ProfileTextR
 ```
 
 - A ordem das checagens é: caractere, instrução, marca (só em `name`) e termo inadequado. O primeiro motivo que falhar é o devolvido. O texto chega aparado, e texto vazio passa (o campo é opcional).
+- Exceção na ordem: quando os únicos caracteres proibidos são os símbolos de leetspeak `@`, `!` e `$`, as checagens de instrução, marca e termo rodam antes. Se nenhuma falhar, o texto é recusado com `caractere`. Assim, "M3rd@ Burguer" sai como `termo_inadequado` (cenário da spec) e "Pizzaria Bella!" como `caractere`.
 - `profileTextMessage` devolve os textos fixos da spec `guardrails`. É o único lugar com esses textos. `VALIDATION_MESSAGES` não os copia.
 - `normalize.ts` exporta `normalizeForModeration(text): string[]`, que devolve os tokens normalizados. Os passos são: minúsculas, NFD sem diacríticos, leetspeak, separadores entre letras soltas removidos (uma sequência de 3 ou mais tokens de 1 letra separados por espaço, `.` ou `-` vira um token só), corte nos caracteres que não são letra nem dígito e letras repetidas reduzidas a uma. Os termos da lista passam pela mesma função quando o módulo carrega, então "merda" e "merdaaa" viram o mesmo token.
 - O casamento é por token inteiro. Um termo de várias palavras casa com uma sequência de tokens. O nome de uma marca casa como sequência ou junto (a sequência `uber`+`eats` e o token `ubereats` são equivalentes). A lista de permitidos (`allowed-terms.ts`, texto claro) tira o token da comparação de termos inadequados.
