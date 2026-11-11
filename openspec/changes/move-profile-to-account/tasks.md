@@ -45,13 +45,13 @@ Esta change só começa depois que a `scope-conversations-to-accounts` estiver m
 
 ## 8. Verificação com a API
 
-- [ ] 8.1 **(pessoa)** Entrar com uma conta Google nova em `localhost`: a tela "Conte sobre o seu restaurante" aparece antes do chat, e só o plano é obrigatório.
+- [x] 8.1 **(pessoa)** Entrar com uma conta Google nova em `localhost`: a tela "Conte sobre o seu restaurante" aparece antes do chat, e só o plano é obrigatório.
 - [x] 8.2 **(autorização)** Rodar `npm run eval -- --label perfil-enum --only <ids das 5 perguntas perfil> --delay-ms 4000` contra o `dev`, seguindo o `docs/qa.md`. Verificar que os acertos das 5 perguntas são iguais aos da última rodada registrada em `eval/resultados/`. Se algum mudar, registrar no relatório a pergunta, a resposta e por que a mudança não vem desta change (o prompt é idêntico, pela tarefa 1.2).
 
 ## 9. Produção
 
 - [x] 9.1 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Antes, contar com `db query --read-only` as conversas `web` sem conta, e registrar o número no relatório.
-- [ ] 9.2 **(pessoa)** Depois do merge, testar em produção o primeiro acesso com Google, a demo com o perfil de exemplo e "Excluir minha conta", e rodar o smoke (ou autorizar o orquestrador).
+- [x] 9.2 **(pessoa)** Depois do merge, testar em produção o primeiro acesso com Google, a demo com o perfil de exemplo e "Excluir minha conta", e rodar o smoke (ou autorizar o orquestrador).
 
 ## 10. Verificação final
 
