@@ -50,14 +50,14 @@ As tarefas **(pessoa)** dependem de conta, de segredo ou do painel da Vercel. O 
 ## 8. Verificação manual e documentação
 
 - [x] 8.1 **(autorização)** Verificação manual no `npm run dev` com o `dev`, seguindo o `docs/qa.md`: entrar como demo, mandar uma pergunta coberta pela base (resposta `answered` com fontes), conferir os atributos do cookie (`HttpOnly`, `SameSite=Lax`) nas ferramentas do navegador, sair, entrar de novo como demo até a 6ª vez no dia e ver a mensagem do limite, e confirmar que `npm run chat -- --nome "Pizzaria Bella"` continua respondendo sem login. Registrar os resultados no relatório.
-- [ ] 8.2 **(pessoa)** Criar o cliente OAuth do Google e colocar as três variáveis no `.env.local` do checkout principal. Depois, entrar com Google em `localhost`: a conta é criada só com o `sub` e o e-mail (conferido com um `db query --read-only` que não imprime o e-mail, só `count(*)` e `email is not null`), e o menu mostra o e-mail.
+- [x] 8.2 **(pessoa)** Criar o cliente OAuth do Google e colocar as três variáveis no `.env.local` do checkout principal. Depois, entrar com Google em `localhost`: a conta é criada só com o `sub` e o e-mail (conferido com um `db query --read-only` que não imprime o e-mail, só `count(*)` e `email is not null`), e o menu mostra o e-mail.
 - [x] 8.3 Escrever a ADR 0020, trocar o status da 0010 e atualizar o `docs/adr/README.md` (decisão 12). Verificar que os links da tabela apontam para arquivos que existem.
 - [x] 8.4 Atualizar `AGENTS.md`, `docs/architecture.md`, `docs/business.md`, `docs/development.md`, `docs/qa.md`, `README.md` e `DEPLOY.md` como na tabela da decisão 12. Verificar com `git grep -n "sem login" -- AGENTS.md docs/ README.md` que nenhuma frase diz que o chat web é sem login, e que o `DEPLOY.md` tem o passo do cliente OAuth com os dois redirecionamentos.
 
 ## 9. Produção
 
-- [ ] 9.1 **(pessoa)** Criar na Vercel o `AUTH_SECRET` (Production e Preview) e o `AUTH_GOOGLE_ID` e o `AUTH_GOOGLE_SECRET` (só Production), e cadastrar o redirecionamento de produção no cliente OAuth.
-- [ ] 9.2 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Verificar com um `db query --read-only` o RLS ligado e 0 policies em `accounts`.
+- [x] 9.1 **(pessoa)** Criar na Vercel o `AUTH_SECRET` (Production e Preview) e o `AUTH_GOOGLE_ID` e o `AUTH_GOOGLE_SECRET` (só Production), e cadastrar o redirecionamento de produção no cliente OAuth.
+- [x] 9.2 **(autorização, H5 parcial)** Antes do merge, aplicar a migração no `prod` com `db push --remote --yes`, nos passos do `DEPLOY.md`. Verificar com um `db query --read-only` o RLS ligado e 0 policies em `accounts`.
 - [ ] 9.3 **(pessoa)** Depois do merge, entrar com Google em produção e rodar o smoke contra a produção (ou autorizar o orquestrador a rodar).
 
 ## 10. Verificação final
