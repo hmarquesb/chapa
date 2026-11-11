@@ -10,8 +10,8 @@ A sessão principal **não implementa changes grandes sozinha**. Ela:
 
 1. Cria a branch e o worktree da change a partir da `main` atualizada (ver "Worktrees").
 2. Gera a proposta com `/opsx:propose` (ou `/opsx:explore` antes, para amadurecer a ideia). A pessoa revisa `proposal.md`, `design.md`, `tasks.md` e os deltas. O *apply* só começa depois de ela dizer que aprovou.
-3. Despacha **um subagente `spec-implementer` por change**, no worktree dela. Changes independentes rodam em paralelo, numa única mensagem com várias chamadas ao Agent.
-4. Revisa a entrega: lê o diff, roda `npm run lint`, `npm run typecheck`, `npm test` (e `npm run build`, quando a change pede) no worktree e confere os critérios de aceite.
+3. Despacha o subagente `spec-implementer` no worktree da change (ver "Tamanho da change"). Changes independentes rodam em paralelo, numa única mensagem com várias chamadas ao Agent.
+4. Revisa a entrega: lê o diff, roda `npm run lint`, `npm run typecheck`, `npm test` (e `npm run build`, quando a change pede) no worktree e confere os critérios de aceite. Depois, faz a verificação manual que o relatório lista como pendente (`db push` no `dev`, `npm run dev`, `npm run chat`), dentro das autorizações abaixo, ou a deixa para a pessoa no PR.
 5. Commita na branch (commits atômicos, em inglês, com o trailer `Change: <nome>`), faz push e abre o PR com `gh pr create`, usando o relatório do subagente na descrição.
 6. Depois do merge, roda `/opsx:archive` numa branch `docs/archive-<change>` e abre o PR `docs(openspec): archive <change>`. Várias changes da mesma leva podem ser arquivadas no mesmo PR. Remove o worktree.
 7. Atalho: quando a pessoa roda `/merge-change <PR>`, a skill [`merge-change`](.claude/skills/merge-change/SKILL.md) faz o merge e o passo 6 de uma vez.
@@ -30,16 +30,27 @@ npm ci
 
 Depois do merge: `git worktree remove ../chapa-worktrees/<change>` e `git branch -d <tipo>/<change>`.
 
+## Tamanho da change
+
+Cada chamada do subagente relê todo o contexto acumulado, então o custo cresce mais rápido que o número de passos. Uma change de 32 tarefas, feita por um subagente só, chegou a 113 chamadas com até 264 mil tokens de contexto cada.
+
+- **Até ~15 tarefas no `tasks.md`:** um subagente para a change inteira.
+- **Mais de ~15 tarefas:** um subagente novo por bloco de grupos do `tasks.md` (`## 1. …`, `## 2. …`), **em sequência**, no mesmo worktree. Junte grupos pequenos até cerca de 10 tarefas por subagente. O grupo de documentação vai sempre num subagente próprio, no fim. Cada um começa com o contexto limpo e lê o diff dos anteriores só onde precisar.
+- O orquestrador roda os portões entre um bloco e outro só se o relatório apontar um problema. A revisão completa fica para o fim.
+
 ## Prompt para o subagente
 
-As regras do implementador ficam em [`.claude/agents/spec-implementer.md`](.claude/agents/spec-implementer.md). No prompt, passe só o que muda de change para change:
+As regras do implementador ficam em [`.claude/agents/spec-implementer.md`](.claude/agents/spec-implementer.md). Ele roda no Sonnet; a proposta e a revisão ficam na sessão principal. No prompt, passe só o que muda de change para change:
 
 ```
 Change: <nome> (openspec/changes/<nome>/)
 Worktree: <caminho absoluto de ../chapa-worktrees/<nome>>
+Grupos de tarefas: <todos | 1 a 3 (os grupos anteriores já estão feitos)>
 Chamadas reais de API e de banco: <PROIBIDAS | AUTORIZADAS: quais e em qual ambiente (dev)>
 Observações: <opcional>
 ```
+
+Por padrão, as chamadas reais ficam **PROIBIDAS** para o subagente: a verificação manual e o `db push` no `dev` são do orquestrador, no passo 4. Autorize só o que a tarefa não consegue fazer sem banco ou API.
 
 Para uma revisão independente, use um subagente `general-purpose` que recebe o diff e a change, não a sua conclusão.
 
@@ -53,7 +64,7 @@ Para uma revisão independente, use um subagente `general-purpose` que recebe o 
 
 As autorizações das specs S00 a S10 (H1 a H4) estão registradas no [`docs/history/build-specs/README.md`](docs/history/build-specs/README.md#autorizações-prévias-histórico).
 
-A pessoa autorizou as ações abaixo (registrado em 10/11/2026). Elas valem como a autorização explícita que o `AGENTS.md` exige: o orquestrador não precisa pedi-las de novo e as repassa no campo "Chamadas reais de API e de banco" do prompt do subagente. O que não está aqui continua precisando de autorização na tarefa.
+A pessoa autorizou as ações abaixo (registrado em 10/11/2026). Elas valem como a autorização explícita que o `AGENTS.md` exige: o orquestrador não precisa pedi-las de novo e pode repassá-las no campo "Chamadas reais de API e de banco" do prompt do subagente, quando a tarefa exigir. O que não está aqui continua precisando de autorização na tarefa.
 
 | Checkpoint | O que está autorizado | Limites |
 |---|---|---|
