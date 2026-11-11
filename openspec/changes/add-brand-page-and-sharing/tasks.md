@@ -31,9 +31,9 @@ Change 3 de 3 da identidade visual da Rango. Só começa depois que a `add-rango
 
 ## 6. Verificação manual (orquestrador)
 
-- [ ] 6.1 **(orquestrador)** Com o `npm run dev` contra o `dev`: salvar `/opengraph-image` em `public/brand/og.png` (`curl -o public/brand/og.png http://localhost:3000/opengraph-image`); rodar `npm run screenshots -- --url http://localhost:3000`; abrir a `/marca` sem login nos dois temas e a 390 px; abrir `/brand/rango-logo.svg` e conferir o favicon na aba. Verificar que saem as 28 imagens e registrar no relatório as da `/marca`.
-- [ ] 6.2 **(pessoa)** Revisar a `/marca` e a imagem de compartilhamento e preencher no PR o checklist de originalidade do `docs/qa.md`. Depois do merge e do deploy, colar o link da produção no inspetor de posts do LinkedIn, rodar o smoke em produção (com o fluxo demo no celular) e levar `public/brand/` para o site-portfólio.
+- [x] 6.1 **(orquestrador)** Com o `npm run dev` contra o `dev`: salvar `/opengraph-image` em `public/brand/og.png` (`curl -o public/brand/og.png http://localhost:3000/opengraph-image`); rodar `npm run screenshots -- --url http://localhost:3000`; abrir a `/marca` sem login nos dois temas e a 390 px; abrir `/brand/rango-logo.svg` e conferir o favicon na aba. Verificar que saem as 28 imagens e registrar no relatório as da `/marca`.
+- [x] 6.2 **(pessoa)** Revisar a `/marca` e a imagem de compartilhamento e preencher no PR o checklist de originalidade do `docs/qa.md`. Depois do merge e do deploy, colar o link da produção no inspetor de posts do LinkedIn, rodar o smoke em produção (com o fluxo demo no celular) e levar `public/brand/` para o site-portfólio.
 
 ## 7. Verificação final
 
-- [ ] 7.1 Rodar `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` e `npx openspec validate add-brand-page-and-sharing`. Verificar que todos passam e registrar no relatório os critérios de aceite do PRD que esta change fecha (favicon, Open Graph, `/marca`, `public/brand/`, README), com a evidência de cada um, e os que ficam com a pessoa (LinkedIn e smoke em produção).
+- [x] 7.1 Rodar `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` e `npx openspec validate add-brand-page-and-sharing`. Verificar que todos passam e registrar no relatório os critérios de aceite do PRD que esta change fecha (favicon, Open Graph, `/marca`, `public/brand/`, README), com a evidência de cada um, e os que ficam com a pessoa (LinkedIn e smoke em produção).
