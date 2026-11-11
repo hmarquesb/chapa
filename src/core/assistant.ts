@@ -15,6 +15,7 @@ import type {
   HandleMessageInput,
   LlmClient,
   RetrievedChunk,
+  SessionOwner,
   SessionRepository,
   StoredMessage,
   Usage,
@@ -64,6 +65,11 @@ export function createAssistant(deps: AssistantDeps): Assistant {
   async function handleMessage(input: HandleMessageInput): Promise<AssistantReply> {
     const startedAt = now()
     const { sessionId, message, channel } = input
+    // Erro de programação: a web sempre tem conta, o CLI e o eval nunca.
+    if ((channel === "web") !== (input.accountId !== null)) {
+      throw new Error("channel and accountId disagree")
+    }
+    const owner: SessionOwner = { accountId: input.accountId }
 
     // Bloqueio de entrada: nada vai para o LLM nem para o banco (pode conter CPF ou cartão).
     const inputCheck = validateInput(message, config.limits.maxInputChars)
@@ -81,11 +87,16 @@ export function createAssistant(deps: AssistantDeps): Assistant {
 
     const usages: Usage[] = []
     const inputProfile = input.profile === undefined ? undefined : cleanProfile(input.profile)
-    const session = await sessions.touch({ id: sessionId, channel, profile: inputProfile })
+    const session = await sessions.touch({
+      id: sessionId,
+      channel,
+      owner,
+      profile: inputProfile,
+    })
     const profile = inputProfile ?? cleanProfile(session.profile)
 
     // Memória: histórico pendente desde o último resumo, vindo do banco a cada mensagem.
-    const pending = await sessions.listMessages(sessionId, {
+    const pending = await sessions.listMessages(sessionId, owner, {
       afterId: session.summaryUntilId ?? undefined,
     })
     const { toSummarize, recent } = planMemory(pending, config.memory)
@@ -101,7 +112,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         })
         usages.push(result.usage)
         if (result.summary !== "") {
-          await sessions.saveSummary(sessionId, result.summary, lastToSummarize.id)
+          await sessions.saveSummary(sessionId, owner, result.summary, lastToSummarize.id)
           summary = result.summary
         }
       } catch {
@@ -168,7 +179,12 @@ export function createAssistant(deps: AssistantDeps): Assistant {
 
     const sources = status === "answered" ? uniqueSources(results) : []
     // Só a pergunta original e a resposta final. Os trechos e o prompt nunca vão para o banco.
-    await sessions.appendTurn(sessionId, { user: message, assistant: answer, status, sources })
+    await sessions.appendTurn(sessionId, owner, {
+      user: message,
+      assistant: answer,
+      status,
+      sources,
+    })
 
     return {
       status,

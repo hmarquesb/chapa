@@ -59,13 +59,23 @@ export interface ChunkRepository {
 }
 
 // ---------- Sessões e mensagens ----------
+// accountId null: conversa do CLI ou do eval. Na web, sempre a conta logada.
+export type SessionOwner = { accountId: string | null }
+
 export type SessionRecord = {
   id: string
   channel: Channel
+  accountId: string | null
   profile: RestaurantProfile
   summary: string | null
   summaryUntilId: number | null // último messages.id incorporado ao resumo
   createdAt: Date
+  lastActivityAt: Date
+}
+
+export type ConversationSummaryRecord = {
+  id: string
+  firstQuestion: string // conteúdo da primeira mensagem do parceiro
   lastActivityAt: Date
 }
 
@@ -79,19 +89,42 @@ export type StoredMessage = {
 }
 
 export interface SessionRepository {
-  get(id: string): Promise<SessionRecord | null>
+  // null se não existe ou se o dono é outro (account_id is not distinct from owner.accountId).
+  get(id: string, owner: SessionOwner): Promise<SessionRecord | null>
+  // Cria com channel e account_id, ou renova last_activity_at (e o perfil, se vier) só quando
+  // o dono é o mesmo. Se o id existe com outro dono, lança SessionNotFoundError e não muda nada.
   touch(input: {
     id: string
     channel: Channel
+    owner: SessionOwner
     profile?: RestaurantProfile
   }): Promise<SessionRecord>
-  listMessages(sessionId: string, opts?: { afterId?: number }): Promise<StoredMessage[]>
+  // [] se o dono é outro.
+  listMessages(
+    sessionId: string,
+    owner: SessionOwner,
+    opts?: { afterId?: number },
+  ): Promise<StoredMessage[]>
+  // Lança SessionNotFoundError, sem gravar nada, se a conversa não é do dono.
   appendTurn(
     sessionId: string,
+    owner: SessionOwner,
     turn: { user: string; assistant: string; status: ReplyStatus; sources: string[] },
   ): Promise<void>
-  saveSummary(sessionId: string, summary: string, untilId: number): Promise<void>
-  deleteInactive(olderThan: Date): Promise<number>
+  // Não faz nada se o dono é outro.
+  saveSummary(
+    sessionId: string,
+    owner: SessionOwner,
+    summary: string,
+    untilId: number,
+  ): Promise<void>
+  // Só conversas da conta com pelo menos uma mensagem, last_activity_at desc, id; no máximo limit.
+  listForAccount(accountId: string, limit: number): Promise<ConversationSummaryRecord[]>
+  // true se apagou.
+  deleteForAccount(id: string, accountId: string): Promise<boolean>
+  // web sem conta (qualquer idade), web com last_activity_at < webBefore, cli e eval com
+  // last_activity_at < otherBefore. Devolve quantas.
+  deleteInactive(input: { webBefore: Date; otherBefore: Date }): Promise<number>
 }
 
 // ---------- Contas ----------
@@ -116,6 +149,8 @@ export interface AccountRepository {
   touchLastSeen(id: string): Promise<void>
   // Demo com expires_at <= now e Google com last_seen_at < googleInactiveBefore. Devolve quantas.
   deleteExpired(input: { now: Date; googleInactiveBefore: Date }): Promise<number>
+  // Apaga a conta; as conversas vão junto (on delete cascade). true se apagou.
+  delete(id: string): Promise<boolean>
 }
 
 // ---------- Rate limit ----------
@@ -132,6 +167,7 @@ export type HandleMessageInput = {
   sessionId: string
   message: string
   channel: Channel
+  accountId: string | null // obrigatório na web e nulo no CLI e no eval
   profile?: RestaurantProfile
 }
 
