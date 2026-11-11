@@ -116,6 +116,12 @@ async function main(): Promise<void> {
   }
   const existing =
     sessionFlag === undefined ? null : await sessions.get(sessionId, { accountId: null })
+  // Old web conversations without an account also match the "no account" owner until the
+  // daily cleanup removes them; the CLI only resumes its own channel.
+  if (existing !== null && existing.channel !== "cli") {
+    console.log(SESSION_NOT_FOUND_MESSAGE)
+    return
+  }
   if (existing === null) {
     console.log("Sessão: nova")
   } else {
