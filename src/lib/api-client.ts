@@ -3,6 +3,8 @@ import type {
   ChatResponse,
   ConversationListItem,
   HistoryMessage,
+  ProfileResponse,
+  ProfileUpdateRequest,
   ReplyStatus,
   SessionHistoryResponse,
   SessionListResponse,
@@ -62,10 +64,13 @@ function isSessionHistory(value: unknown): value is SessionHistoryResponse {
   return (
     isRecord(value) &&
     typeof value.sessionId === "string" &&
-    isRecord(value.profile) &&
     Array.isArray(value.messages) &&
     value.messages.every(isHistoryMessage)
   )
+}
+
+function isProfileResponse(value: unknown): value is ProfileResponse {
+  return isRecord(value) && isRecord(value.profile)
 }
 
 function isConversationListItem(value: unknown): value is ConversationListItem {
@@ -125,16 +130,38 @@ export function listSessions(
 }
 
 // DELETE answers 204 with no body: any 2xx other than 204 is an unexpected reply.
-export async function deleteSession(
+export function deleteSession(
   id: string,
   fetchFn: typeof fetch = defaultFetch,
 ): Promise<ApiResult<null>> {
+  return deleteRequest(`/api/sessions/${encodeURIComponent(id)}`, fetchFn)
+}
+
+export function deleteAccount(fetchFn: typeof fetch = defaultFetch): Promise<ApiResult<null>> {
+  return deleteRequest("/api/account", fetchFn)
+}
+
+export function saveProfile(
+  profile: ProfileUpdateRequest,
+  fetchFn: typeof fetch = defaultFetch,
+): Promise<ApiResult<ProfileResponse>> {
+  return request(
+    "/api/profile",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profile),
+      cache: "no-store",
+    },
+    isProfileResponse,
+    fetchFn,
+  )
+}
+
+async function deleteRequest(url: string, fetchFn: typeof fetch): Promise<ApiResult<null>> {
   let response: Response
   try {
-    response = await fetchFn(`/api/sessions/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-      cache: "no-store",
-    })
+    response = await fetchFn(url, { method: "DELETE", cache: "no-store" })
   } catch {
     return { ok: false, status: 0, error: NETWORK_ERROR_MESSAGE }
   }
