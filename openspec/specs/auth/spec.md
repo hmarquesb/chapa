@@ -116,7 +116,7 @@ A limpeza diária SHALL apagar as contas demo cujo prazo de 7 dias venceu e as c
 - **THEN** a conta continua
 
 ### Requirement: Conta demo com perfil de exemplo
-Toda conta demo SHALL nascer com o mesmo perfil fictício, no formato v2: nome "Marmitaria Boa Panela", plano Misto, cozinha "Marmita e comida caseira" (`marmita`), local Rio de Janeiro (RJ, código 3304557) e horário "11h às 15h e 18h às 23h". O visitante MAY editar o perfil da própria demo, e a edição não muda o perfil das outras demos.
+Toda conta demo SHALL nascer com o mesmo perfil fictício, no formato v2: nome "Marmitaria Boa Panela", plano Misto, cozinha "Marmita e comida caseira" (`marmita`), local Rio de Janeiro (RJ, código 3304557) e horário de segunda a sábado das 11:00 às 15:00 e das 18:00 às 23:00, com o domingo fechado. O visitante MAY editar o perfil da própria demo, e a edição não muda o perfil das outras demos.
 
 #### Scenario: Demo nova
 - **WHEN** o visitante clica em "Testar como demo"
@@ -129,6 +129,10 @@ Toda conta demo SHALL nascer com o mesmo perfil fictício, no formato v2: nome "
 #### Scenario: Smoke confere a demo
 - **WHEN** o smoke lê `GET /api/profile` de uma demo nova
 - **THEN** o passo só passa com o plano `misto` e o local `{ "uf": "RJ", "cityCode": 3304557 }`
+
+#### Scenario: Horário da demo no prompt
+- **WHEN** a demo nova faz uma pergunta
+- **THEN** a instrução de sistema traz "Horário: seg a sáb, 11h às 15h e 18h às 23h; dom, fechado"
 
 ### Requirement: Excluir a conta
 "Excluir minha conta" SHALL apagar, na hora, a conta, o perfil e todas as conversas e mensagens dela, encerrar a sessão e levar a `/entrar`. Depois disso, o cookie antigo MUST ser tratado como sem sessão.

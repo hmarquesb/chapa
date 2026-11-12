@@ -1,7 +1,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: Perfil salvo no formato antigo
-Ao ler um perfil salvo sem `version: 2`, ou com o horário em texto, na conta ou na conversa, o sistema SHALL convertê-lo para o v2 sem gravar nada. O plano é mantido, e o horário em texto livre é descartado; o nome fica se passar no filtro de `guardrails`; a cozinha vira um id da lista (pelo rótulo ou por um sinônimo) ou "Outro" (se o texto passar no filtro e tiver até 30 caracteres); a cidade vira o local só quando casa com um único município do Brasil. O que não converte é descartado, e o perfil MUST ficar marcado como "precisa revisar".
+Ao ler um perfil salvo sem `version: 2`, ou com o horário em texto, na conta ou na conversa, o sistema SHALL convertê-lo para o v2 sem gravar nada, campo a campo. O que não converte é descartado, e o perfil MUST ficar marcado como "precisa revisar".
+
+#### Scenario: Regras de cada campo
+- **WHEN** o perfil antigo tem plano, horário, nome, cozinha e cidade
+- **THEN** o plano é mantido e o horário em texto livre é descartado; o nome fica se passar no filtro de `guardrails`; a cozinha vira um id da lista (pelo rótulo ou por um sinônimo) ou "Outro" (se o texto passar no filtro e tiver até 30 caracteres); a cidade vira o local só quando casa com um único município do Brasil
 
 #### Scenario: Conversão completa
 - **WHEN** a conta tem o perfil antigo `{ "name": "Cantina do Beto", "plan": "proprio", "cuisine": "pizzaria", "city": "Campinas" }`
