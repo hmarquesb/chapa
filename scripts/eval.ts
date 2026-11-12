@@ -236,8 +236,12 @@ function reduceChunk(chunk: RetrievedChunk): Omit<RetrievedChunk, "id"> {
 }
 
 // O contexto gravado guarda só a origem e o tamanho; o texto não vai para o arquivo.
-function reduceContextBlock(block: ContextBlock) {
-  return { source: block.source, section: block.section, chars: block.content.length }
+// Resultados de blocos anteriores (--append) já vêm reduzidos do arquivo, sem `content`: mantêm o `chars`.
+function reduceContextBlock(
+  block: ContextBlock | { source: string; section: string; chars: number },
+) {
+  const chars = "content" in block ? block.content.length : block.chars
+  return { source: block.source, section: block.section, chars }
 }
 
 function serializeRun(run: EvalRun): string {
