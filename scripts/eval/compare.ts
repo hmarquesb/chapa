@@ -1,6 +1,6 @@
 // Comparação lado a lado de rodadas de avaliação (S08, RF6). Pura: usa só os EvalRun.
 import type { RagConfig } from "@/config"
-import type { Metrics } from "./metrics"
+import type { Metrics, RouteMetrics } from "./metrics"
 import type { EvalRun } from "./report"
 import { cell, formatPercent, formatScore } from "./report"
 
@@ -31,6 +31,27 @@ const METRIC_ROWS: Array<[string, (m: Metrics) => string]> = [
   ["Tokens de saída", (m) => String(m.usage.outputTokens)],
 ]
 
+// Linhas de rota: "—" na rodada gravada antes das métricas de rota (ou sem nenhuma pergunta curta).
+const ROUTE_ROWS: Array<[string, (r: RouteMetrics) => string | null]> = [
+  ["Acerto de rota", (r) => formatPercent(r.routeAccuracy)],
+  ["Falso small talk", (r) => String(r.falseSmallTalk)],
+  ["Chamadas evitadas", (r) => String(r.avoidedSearches)],
+  [
+    "Acerto conversa / mistas",
+    (r) => `${formatPercent(r.conversationAccuracy)} / ${formatPercent(r.mixedAccuracy)}`,
+  ],
+  [
+    "Latência curtas → RAG",
+    (r) => (r.shortRagLatencyAvgMs === null ? null : `${Math.round(r.shortRagLatencyAvgMs)} ms`),
+  ],
+]
+
+function routerLabel(run: EvalRun): string {
+  const router = run.config.router
+  if (router === undefined) return EMPTY
+  return router.enabled ? "ligado" : "desligado"
+}
+
 function row(name: string, values: string[]): string {
   return `| ${[name, ...values].map(cell).join(" | ")} |`
 }
@@ -45,6 +66,15 @@ export function renderComparison(runs: EvalRun[]): string {
       row(
         name,
         runs.map((run) => format(run.metrics)),
+      ),
+    )
+  }
+
+  for (const [name, format] of ROUTE_ROWS) {
+    lines.push(
+      row(
+        name,
+        runs.map((run) => (run.metrics.routing ? (format(run.metrics.routing) ?? EMPTY) : EMPTY)),
       ),
     )
   }
@@ -67,6 +97,9 @@ export function renderComparison(runs: EvalRun[]): string {
     const values = runs.map((run) => String(run.config.rag[field]))
     if (new Set(values).size > 1) lines.push(row(field, values))
   }
+
+  const routers = runs.map(routerLabel)
+  if (new Set(routers).size > 1) lines.push(row("Roteador", routers))
 
   const intro = [
     "# Comparação das rodadas",

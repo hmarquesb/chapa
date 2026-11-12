@@ -2,7 +2,7 @@
 // existente e recalcula as métricas. Funções puras: quem lê e grava os arquivos é scripts/eval.ts.
 import { aggregate, type QuestionResult, scoreQuestion } from "./metrics"
 import type { EvalQuestion } from "./questions"
-import type { EvalRun } from "./report"
+import { type EvalRun, routerMaxWords } from "./report"
 
 const COMMIT_SEPARATOR = ", "
 
@@ -48,7 +48,8 @@ export function sameRunConfig(
   return (
     a.preset === b.preset &&
     deepEqual(a.config.models, b.config.models) &&
-    deepEqual(a.config.rag, b.config.rag)
+    deepEqual(a.config.rag, b.config.rag) &&
+    deepEqual(a.config.router, b.config.router)
   )
 }
 
@@ -95,7 +96,7 @@ export function mergeRuns(
     commit: mergeCommits(previous.commit, current.commit),
     results,
     scores: results.map(scoreQuestion),
-    metrics: aggregate(results),
+    metrics: aggregate(results, routerMaxWords(current)),
   }
   return { run, discarded, pending }
 }

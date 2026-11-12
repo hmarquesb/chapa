@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest"
 import { RAG_PRESETS, type RagConfig } from "@/config"
 import { renderComparison } from "./compare"
-import type { Metrics } from "./metrics"
+import type { Metrics, RouteMetrics } from "./metrics"
 import type { EvalRun } from "./report"
+
+const ROUTING: RouteMetrics = {
+  routeAccuracy: 1,
+  falseSmallTalk: 0,
+  falseSmallTalkIds: [],
+  avoidedSearches: 6,
+  greetingAccuracy: 1,
+  conversationAccuracy: 0.75,
+  mixedAccuracy: 1,
+  shortRagLatencyAvgMs: 1800,
+}
+
+function routerOf(enabled: boolean | undefined): EvalRun["config"]["router"] {
+  return enabled === undefined ? undefined : { enabled, maxWords: 12 }
+}
 
 const MODELS = {
   chat: "modelo-chat",
@@ -27,13 +42,18 @@ function metrics(overrides: Partial<Metrics> = {}): Metrics {
   }
 }
 
-function run(label: string, rag: Partial<RagConfig>, m: Partial<Metrics> = {}): EvalRun {
+function run(
+  label: string,
+  rag: Partial<RagConfig>,
+  m: Partial<Metrics> = {},
+  router?: boolean,
+): EvalRun {
   return {
     label,
     preset: "padrao",
     date: "2026-11-06T12:00:00.000Z",
     commit: "abc1234",
-    config: { models: MODELS, rag: { ...RAG_PRESETS.padrao, ...rag } },
+    config: { models: MODELS, rag: { ...RAG_PRESETS.padrao, ...rag }, router: routerOf(router) },
     results: [],
     scores: [],
     metrics: metrics(m),
@@ -96,6 +116,39 @@ describe("renderComparison", () => {
     expect(row(md, "Juiz: corretude")).toBe("| Juiz: corretude | — | 4.25 |")
     expect(row(md, "Juiz: fidelidade")).toBe("| Juiz: fidelidade | — | 4.50 |")
     expect(row(renderComparison([run("v1", {})]), "Juiz: corretude")).toBeUndefined()
+  })
+
+  it("shows the route rows with a dash for a run without routing (v3 x v4)", () => {
+    const md = renderComparison([run("v3", {}), run("v4", {}, { routing: ROUTING }, true)])
+    expect(row(md, "Acerto de rota")).toBe("| Acerto de rota | — | 100,0% |")
+    expect(row(md, "Falso small talk")).toBe("| Falso small talk | — | 0 |")
+    expect(row(md, "Chamadas evitadas")).toBe("| Chamadas evitadas | — | 6 |")
+    expect(row(md, "Acerto conversa / mistas")).toBe(
+      "| Acerto conversa / mistas | — | 75,0% / 100,0% |",
+    )
+    expect(row(md, "Latência curtas → RAG")).toBe("| Latência curtas → RAG | — | 1800 ms |")
+    expect(row(md, "Roteador")).toBe("| Roteador | — | ligado |")
+  })
+
+  it("shows the router row and the short-RAG latency side by side (v4 x v4-regras)", () => {
+    const md = renderComparison([
+      run("v4", {}, { routing: { ...ROUTING, shortRagLatencyAvgMs: 1200 } }, true),
+      run(
+        "v4-regras",
+        {},
+        { routing: { ...ROUTING, avoidedSearches: 4, shortRagLatencyAvgMs: null } },
+        false,
+      ),
+    ])
+    expect(row(md, "Roteador")).toBe("| Roteador | ligado | desligado |")
+    expect(row(md, "Latência curtas → RAG")).toBe("| Latência curtas → RAG | 1200 ms | — |")
+    expect(row(md, "Chamadas evitadas")).toBe("| Chamadas evitadas | 6 | 4 |")
+  })
+
+  it("hides the router row when every run has the same router", () => {
+    const md = renderComparison([run("v4", {}, {}, true), run("v4b", {}, {}, true)])
+    expect(row(md, "Roteador")).toBeUndefined()
+    expect(row(renderComparison([run("v3", {}), run("v3b", {})]), "Roteador")).toBeUndefined()
   })
 
   it("asks for at least one run", () => {

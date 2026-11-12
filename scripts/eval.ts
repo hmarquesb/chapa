@@ -3,6 +3,7 @@
 // npm run eval -- --label v1 --preset baseline
 // npm run eval -- --label v2 --preset padrao [--judge] [--delay-ms 4000] [--only 1,5,16]
 // npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 101,102 (rodada em blocos)
+// npm run eval -- --label v4-regras --preset padrao --router off (só a regra local de cumprimento)
 // npm run eval -- --label teste-minscore --preset padrao --min-score 0.45 --only 3,9
 // npm run eval -- --compare eval/resultados/v1.json eval/resultados/v2.json
 import { execFileSync } from "node:child_process"
@@ -28,7 +29,7 @@ import { renderComparison } from "./eval/compare"
 import { judgeAnswer } from "./eval/judge"
 import { aggregate, type QuestionResult, scoreQuestion } from "./eval/metrics"
 import { type EvalQuestion, runQuestions, validateQuestions } from "./eval/questions"
-import { type EvalRun, formatPercent, renderReport } from "./eval/report"
+import { type EvalRun, formatPercent, renderReport, routerMaxWords } from "./eval/report"
 import { parseArgs } from "./lib/args"
 
 const ROOT = process.cwd()
@@ -105,9 +106,24 @@ function ragOverrides(flags: Flags): Partial<RagConfig> {
   return overrides
 }
 
-function buildConfig(preset: PresetName, overrides: Partial<RagConfig>): AppConfig {
+// --router on|off; sem a flag, ligado no padrao e desligado no baseline.
+function routerFlag(flags: Flags, preset: PresetName): boolean {
+  const raw = stringFlag(flags, "router")
+  if (raw === undefined) return preset === "padrao"
+  if (raw !== "on" && raw !== "off") {
+    throw new UsageError(`--router aceita on ou off (recebido: ${raw}).`)
+  }
+  return raw === "on"
+}
+
+function buildConfig(
+  preset: PresetName,
+  overrides: Partial<RagConfig>,
+  routerEnabled: boolean,
+): AppConfig {
   try {
-    return withRag(withRag(config, RAG_PRESETS[preset]), overrides)
+    const withPreset = withRag(withRag(config, RAG_PRESETS[preset]), overrides)
+    return { ...withPreset, router: { ...config.router, enabled: routerEnabled } }
   } catch (error) {
     // withRag explica o campo inválido em PT-BR.
     throw new UsageError(error instanceof Error ? error.message : String(error))
@@ -170,7 +186,7 @@ async function loadPreviousRun(
   }
   if (!sameRunConfig(previous, current)) {
     throw new UsageError(
-      `A rodada "${label}" foi gravada com outra configuração (preset, modelos ou RAG).` +
+      `A rodada "${label}" foi gravada com outra configuração (preset, modelos, RAG ou roteador).` +
         " Use outro --label ou rode sem --append.",
     )
   }
@@ -222,13 +238,14 @@ function serializeRun(run: EvalRun): string {
 
 function progressLine(index: number, total: number, result: QuestionResult): string {
   const score = scoreQuestion(result)
-  const ok = score.inScope ? score.correct : score.refusedCorrectly
+  const ok = score.conversationCorrect ?? (score.inScope ? score.correct : score.refusedCorrectly)
   const status =
     result.reply === null ? `erro: ${result.error ?? "desconhecido"}` : result.reply.status
   const hit = score.hit === null ? "" : ` hit=${score.hit ? "sim" : "não"}`
+  const route = result.reply?.route == null ? "" : ` rota=${result.reply.route}`
   return (
     `[${index}/${total}] #${result.question.id} ${result.question.tipo} ${ok ? "✓" : "✗"}` +
-    ` (${status}${hit}, ${result.latencyMs} ms, ${result.usage.calls} chamadas)`
+    ` (${status}${hit}${route}, ${result.latencyMs} ms, ${result.usage.calls} chamadas)`
   )
 }
 
@@ -279,19 +296,19 @@ async function evaluate(flags: Flags): Promise<void> {
       `Preset desconhecido: ${received}. Use --preset ${Object.keys(RAG_PRESETS).join(" ou --preset ")}.`,
     )
   }
-  const appConfig = buildConfig(preset, ragOverrides(flags))
+  const appConfig = buildConfig(preset, ragOverrides(flags), routerFlag(flags, preset))
+  const runConfig = {
+    models: appConfig.models,
+    rag: appConfig.rag,
+    router: appConfig.router,
+  }
   const delayMs = numberFlag(flags, "delay-ms", true) ?? DEFAULT_DELAY_MS
   if (delayMs < 0) throw new UsageError("--delay-ms precisa ser maior ou igual a 0.")
   const useJudge = flags.judge === true
   const append = appendFlag(flags)
   const allQuestions = await loadQuestions()
   const questions = parseOnly(flags, allQuestions)
-  const previous = append
-    ? await loadPreviousRun(label, {
-        preset,
-        config: { models: appConfig.models, rag: appConfig.rag },
-      })
-    : null
+  const previous = append ? await loadPreviousRun(label, { preset, config: runConfig }) : null
 
   const key = {
     embeddingModel: appConfig.models.embedding,
@@ -302,6 +319,10 @@ async function evaluate(flags: Flags): Promise<void> {
   console.log(
     `RAG: topK ${appConfig.rag.topK}, minScore ${appConfig.rag.minScore}, alpha ${appConfig.rag.alpha},` +
       ` rewriteQuery ${appConfig.rag.rewriteQuery}`,
+  )
+  const { router } = appConfig
+  console.log(
+    `Roteador: ${router.enabled ? `ligado (até ${router.maxWords} palavras)` : "desligado (só a regra de cumprimento)"}`,
   )
   console.log(`Modelos: chat ${appConfig.models.chat}, rápido ${appConfig.models.fast}`)
   console.log(
@@ -348,10 +369,10 @@ async function evaluate(flags: Flags): Promise<void> {
     preset,
     date: new Date().toISOString(),
     commit: commitHash(),
-    config: { models: appConfig.models, rag: appConfig.rag },
+    config: runConfig,
     results,
     scores: results.map(scoreQuestion),
-    metrics: aggregate(results),
+    metrics: aggregate(results, routerMaxWords({ config: runConfig })),
   }
   // Com --append, junta ao que já estava gravado (sem arquivo, junta a uma rodada vazia).
   const merged = append
@@ -372,6 +393,13 @@ async function evaluate(flags: Flags): Promise<void> {
       ` Recusa correta ${formatPercent(metrics.correctRefusal)} |` +
       ` Falsa recusa ${formatPercent(metrics.falseRefusal)}`,
   )
+  if (metrics.routing !== undefined) {
+    const routing = metrics.routing
+    console.log(
+      `Rotas: acerto ${formatPercent(routing.routeAccuracy)} | falso small talk ${routing.falseSmallTalk} |` +
+        ` chamadas evitadas ${routing.avoidedSearches}`,
+    )
+  }
   console.log(
     `Latência p50 ${metrics.latencyP50Ms} ms, p95 ${metrics.latencyP95Ms} ms | Erros ${metrics.errors} |` +
       ` ${metrics.usage.calls} chamadas, ${metrics.usage.inputTokens} tokens de entrada,` +

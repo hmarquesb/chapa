@@ -21,6 +21,7 @@ function question(id: number, overrides: Partial<EvalQuestion> = {}): EvalQuesti
     fonte_esperada: ["01-planos-e-taxas.md"],
     deve_conter: ["11%"],
     esperado: "resposta",
+    rota_esperada: "rag",
     nota: "nota",
     ...overrides,
   }
@@ -51,10 +52,14 @@ function run(results: QuestionResult[], overrides: Partial<EvalRun> = {}): EvalR
     preset: "padrao",
     date: "2026-11-10T10:00:00.000Z",
     commit: "aaa1111",
-    config: { models: { ...MODELS }, rag: { ...RAG_PRESETS.padrao } },
+    config: {
+      models: { ...MODELS },
+      rag: { ...RAG_PRESETS.padrao },
+      router: { enabled: true, maxWords: 12 },
+    },
     results,
     scores: results.map(scoreQuestion),
-    metrics: aggregate(results),
+    metrics: aggregate(results, 12),
     ...overrides,
   }
 }
@@ -117,6 +122,21 @@ describe("sameRunConfig", () => {
     ).toBe(false)
   })
 
+  it("is false when the router differs", () => {
+    const off = { ...base.config, router: { enabled: false, maxWords: 12 } }
+    expect(sameRunConfig(base, { ...base, config: off })).toBe(false)
+    const words = { ...base.config, router: { enabled: true, maxWords: 8 } }
+    expect(sameRunConfig(base, { ...base, config: words })).toBe(false)
+  })
+
+  it("accepts a run without router only against another run without router", () => {
+    const { router: _router, ...oldConfig } = base.config
+    const old = { ...base, config: oldConfig }
+    expect(sameRunConfig(old, { ...old })).toBe(true)
+    expect(sameRunConfig(old, base)).toBe(false)
+    expect(sameRunConfig(base, old)).toBe(false)
+  })
+
   it("is false when a field exists only on one side", () => {
     const rag = { ...base.config.rag, extra: 1 } as unknown as EvalRun["config"]["rag"]
     expect(sameRunConfig(base, { ...base, config: { ...base.config, rag } })).toBe(false)
@@ -136,7 +156,7 @@ describe("mergeRuns", () => {
     expect(merged.scores.map((s) => s.id)).toEqual([101, 102, 103])
     expect(merged.metrics.total).toBe(3)
     expect(merged.metrics.accuracy).toBeCloseTo(2 / 3)
-    expect(merged.metrics).toEqual(aggregate(merged.results))
+    expect(merged.metrics).toEqual(aggregate(merged.results, 12))
     expect(merged.date).toBe("2026-11-10T11:00:00.000Z")
     expect(merged.commit).toBe("aaa1111, bbb2222")
     expect(discarded).toEqual([])
