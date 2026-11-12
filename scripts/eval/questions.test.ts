@@ -420,6 +420,7 @@ function reply(overrides: Partial<AssistantReply> = {}): AssistantReply {
     searchQuery: "busca",
     usage: ONE_CALL,
     latencyMs: 100,
+    routerMs: null,
     route: "rag",
     ...overrides,
   }
