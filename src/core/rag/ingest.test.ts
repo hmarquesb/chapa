@@ -38,6 +38,9 @@ function fakeChunks(): ChunkRepository & { replaceCalls: ReplaceCall[] } {
       replaceCalls.push({ key, chunks })
       return chunks.length
     },
+    async listBySources() {
+      return []
+    },
     async search() {
       throw new Error("search não deveria ser chamado")
     },

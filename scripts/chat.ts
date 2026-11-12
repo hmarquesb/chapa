@@ -2,10 +2,12 @@
 // ⚠️ Chama a API do Gemini e grava no banco do DATABASE_URL: rode só com autorização.
 // npm run chat -- --perfil perfil.json --nome "Pizzaria Bella" --plano misto
 // npm run chat -- --sessao <uuid> --debug
+// npm run chat -- --debug --context chunks --max-docs 2
 import { randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { createInterface } from "node:readline/promises"
-import { chunkConfigKey } from "@/config"
+import { chunkConfigKey, type RagConfig, withRag } from "@/config"
+import { createAssistant } from "@/core/assistant"
 import {
   LlmQuotaError,
   LlmRequestError,
@@ -115,6 +117,11 @@ function printReply(reply: AssistantReply, debug: boolean): void {
     console.log(`Busca: ${reply.searchQuery === "" ? "(nenhuma)" : reply.searchQuery}`)
     console.log(`Trechos recuperados (${reply.retrieved.length}) [score | sem | kw]:`)
     for (const chunk of reply.retrieved) console.log(formatChunk(chunk))
+    const chars = reply.context.reduce((sum, block) => sum + block.content.length, 0)
+    const files = [...new Set(reply.context.map((block) => block.source))].join(", ")
+    console.log(
+      `Contexto enviado: ${reply.context.length} blocos, ${chars} caracteres${files === "" ? "" : `: ${files}`}`,
+    )
     const { calls, inputTokens, outputTokens } = reply.usage
     console.log(
       `Uso: ${calls} chamadas, ${inputTokens} tokens de entrada, ${outputTokens} de saída` +
@@ -123,6 +130,30 @@ function printReply(reply: AssistantReply, debug: boolean): void {
     console.log("-------------")
   }
   console.log("")
+}
+
+// --context chunks|documents e --max-docs 1..5 sobrescrevem o preset ativo.
+function contextOverrides(
+  flags: Record<string, string | true>,
+): Partial<RagConfig> | { error: string } {
+  const overrides: Partial<RagConfig> = {}
+  const context = flags.context
+  if (context !== undefined) {
+    if (context !== "chunks" && context !== "documents") {
+      return { error: `--context aceita chunks ou documents (recebido: ${String(context)}).` }
+    }
+    overrides.contextMode = context
+  }
+  const maxDocs = flags["max-docs"]
+  if (maxDocs !== undefined) {
+    const value =
+      typeof maxDocs === "string" && maxDocs.trim() !== "" ? Number(maxDocs) : Number.NaN
+    if (!Number.isInteger(value)) {
+      return { error: `--max-docs precisa ser um número inteiro (recebido: ${String(maxDocs)}).` }
+    }
+    overrides.maxContextDocs = value
+  }
+  return overrides
 }
 
 async function main(): Promise<void> {
@@ -143,13 +174,33 @@ async function main(): Promise<void> {
   }
   const profile = parsedProfile
 
-  const { config, chunks, sessions, assistant } = getContainer()
+  const overrides = contextOverrides(flags)
+  if ("error" in overrides) {
+    console.error(overrides.error)
+    process.exitCode = 1
+    return
+  }
+  const container = getContainer()
+  const { chunks, sessions } = container
+  let config = container.config
+  let assistant = container.assistant
+  if (Object.keys(overrides).length > 0) {
+    try {
+      config = withRag(config, overrides)
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error))
+      process.exitCode = 1
+      return
+    }
+    assistant = createAssistant({ llm: container.llm, chunks, sessions, config })
+  }
   const key = { embeddingModel: config.models.embedding, chunkConfig: chunkConfigKey(config.rag) }
   const total = await chunks.count(key)
 
   console.log("Chapa (CLI de desenvolvimento)")
   console.log(`Modelo de chat: ${config.models.chat}`)
   console.log(`chunkConfig: ${key.chunkConfig} (${key.embeddingModel})`)
+  console.log(`Contexto: ${config.rag.contextMode} (até ${config.rag.maxContextDocs} documentos)`)
   console.log(`Trechos no banco: ${total}`)
   if (total === 0) {
     console.log("A base está vazia para esta configuração. Rode `npm run ingest` antes do chat.")

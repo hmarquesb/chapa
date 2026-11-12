@@ -1,6 +1,6 @@
 import "server-only"
 import { FALLBACK_MESSAGE } from "@/core/messages"
-import type { ChatMessage, RetrievedChunk } from "@/core/types"
+import type { ChatMessage, ContextBlock } from "@/core/types"
 import { cuisineLabel } from "@/lib/profile/cuisines"
 import { formatWeekHours } from "@/lib/profile/hours"
 import { STATES } from "@/lib/profile/states"
@@ -72,7 +72,7 @@ export function buildSystemInstruction(input: {
   return parts.join("\n\n")
 }
 
-function sourceLabel(chunk: RetrievedChunk): string {
+function sourceLabel(chunk: ContextBlock): string {
   return chunk.section === ""
     ? `[Fonte: ${chunk.source}]`
     : `[Fonte: ${chunk.source} › ${chunk.section}]`
@@ -94,11 +94,11 @@ Contexto: Fotos do cardápio devem mostrar o prato real, com boa iluminação.
 Pergunta: Qual é o prazo para receber o repasse?
 Resposta: ${FALLBACK_MESSAGE}`
 
-export function buildRagPrompt(question: string, results: RetrievedChunk[]): string {
+export function buildRagPrompt(question: string, blocks: ContextBlock[]): string {
   const context =
-    results.length === 0
+    blocks.length === 0
       ? "(nenhum trecho encontrado)"
-      : results.map((chunk) => `${sourceLabel(chunk)}\n${chunk.content}`).join("\n---\n")
+      : blocks.map((chunk) => `${sourceLabel(chunk)}\n${chunk.content}`).join("\n---\n")
 
   return `Instruções:
 - Responda só com base no contexto da base de conhecimento abaixo.

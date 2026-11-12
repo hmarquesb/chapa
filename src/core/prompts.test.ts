@@ -227,7 +227,10 @@ describe("buildSystemInstruction", () => {
 })
 
 describe("buildRagPrompt", () => {
-  const prompt = buildRagPrompt("Quando cai o repasse?", RESULTS)
+  const prompt = buildRagPrompt(
+    "Quando cai o repasse?",
+    RESULTS.map(({ source, section, content }) => ({ source, section, content })),
+  )
 
   it("labels every chunk, with or without section", () => {
     expect(prompt).toContain("[Fonte: 02-repasse-financeiro.md › Ciclo de repasse]")

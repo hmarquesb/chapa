@@ -1,6 +1,6 @@
 import "server-only"
 import type { Sql } from "postgres"
-import type { ChunkRepository } from "@/core/types"
+import type { Chunk, ChunkRepository } from "@/core/types"
 import { type ChunkRow, toChunkCandidate, toVectorLiteral } from "@/infra/db/mappers"
 
 const INSERT_BATCH_SIZE = 100
@@ -47,6 +47,18 @@ export function createChunkRepository(sql: Sql): ChunkRepository {
         )
       `
       return rows.map(toChunkCandidate)
+    },
+
+    async listBySources(key, sources) {
+      if (sources.length === 0) return []
+      return sql<Chunk[]>`
+        select source, section, content
+        from public.document_chunks
+        where embedding_model = ${key.embeddingModel}
+          and chunk_config = ${key.chunkConfig}
+          and source = any(${sources}::text[])
+        order by id
+      `
     },
 
     async count(key) {

@@ -9,6 +9,7 @@ import {
   greetingReply,
 } from "@/core/messages"
 import { buildRagPrompt, buildSystemInstruction } from "@/core/prompts"
+import { buildContext } from "@/core/rag/context"
 import { retrieve } from "@/core/rag/retrieve"
 import { rewriteQuery } from "@/core/rewrite-query"
 import { countWords, routeConversation } from "@/core/router/conversation"
@@ -19,9 +20,9 @@ import type {
   AssistantReply,
   ChatMessage,
   ChunkRepository,
+  ContextBlock,
   HandleMessageInput,
   LlmClient,
-  RetrievedChunk,
   SessionOwner,
   SessionRecord,
   SessionRepository,
@@ -81,9 +82,9 @@ function startWithUser(messages: ChatMessage[]): ChatMessage[] {
   return messages[0]?.role === "assistant" ? messages.slice(1) : messages
 }
 
-// Arquivos únicos, na ordem do score (results já vem ordenado).
-function uniqueSources(results: RetrievedChunk[]): string[] {
-  return [...new Set(results.map((chunk) => chunk.source))]
+// Arquivos únicos do contexto enviado ao modelo, na ordem em que aparecem.
+function uniqueSources(blocks: ContextBlock[]): string[] {
+  return [...new Set(blocks.map((block) => block.source))]
 }
 
 export function createAssistant(deps: AssistantDeps): Assistant {
@@ -115,6 +116,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         answer: BLOCKED_INPUT_MESSAGES[inputCheck.reason],
         sources: [],
         retrieved: [],
+        context: [],
         searchQuery: "",
         usage: emptyUsage(),
         latencyMs: now() - startedAt,
@@ -153,6 +155,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         answer,
         sources: [],
         retrieved: [],
+        context: [],
         searchQuery: "",
         usage: emptyUsage(),
         latencyMs: now() - startedAt,
@@ -213,6 +216,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
           answer: routed.answer,
           sources: [],
           retrieved: [],
+          context: [],
           searchQuery: "",
           usage: addUsage(...usages),
           latencyMs: now() - startedAt,
@@ -247,6 +251,9 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     })
     usages.push(retrieveUsage)
 
+    // Montagem do contexto (trechos ou documentos); erro sobe sem gravar o turno.
+    const context = await buildContext({ results, config, chunks })
+
     let status: ReplyStatus
     let answer: string
     if (results.length === 0) {
@@ -263,7 +270,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         }),
         messages: [
           ...startWithUser(history),
-          { role: "user", content: buildRagPrompt(message, results) },
+          { role: "user", content: buildRagPrompt(message, context) },
         ],
         temperature: ANSWER_TEMPERATURE,
         maxOutputTokens: ANSWER_MAX_OUTPUT_TOKENS,
@@ -283,7 +290,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
       }
     }
 
-    const sources = status === "answered" ? uniqueSources(results) : []
+    const sources = status === "answered" ? uniqueSources(context) : []
     // Só a pergunta original e a resposta final. Os trechos e o prompt nunca vão para o banco.
     await sessions.appendTurn(sessionId, owner, {
       user: message,
@@ -297,6 +304,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
       answer,
       sources,
       retrieved: results,
+      context,
       searchQuery,
       usage: addUsage(...usages),
       latencyMs: now() - startedAt,
