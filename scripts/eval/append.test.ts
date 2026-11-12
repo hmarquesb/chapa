@@ -112,7 +112,7 @@ describe("sameRunConfig", () => {
     expect(
       sameRunConfig(base, {
         ...base,
-        config: { ...base.config, rag: { ...base.config.rag, minScore: 0.5 } },
+        config: { ...base.config, rag: { ...base.config.rag, minScore: 0.6 } },
       }),
     ).toBe(false)
     expect(

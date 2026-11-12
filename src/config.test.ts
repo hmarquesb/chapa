@@ -84,7 +84,7 @@ describe("RAG_PRESETS (RF2)", () => {
   it("has the padrao values", () => {
     expect(RAG_PRESETS.padrao).toEqual({
       topK: 5,
-      minScore: 0.55,
+      minScore: 0.5,
       alpha: 0.7,
       candidateLimit: 30,
       chunkStrategy: "markdown",
