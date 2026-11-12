@@ -1,9 +1,15 @@
 // Métricas da avaliação (S08, RF2). Funções puras: os números saem só dos resultados da rodada.
+import { countWords } from "@/core/router/conversation"
 import { includesNormalized } from "@/core/text"
 import type { AssistantReply, Usage } from "@/core/types"
 import { addUsage } from "@/core/usage"
 import type { ReplyStatus } from "@/lib/types"
-import { type EvalQuestion, IN_SCOPE_TYPES } from "./questions"
+import {
+  CONVERSATION_TYPES,
+  type EvalQuestion,
+  IN_SCOPE_TYPES,
+  questionMessages,
+} from "./questions"
 
 export type QuestionResult = {
   question: EvalQuestion
@@ -24,7 +30,24 @@ export type QuestionScore = {
   refusalTypeMatches: boolean | null
   falseRefusal: boolean | null
   forbiddenFound: string[] // termos de nao_deve_conter presentes na resposta; [] se nenhum ou sem resposta
+  routeMatches: boolean | null // null: erro ou entrada bloqueada
+  falseSmallTalk: boolean | null // só com rota_esperada "rag"; null no erro e no bloqueio
+  conversationCorrect: boolean | null // só nos tipos de conversa
 }
+
+export type RouteMetrics = {
+  routeAccuracy: number // 0 a 1, sobre as perguntas com routeMatches !== null
+  falseSmallTalk: number // contagem
+  falseSmallTalkIds: number[]
+  avoidedSearches: number // perguntas que terminaram em rota cumprimento ou conversa
+  greetingAccuracy: number // cumprimento
+  conversationAccuracy: number // conversa
+  mixedAccuracy: number // misto
+  shortRagLatencyAvgMs: number | null // null se nenhuma
+}
+
+// Metas de rota (docs/business.md, "Metas de qualidade").
+export const ROUTE_TARGETS = { falseSmallTalk: 0, routeAccuracy: 0.95 } as const
 
 export type Metrics = {
   total: number
@@ -38,6 +61,7 @@ export type Metrics = {
   errors: number
   usage: Usage
   judgeAvg?: { corretude: number; fidelidade: number } | null
+  routing?: RouteMetrics // opcional: rodadas antigas não têm
 }
 
 export const REFUSAL_STATUSES: ReadonlySet<ReplyStatus> = new Set([
@@ -67,8 +91,30 @@ export function scoreQuestion(result: QuestionResult): QuestionScore {
       reply === null
         ? []
         : (question.nao_deve_conter ?? []).filter((term) => includesNormalized(reply.answer, term)),
+    routeMatches: null,
+    falseSmallTalk: null,
+    conversationCorrect: null,
   }
   const clean = score.forbiddenFound.length === 0
+
+  // Rota do último turno; erro e bloqueio de entrada (route null) ficam fora.
+  if (reply !== null && reply.route !== null) {
+    score.routeMatches = reply.route === question.rota_esperada
+    if (question.rota_esperada === "rag") score.falseSmallTalk = reply.status === "small_talk"
+  }
+
+  if (CONVERSATION_TYPES.has(question.tipo)) {
+    const terms = question.deve_conter ?? []
+    const hasTerms = reply !== null && terms.every((term) => includesNormalized(reply.answer, term))
+    score.conversationCorrect =
+      reply !== null &&
+      clean &&
+      (question.tipo === "misto"
+        ? reply.status === "answered" && hasTerms
+        : reply.status === "small_talk" &&
+          (question.tipo === "cumprimento" ? hasTerms : !/\d/.test(reply.answer)))
+    return score
+  }
 
   if (inScope) {
     const expected = question.fonte_esperada ?? []
@@ -122,10 +168,47 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
-export function aggregate(results: QuestionResult[]): Metrics {
+// `maxWords` é o limite do roteador da rodada: define quais perguntas contam como curtas.
+function aggregateRouting(
+  results: QuestionResult[],
+  scores: QuestionScore[],
+  maxWords: number,
+): RouteMetrics {
+  const withRoute = scores.filter((score) => score.routeMatches !== null)
+  const falseSmallTalkIds = scores.filter((score) => score.falseSmallTalk === true).map((s) => s.id)
+  const accuracyOf = (tipo: EvalQuestion["tipo"]): number => {
+    const ofType = scores.filter((_, index) => results[index]?.question.tipo === tipo)
+    return ratio(countTrue(ofType.map((score) => score.conversationCorrect)), ofType.length)
+  }
+  const shortRag = results.filter(
+    (result) =>
+      result.reply?.route === "rag" &&
+      countWords(questionMessages(result.question).at(-1) ?? "") <= maxWords,
+  )
+  return {
+    routeAccuracy: ratio(countTrue(withRoute.map((score) => score.routeMatches)), withRoute.length),
+    falseSmallTalk: falseSmallTalkIds.length,
+    falseSmallTalkIds,
+    avoidedSearches: results.filter(
+      (result) => result.reply?.route === "cumprimento" || result.reply?.route === "conversa",
+    ).length,
+    greetingAccuracy: accuracyOf("cumprimento"),
+    conversationAccuracy: accuracyOf("conversa"),
+    mixedAccuracy: accuracyOf("misto"),
+    shortRagLatencyAvgMs:
+      shortRag.length === 0 ? null : average(shortRag.map((result) => result.latencyMs)),
+  }
+}
+
+export function aggregate(results: QuestionResult[], maxWords: number): Metrics {
   const scores = results.map(scoreQuestion)
   const inScope = scores.filter((score) => score.inScope)
-  const outOfScope = scores.filter((score) => !score.inScope)
+  // Recusa: nem do escopo nem de conversa (as 14 perguntas de antes).
+  const outOfScope = scores.filter(
+    (score, index) =>
+      !score.inScope &&
+      !CONVERSATION_TYPES.has(results[index]?.question.tipo as EvalQuestion["tipo"]),
+  )
   const latencies = results.map((result) => result.latencyMs)
 
   const metrics: Metrics = {
@@ -139,6 +222,7 @@ export function aggregate(results: QuestionResult[]): Metrics {
     latencyP95Ms: percentile(latencies, 95),
     errors: results.filter((result) => result.reply === null).length,
     usage: addUsage(...results.map((result) => result.usage)),
+    routing: aggregateRouting(results, scores, maxWords),
   }
 
   // Sem juiz na rodada: o campo fica de fora. Com juiz mas sem nenhuma nota válida: null.
