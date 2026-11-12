@@ -55,3 +55,17 @@ Dez perguntas passaram de erro a acerto (116, 119, 124, 126, 132, 134, 163, 165,
 **Decisão:** o critério do passo 2 passou. O `padrao` fica em `documents` com `maxContextDocs` 3. O custo é o dobro dos tokens de entrada, dentro do limite por minuto com `--delay-ms 4000`.
 
 A `v5-docs` esbarrou na cota do Gemini no meio da rodada (5 perguntas com `LlmQuotaError`); depois da troca da chave, só essas e as pendentes foram refeitas com `--append`.
+
+### Prompt do RAG e `minScore` 0.50 (`v5`)
+
+| Rodada | `minScore` | Acerto | Falsa recusa | Contexto suficiente | Recusa correta | Hit@K |
+|---|---|---|---|---|---|---|
+| [`v5-docs`](v5-docs.md) | 0.55 | 91,1% | 6,7% | 97,8% | 100% | 95,6% |
+| [`v5-prompt`](v5-prompt.md) | 0.55 | 91,1% | 4,4% | 97,8% | 100% | 95,6% |
+| [`v5`](v5.md) | 0.50 | 91,1% | 6,7% | 100% | 100% | 97,8% |
+
+**Passo 3, prompt (instrução nova e Exemplo 3):** passou. O acerto ficou igual e nenhuma recusa mudou. Duas perguntas mudaram de resultado: a 135 piorou e a 164 melhorou. Repetidas duas vezes, a 135 acertou numa e errou na outra, e a 164 errou nas duas (a busca não trouxe o arquivo esperado). Foi ruído da rodada, não efeito do prompt. O grupo do prompt fica.
+
+**Passo 4, `minScore` 0.50 (`cal-v5-minscore-050`, 21 perguntas):** passou. Nenhuma das 16 perguntas de recusa mudou de resultado, e a 121 melhorou (de 2 para 5 trechos). Efeito colateral: as perguntas 138 e 141, que a 0.55 caíam no fallback sem chamar o modelo, passaram a enviar trechos; o modelo recusou do mesmo jeito. O `minScore` do `padrao` passou a 0.50 e a rodada completa `v5` o confirma: o contexto suficiente foi a 100% e o Hit@K a 97,8%, e a falsa recusa (6,7%) fica abaixo da meta de 10%.
+
+A diferença de 4,4% para 6,7% entre `v5-prompt` e `v5` é de uma pergunta (2 contra 3 de 45) e está dentro do ruído observado entre execuções.

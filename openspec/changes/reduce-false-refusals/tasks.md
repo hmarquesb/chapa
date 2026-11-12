@@ -46,10 +46,10 @@
 
 ## 7. Checkpoint B: prompt e minScore (orquestrador, com autorização)
 
-- [ ] 7.1 Rodada `v5-prompt` em blocos, com o `padrao`, até `Pendentes: nenhuma`; comparar com a `v5-docs`, repetir as perguntas que mudaram e aplicar o critério do passo 3. Se não passar, reverter o grupo 6. Registrar no `CALIBRACAO.md`
-- [ ] 7.2 Rodada parcial `cal-v5-minscore-050`: `--min-score 0.5 --only <as 16 de recusa e as do escopo que, na v5-prompt, terminaram em fallback ou tiveram menos de 5 trechos>`; aplicar o critério do passo 4 e registrar no `CALIBRACAO.md`
-- [ ] 7.3 Só se o critério da 7.2 passar: mudar o `minScore` do `padrao` para 0.50 em `src/config.ts` (com o comentário da calibração) e rodar a rodada completa `v5`
-- [ ] 7.4 `npm run chat -- --plano misto --debug` com as quatro perguntas da proposta, na configuração final; colar o resultado na descrição do PR, ao lado do da 5.1
+- [x] 7.1 Rodada `v5-prompt` em blocos, com o `padrao`, até `Pendentes: nenhuma`; comparar com a `v5-docs`, repetir as perguntas que mudaram e aplicar o critério do passo 3. Se não passar, reverter o grupo 6. Registrar no `CALIBRACAO.md`
+- [x] 7.2 Rodada parcial `cal-v5-minscore-050`: `--min-score 0.5 --only <as 16 de recusa e as do escopo que, na v5-prompt, terminaram em fallback ou tiveram menos de 5 trechos>`; aplicar o critério do passo 4 e registrar no `CALIBRACAO.md`
+- [x] 7.3 Só se o critério da 7.2 passar: mudar o `minScore` do `padrao` para 0.50 em `src/config.ts` (com o comentário da calibração) e rodar a rodada completa `v5`
+- [x] 7.4 `npm run chat -- --plano misto --debug` com as quatro perguntas da proposta, na configuração final; colar o resultado na descrição do PR, ao lado do da 5.1
 
 ## 8. Documentação
 
