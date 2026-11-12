@@ -40,6 +40,35 @@ A pergunta 129 (multi_doc) também falhou, mas sem recusa: respondeu que o custo
 
 Pela proposta da change, nada no RAG, nos prompts ou na base foi mudado para subir a métrica. Os candidatos para a onda 1 são a recuperação por seção nas paráfrases (116 e 121), a reescrita nas perguntas de continuação (135) e a decisão entre responder e devolver o fallback quando os trechos certos estão no contexto (126 e 134).
 
+## Roteador de conversa (`v4`)
+
+A `v4` é a nova linha de base: as mesmas 50 perguntas da `v3` e 12 novas (ids 151 a 162) para o roteador ([ADR 0025](../../docs/adr/0025-roteador-de-conversa-antes-do-rag.md)). Os tipos `cumprimento`, `conversa` e `misto` não entram no Hit@K, no acerto nem na recusa, então a `v4` continua comparável com a `v3` nessas linhas. Todas as rodadas rodaram em 6 blocos com `--delay-ms 4000 --append`, no mesmo commit (`a0d1cd8`), sem erros e sem estouro de cota. Relatórios: [`v4.md`](v4.md), [`v4-regras.md`](v4-regras.md) e [`v4-baseline.md`](v4-baseline.md).
+
+| Rodada | Configuração | O que mede |
+|---|---|---|
+| `v4` | `padrao`, roteador ligado | A linha de base |
+| `v4-regras` | `padrao`, `--router off` | Só a regra local de cumprimento: o que o roteador acrescenta |
+| `v4-baseline` | `baseline`, roteador desligado | O preset antigo nas mesmas 62 perguntas |
+
+| Métrica | Meta | v3 | v4 | v4-regras | v4-baseline |
+|---|---|---|---|---|---|
+| Acerto | registrar | 83,3% | 83,3% | 80,6% | 41,7% |
+| Falsa recusa | ≤ 3 de 36 | 13,9% | 13,9% | 16,7% | 58,3% |
+| Acerto de rota | ≥ 95% | — | 100,0% | 93,2% | 93,2% |
+| Falso small talk | 0 | — | 0 | 0 | 0 |
+| Chamadas evitadas | registrar | — | 8 | 4 | 4 |
+| Acerto conversa / mistas | registrar | — | 100,0% / 100,0% | 0,0% / 100,0% | 0,0% / 50,0% |
+| Latência curtas → RAG | registrar | — | 4279 ms | 3525 ms | 2787 ms |
+
+**Leitura.**
+
+- **O roteador cumpre as duas metas.** Na `v4`, o acerto de rota é 100% e o falso small talk é 0. As quatro perguntas `conversa` (155 a 158) recebem a resposta de conversa e as quatro `misto` (159 a 162) seguem para o RAG com a saudação e o dado pedido, sem nenhum falso small talk.
+- **O que o roteador acrescenta (`v4` × `v4-regras`).** Com a regra local só, os quatro cumprimentos (151 a 154) passam, mas as quatro `conversa` caem no RAG e terminam em fallback: o acerto de conversa vai a 0%. São 4 chamadas evitadas a menos (8 contra 4).
+- **Acerto de rota abaixo de 95% na `v4-regras` e na `v4-baseline` (93,2%).** É o resultado esperado de desligar o roteador, não uma regressão: as 4 perguntas `conversa` esperam a rota `conversa` e, sem o roteador, seguem para `rag`. A conta é 55 de 59 perguntas com rota definida (as de bloqueio não têm rota escolhida). Falso small talk continua 0 nas três, porque a regra de cumprimento só reconhece a mensagem inteira.
+- **`v4-baseline`.** O acerto de `misto` cai para 50%: as perguntas 160 e 162 devolvem o fallback, porque o preset antigo (`minScore` 0.7, trechos de 500 caracteres e sem reescrita) não recupera a seção certa. Isso repete a leitura da `v3` sobre o `baseline` (acerto de 41,7% e falsa recusa de 58,3%).
+- **Acerto e falsa recusa da `v4` são os da `v3`, mas não as mesmas perguntas.** Na `v4` falharam 116, 119, 121, 124, 129 e 134; na `v3` foram 116, 121, 126, 129, 134 e 135. A 119 e a 124 entraram e a 126 e a 135 saíram, sem mudança no RAG, nos prompts ou na base: é a oscilação de uma rodada com 36 perguntas, em que cada uma vale 2,8 pontos. A falsa recusa continua acima da meta pelos motivos da seção "Por que a falsa recusa ficou acima da meta", acima.
+- **Latência e custo.** A `v4` fez 144 chamadas e 99 mil tokens de entrada, contra 106 chamadas e 72 mil da `v3`, porque tem 12 perguntas a mais. Os percentis de latência da `v4` (p50 de 1942 ms, p95 de 5865 ms) ficaram abaixo dos da `v3`, mas a diferença do p95 vem principalmente de variação da API em rodadas diferentes e não deve ser atribuída ao roteador. Nas perguntas de conversa, os cumprimentos levam cerca de 0,2 s (resposta local) e as quatro `conversa` cerca de 1 a 1,5 s, sem passar pela busca.
+
 ## Base anterior (histórico)
 
 As rodadas abaixo usaram a base anterior (7 documentos, em [`docs/history/knowledge-base-v1/`](../../docs/history/knowledge-base-v1/README.md)) e as 20 perguntas antigas (ids 1 a 20).

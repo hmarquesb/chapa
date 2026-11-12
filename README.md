@@ -49,7 +49,7 @@ O Chapa existe para estudar, num problema concreto e de ponta a ponta:
 - **RAG híbrido:** busca semântica com embeddings somada à busca por palavras-chave em português.
 - **Memória de conversa:** histórico recente e resumo persistido por sessão.
 - **Guardrails:** bloqueio de dados sensíveis na entrada e checagem da resposta antes de exibi-la.
-- **Avaliação:** 50 perguntas sobre a base da Rango, com metas por métrica, rodadas em blocos para caber na cota gratuita.
+- **Avaliação:** 62 perguntas sobre a base da Rango, com metas por métrica, rodadas em blocos para caber na cota gratuita.
 - **Desenvolvimento guiado por specs com agentes de código:** cada parte do sistema é uma spec implementada por um subagente e revisada antes de entrar na `main`.
 
 ### Decisões tomadas para simplificar
@@ -70,7 +70,7 @@ Algumas escolhas facilitam o desenvolvimento e mantêm o custo em zero, mas não
 | Respostas completas, sem streaming ([ADR 0004](docs/adr/0004-sem-streaming.md)) | O guardrail de saída vê a resposta inteira antes do usuário | Streaming com uma checagem que acompanhe o texto |
 | Rate limit por IP guardado no próprio Postgres | Nenhum serviço a mais para manter | Um armazenamento dedicado, como Redis |
 | Ingestão, migrações e rodadas de avaliação manuais | Controle sobre o que chama API e grava em banco | Pipelines automatizados |
-| Avaliação com 50 perguntas, rodada em blocos, e acerto por termos esperados (juiz opcional, não usado nas rodadas) | Cabe na cota gratuita | Um conjunto maior, com juiz, rodando a cada mudança |
+| Avaliação com 62 perguntas, rodada em blocos, e acerto por termos esperados (juiz opcional, não usado nas rodadas) | Cabe na cota gratuita | Um conjunto maior, com juiz, rodando a cada mudança |
 
 As decisões completas, com contexto e alternativas, estão em [`docs/adr/`](docs/adr/README.md).
 
@@ -90,11 +90,12 @@ As regras para os agentes ficam no [`AGENTS.md`](AGENTS.md), e a documentação 
 
 **Solução.** Uma página de chat com uma API própria. O assistente responde só com base em 11 documentos de `knowledge-base/`, mostra os arquivos usados como fontes e usa o perfil da conta (plano e, se preenchidos, nome, cozinha, estado, cidade e horário) para personalizar a resposta. Quando a base não cobre a pergunta, devolve uma mensagem fixa que encaminha ao suporte. Ele recusa CPF, número de cartão e senha, explica como fazer as coisas e não executa ações. Cadastro de novos restaurantes fica fora do escopo.
 
-**Resultados** (rodada `v3`, 10/11/2026, [`v3.md`](eval/resultados/v3.md)):
+**Resultados** (rodada `v4`, 12/11/2026, [`v4.md`](eval/resultados/v4.md); a `v3`, de 10/11/2026, é a base de comparação):
 
-- 3 das 4 metas foram atingidas: Hit@K 100,0%, acerto 83,3% e recusa correta 100,0% (14 de 14, inclusive as 4 adversariais). A falsa recusa ficou em 13,9% (5 de 36), acima da meta de 10%.
-- As 5 falsas recusas vêm de paráfrases e continuações em que a busca não trouxe a seção certa (116, 121 e 135) e de respostas em que o modelo devolveu o fallback com os trechos certos no contexto (126 e 134). A análise está no [`COMPARACAO.md`](eval/resultados/COMPARACAO.md).
-- Custo da rodada: 106 chamadas e 72179 tokens de entrada, em 5 blocos de 10 perguntas. Latência p50 de 2693 ms e p95 de 12369 ms (a p95 vem das perguntas multi-turno, que somam os turnos).
+- 3 das 4 metas de qualidade foram atingidas: Hit@K 100,0%, acerto 83,3% e recusa correta 100,0% (14 de 14, inclusive as 4 adversariais). A falsa recusa ficou em 13,9% (6 de 36 não acertam e 5 terminaram em fallback), acima da meta de 10%, o mesmo valor da `v3`.
+- As falsas recusas vêm de paráfrases e continuações em que a busca não trouxe a seção certa e de respostas em que o modelo devolveu o fallback com os trechos certos no contexto. A análise está no [`COMPARACAO.md`](eval/resultados/COMPARACAO.md).
+- As metas do roteador foram atingidas na `v4`: acerto de rota de 100,0% (meta de 95%) e falso small talk 0. Sem o roteador (`v4-regras`), o acerto de rota é 93,2%, porque as perguntas de conversa vão para o RAG.
+- Custo da rodada: 144 chamadas e 99498 tokens de entrada (62 perguntas), em 6 blocos. Latência p50 de 1942 ms e p95 de 5865 ms.
 - Em produção desde 06/11/2026, na Vercel e no Supabase ([`DEPLOY.md`](DEPLOY.md)), com custo zero.
 - Na base anterior, a `v2` atingiu as 4 metas daquela época (acerto 92,9% e falsa recusa 7,1%, com 14 perguntas no escopo). Os números não se comparam com os da `v3`.
 
@@ -186,7 +187,9 @@ Conferido em [`src/core/assistant.ts`](src/core/assistant.ts) e [`src/app/api/_l
 
 1. **API.** `POST /api/chat` aceita só JSON de até 4096 bytes e aplica o rate limit por IP (10 por minuto e 100 por dia), guardando só o HMAC do IP.
 2. **Guardrail de entrada.** Mensagem vazia, com mais de 1000 caracteres, com CPF, cartão ou senha, ou pedindo senha recebe uma resposta fixa. Nada vai para o LLM nem para o banco.
+   **Cumprimento.** Uma mensagem que é só um cumprimento ("bom dia", "oi, tudo bem?") recebe uma resposta fixa local, com o nome do perfil, sem nenhuma chamada ao modelo nem à busca ([ADR 0025](docs/adr/0025-roteador-de-conversa-antes-do-rag.md)).
 3. **Histórico e resumo.** A conversa é criada ou atualizada (na web, o perfil vem da conta e não é copiado para a conversa). As mensagens desde o último resumo vêm do banco. Se passarem de 16, as mais antigas viram resumo (modelo rápido) e as 10 mais recentes seguem inteiras.
+   **Roteador de conversa.** Mensagens curtas (até 12 palavras) passam por uma chamada do modelo rápido que decide entre conversa (agradecimento, despedida, "o que você sabe fazer?") e dúvida do restaurante. Só a conversa fica por aqui; qualquer dúvida, ou falha do roteador, segue para o RAG.
 4. **Reescrita.** Se há histórico ou resumo, o modelo rápido reescreve a pergunta como autossuficiente, com até 6 mensagens recentes. Em erro, saída vazia ou com mais de 300 caracteres, vale a pergunta original.
 5. **Embedding.** A pergunta reescrita vira um vetor de 768 dimensões com `gemini-embedding-001` e a tarefa `RETRIEVAL_QUERY`.
 6. **Busca híbrida.** A função SQL `match_chunks` devolve até 30 candidatos do mesmo modelo de embedding e do mesmo fatiamento, cada um com um score semântico e um textual. Uma função pura em TS combina os dois, filtra por `minScore` e corta em `topK`.
@@ -268,7 +271,7 @@ Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o
 
 **Metodologia.** `npm run eval` passa as perguntas de [`eval/perguntas.json`](eval/perguntas.json) pelo mesmo `handleMessage` da API, com o banco `dev`, e grava um `.json` e um `.md` por rodada em [`eval/resultados/`](eval/resultados/). As rodadas usaram `gemini-3.5-flash-lite` (resposta e reescrita), `gemini-embedding-001`, `--delay-ms 4000` e nenhum juiz.
 
-**As 50 perguntas** (ids 101 a 150):
+**As 62 perguntas** (ids 101 a 162; as 50 primeiras são as da `v3`):
 
 | Tipo | Quantidade | O que mede |
 |---|---|---|
@@ -280,26 +283,33 @@ Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o
 | Fora do escopo | 7 | Cadastro de loja nova, integração, entregadores, Rango Ads, legislação, receita e concorrentes |
 | Adversarial | 4 | Prompt injection, pedido para inventar um número, dados de outra loja e pedido do prompt de sistema |
 | Bloqueio | 3 | CPF, número de cartão e senha fictícios |
+| Cumprimento | 4 | Só uma saudação ("bom dia"), com o nome do perfil na resposta |
+| Conversa | 4 | Agradecimento, despedida e "o que você sabe fazer?", sem número nem fallback |
+| Misto | 4 | Saudação e dúvida na mesma mensagem ("bom dia! quanto é a comissão…"): tem que ir para o RAG |
 
-**Métricas.** Calculadas em [`scripts/eval/metrics.ts`](scripts/eval/metrics.ts). Hit@K, acerto e falsa recusa usam as 36 perguntas no escopo; a recusa correta usa as 14 de recusa.
+**Métricas.** Calculadas em [`scripts/eval/metrics.ts`](scripts/eval/metrics.ts). Hit@K, acerto e falsa recusa usam as 36 perguntas no escopo; a recusa correta usa as 14 de recusa. Os três tipos de conversa ficam de fora dessas quatro, para a rodada continuar comparável com a `v3`, e têm métricas de rota próprias.
 
 - **Hit@K:** algum dos arquivos esperados está entre os trechos recuperados.
 - **Acerto:** status `answered`, a resposta contém todos os termos esperados (por exemplo, "11%" ou "7 dias") e nenhum termo proibido (`nao_deve_conter`, como "22%" numa pergunta do Plano Próprio), sem diferenciar maiúsculas e acentos.
 - **Recusa correta:** a pergunta de recusa terminou em fallback ou bloqueio, sem termo proibido. Nas adversariais, qualquer recusa conta.
 - **Falsa recusa:** a pergunta no escopo terminou em fallback ou bloqueio.
+- **Acerto de rota:** a rota escolhida (`cumprimento`, `conversa` ou `rag`) é a esperada (`rota_esperada`).
+- **Falso small talk:** uma pergunta que esperava o RAG foi tratada como conversa. A meta é zero, porque é o erro que esconde uma dúvida real.
 
-| Métrica | Meta | v3 |
-|---|---|---|
-| Hit@K | ≥ 85% | 100,0% |
-| Acerto | ≥ 80% | 83,3% |
-| Recusa correta | ≥ 92% | 100,0% |
-| Falsa recusa | ≤ 10% | 13,9% |
-| Latência p50 / p95 | registrar | 2693 / 12369 ms |
-| Chamadas | registrar | 106 |
-| Tokens de entrada / saída | registrar | 72179 / 2479 |
-| Erros | — | 0 |
+| Métrica | Meta | v3 | v4 | v4-regras | v4-baseline |
+|---|---|---|---|---|---|
+| Hit@K | ≥ 85% | 100,0% | 100,0% | 100,0% | 61,1% |
+| Acerto | ≥ 80% | 83,3% | 83,3% | 80,6% | 41,7% |
+| Recusa correta | ≥ 92% | 100,0% | 100,0% | 100,0% | 100,0% |
+| Falsa recusa | ≤ 10% | 13,9% | 13,9% | 16,7% | 58,3% |
+| Acerto de rota | ≥ 95% | — | 100,0% | 93,2% | 93,2% |
+| Falso small talk | 0 | — | 0 | 0 | 0 |
+| Latência p50 / p95 | registrar | 2693 / 12369 ms | 1942 / 5865 ms | 1953 / 5955 ms | 1035 / 6037 ms |
+| Chamadas | registrar | 106 | 144 | 121 | 90 |
+| Tokens de entrada / saída | registrar | 72179 / 2479 | 99498 / 2494 | 84426 / 2529 | 34474 / 1149 |
+| Erros | — | 0 | 0 | 0 | 0 |
 
-A `v3` rodou em 5 blocos de 10 perguntas com `--append` ([`qa.md`](docs/qa.md#avaliação)), sem estouro de cota. Relatórios: [`v3`](eval/resultados/v3.md) e [`COMPARACAO.md`](eval/resultados/COMPARACAO.md). A latência de uma pergunta multi-turno soma os turnos.
+A `v4` é a linha de base atual (62 perguntas, com o roteador ligado); a `v4-regras` desliga o roteador e deixa só a regra local de cumprimento; a `v4-baseline` usa o preset `baseline`. Os 93,2% de acerto de rota das duas últimas são esperados, e não uma regressão: sem o roteador, as 4 perguntas de conversa seguem para o RAG. Cada rodada foi em 6 blocos com `--append` ([`qa.md`](docs/qa.md#avaliação)), sem estouro de cota. Relatórios: [`v4`](eval/resultados/v4.md), [`v4-regras`](eval/resultados/v4-regras.md), [`v4-baseline`](eval/resultados/v4-baseline.md), [`v3`](eval/resultados/v3.md) e [`COMPARACAO.md`](eval/resultados/COMPARACAO.md). A latência de uma pergunta multi-turno soma os turnos.
 
 **Base anterior (histórico).** As rodadas abaixo usaram a base anterior, 20 perguntas (14 no escopo) e a meta de recusa correta de 100%. Não são comparáveis com a `v3`.
 
@@ -326,7 +336,7 @@ A customização é **RAG híbrido e engenharia de prompt** (prompt de sistema c
 | Rastreabilidade das fontes | Cada resposta vem de trechos com arquivo e seção, mostrados como fontes | O fato fica nos pesos, sem fonte para mostrar | O usuário vê os arquivos, e o `--debug` mostra trecho e score |
 | Custo e tempo de iteração | Mudar um parâmetro e rodar o eval | Montar dados, treinar e avaliar a cada ciclo | As 6 tentativas de calibração rodaram no mesmo dia, com `--only` |
 | Necessidade de GPU | Nenhuma: só chamadas de API | Treino em GPU, ou um serviço gerenciado de ajuste | Custo zero, no plano gratuito |
-| Volume de dados | Funciona com 11 documentos | Precisa de muitos pares pergunta–resposta revisados | O único conjunto rotulado é o eval, com 50 perguntas |
+| Volume de dados | Funciona com 11 documentos | Precisa de muitos pares pergunta–resposta revisados | O único conjunto rotulado é o eval, com 62 perguntas |
 
 **Decisão.** RAG resolve o que este problema pede: fatos que mudam, com fonte. O prompt resolve o tom, o formato e a recusa. O fine-tuning fixaria fatos que envelhecem e tiraria a rastreabilidade.
 
@@ -361,6 +371,13 @@ O que ficou:
 - **Mais contexto custa tokens.** Com trechos de até 1200 caracteres e a reescrita, a `v2` gastou 31935 tokens de entrada, contra 10277 na `v1`. A latência p50 subiu de 4644 ms para 4782 ms.
 - **Uma rodada é ruidosa.** Com 14 perguntas no escopo, uma pergunta vale 7,1 pontos. A pergunta 9 oscila entre resposta e fallback com os mesmos trechos.
 - **O chunking não foi recalibrado.** O Hit@K já estava em 100%, e mudar o fatiamento exige reingerir.
+
+**Roteador de conversa (`v4` × `v4-regras` × `v4-baseline`).** Com a base da Rango, três rodadas das mesmas 62 perguntas isolam o que o roteador faz ([`COMPARACAO.md`](eval/resultados/COMPARACAO.md)):
+
+- **O roteador acerta a rota e não esconde dúvida.** Na `v4`, o acerto de rota é 100% e o falso small talk é 0: as 4 perguntas de conversa não vão para o RAG, e as 4 mistas ("bom dia! quanto é a comissão…") seguem para ele.
+- **A regra de cumprimento sozinha não basta.** Na `v4-regras`, os 4 cumprimentos passam, mas as 4 perguntas de conversa viram fallback, e o acerto de rota cai para 93,2%.
+- **Acerto e falsa recusa não mudaram.** A `v4` tem o mesmo acerto (83,3%) e a mesma falsa recusa (13,9%) da `v3`, com outras perguntas falhando (entraram a 119 e a 124, saíram a 126 e a 135) sem mudar o RAG: é o ruído de uma rodada com 36 perguntas.
+- **O `baseline` continua pior** (acerto de 41,7%, falsa recusa de 58,3%), e derruba 2 das 4 mistas.
 
 ## Falhas encontradas
 
