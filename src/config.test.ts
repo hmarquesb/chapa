@@ -91,6 +91,8 @@ describe("RAG_PRESETS (RF2)", () => {
       chunkSize: 1200,
       chunkOverlap: 150,
       rewriteQuery: true,
+      contextMode: "documents",
+      maxContextDocs: 3,
     })
   })
 
@@ -104,12 +106,19 @@ describe("RAG_PRESETS (RF2)", () => {
       chunkSize: 500,
       chunkOverlap: 100,
       rewriteQuery: false,
+      contextMode: "chunks",
+      maxContextDocs: 3,
     })
   })
 
   it("builds the chunk config key", () => {
     expect(chunkConfigKey(RAG_PRESETS.baseline)).toBe("fixed:500:100")
     expect(chunkConfigKey(RAG_PRESETS.padrao)).toBe("markdown:1200:150")
+  })
+
+  it("keeps the same chunk config key in both context modes", () => {
+    const chunks = { ...RAG_PRESETS.padrao, contextMode: "chunks" as const }
+    expect(chunkConfigKey(chunks)).toBe(chunkConfigKey(RAG_PRESETS.padrao))
   })
 })
 
@@ -186,6 +195,26 @@ describe("withRag (RF4)", () => {
   it("rejects an unknown chunkStrategy", () => {
     const chunkStrategy = "semantic" as unknown as RagConfig["chunkStrategy"]
     expect(() => withRag(config, { chunkStrategy })).toThrow(/chunkStrategy/)
+  })
+
+  it.each([0, 6, 2.5, Number.NaN])("rejects maxContextDocs = %s", (maxContextDocs) => {
+    expect(() => withRag(config, { maxContextDocs })).toThrow(/maxContextDocs/)
+  })
+
+  it("uses the spec message for maxContextDocs", () => {
+    expect(() => withRag(config, { maxContextDocs: 0 })).toThrow(
+      "Configuração de RAG inválida: maxContextDocs precisa ser um inteiro de 1 a 5 (recebido: 0).",
+    )
+  })
+
+  it("accepts the bounds of maxContextDocs", () => {
+    expect(withRag(config, { maxContextDocs: 1 }).rag.maxContextDocs).toBe(1)
+    expect(withRag(config, { maxContextDocs: 5 }).rag.maxContextDocs).toBe(5)
+  })
+
+  it("rejects an unknown contextMode", () => {
+    const contextMode = "tudo" as unknown as RagConfig["contextMode"]
+    expect(() => withRag(config, { contextMode })).toThrow(/contextMode/)
   })
 
   it("writes the error message in PT-BR", () => {
