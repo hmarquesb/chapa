@@ -120,7 +120,7 @@ A página `/marca` SHALL ser pública e mostrar os princípios da marca, a rela�
 
 #### Scenario: Componentes reais
 - **WHEN** alguém olha a seção de componentes
-- **THEN** vê um botão de cada variante, uma bolha do parceiro, uma resposta do Chapa com fontes, um fallback, um bloqueio, a faixa de demo e o campo de mensagem, desenhados pelos mesmos componentes do chat, sem enviar nada
+- **THEN** vê um botão de cada variante, uma bolha do parceiro, uma resposta do Chapa com fontes, uma resposta a um cumprimento, um fallback, um bloqueio, a faixa de demo e o campo de mensagem, desenhados pelos mesmos componentes do chat, sem enviar nada
 
 #### Scenario: Celular
 - **WHEN** alguém abre `/marca` numa tela de 390 px
