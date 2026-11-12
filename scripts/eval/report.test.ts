@@ -25,6 +25,7 @@ function reply(overrides: Partial<AssistantReply> = {}): AssistantReply {
     searchQuery: "comissão",
     usage: { calls: 2, inputTokens: 100, outputTokens: 20 },
     latencyMs: 1234,
+    route: "rag",
     ...overrides,
   }
 }

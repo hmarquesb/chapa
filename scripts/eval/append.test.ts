@@ -35,6 +35,7 @@ function reply(answer: string): AssistantReply {
     searchQuery: "busca",
     usage: { calls: 1, inputTokens: 10, outputTokens: 5 },
     latencyMs: 100,
+    route: "rag",
   }
 }
 

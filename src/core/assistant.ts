@@ -2,10 +2,16 @@ import "server-only"
 import type { AppConfig } from "@/config"
 import { validateInput, validateOutput } from "@/core/guardrails"
 import { planMemory, summarize } from "@/core/memory"
-import { BLOCKED_INPUT_MESSAGES, BLOCKED_OUTPUT_MESSAGE, FALLBACK_MESSAGE } from "@/core/messages"
+import {
+  BLOCKED_INPUT_MESSAGES,
+  BLOCKED_OUTPUT_MESSAGE,
+  FALLBACK_MESSAGE,
+  greetingReply,
+} from "@/core/messages"
 import { buildRagPrompt, buildSystemInstruction } from "@/core/prompts"
 import { retrieve } from "@/core/rag/retrieve"
 import { rewriteQuery } from "@/core/rewrite-query"
+import { matchGreeting } from "@/core/router/greeting"
 import { includesNormalized } from "@/core/text"
 import type {
   Assistant,
@@ -111,6 +117,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         searchQuery: "",
         usage: emptyUsage(),
         latencyMs: now() - startedAt,
+        route: null,
       }
     }
 
@@ -125,6 +132,30 @@ export function createAssistant(deps: AssistantDeps): Assistant {
       const inputProfile = input.profile === undefined ? undefined : cleanProfile(input.profile)
       session = await sessions.touch({ id: sessionId, channel, owner, profile: inputProfile })
       profile = inputProfile ?? cleanProfile(session.profile)
+    }
+
+    // Cumprimento: resposta fixa, sem modelo, sem busca e sem ler o histórico (não dispara o
+    // resumo, que chama o modelo). Vem depois do touch porque, no cli e no eval, o nome do
+    // perfil pode estar na conversa salva; o nome já passou pelo filtro em cleanProfile.
+    const greeting = matchGreeting(message)
+    if (greeting !== null) {
+      const answer = greetingReply(greeting, profile.name)
+      await sessions.appendTurn(sessionId, owner, {
+        user: message,
+        assistant: answer,
+        status: "small_talk",
+        sources: [],
+      })
+      return {
+        status: "small_talk",
+        answer,
+        sources: [],
+        retrieved: [],
+        searchQuery: "",
+        usage: emptyUsage(),
+        latencyMs: now() - startedAt,
+        route: "cumprimento",
+      }
     }
 
     // Memória: histórico pendente desde o último resumo, vindo do banco a cada mensagem.
@@ -230,6 +261,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
       searchQuery,
       usage: addUsage(...usages),
       latencyMs: now() - startedAt,
+      route: "rag",
     }
   }
 
