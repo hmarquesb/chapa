@@ -33,6 +33,7 @@ function reply(answer: string): AssistantReply {
     answer,
     sources: ["01-planos-e-taxas.md"],
     retrieved: [],
+    context: [],
     searchQuery: "busca",
     usage: { calls: 1, inputTokens: 10, outputTokens: 5 },
     latencyMs: 100,
@@ -143,6 +144,26 @@ describe("sameRunConfig", () => {
   })
 })
 
+describe("sameRunConfig with the context mode", () => {
+  const base = run([])
+  const withRag = (rag: Partial<EvalRun["config"]["rag"]>): EvalRun => ({
+    ...base,
+    config: { ...base.config, rag: { ...base.config.rag, ...rag } },
+  })
+
+  it("is false when contextMode or maxContextDocs differ", () => {
+    expect(sameRunConfig(base, withRag({ contextMode: "chunks" }))).toBe(false)
+    expect(sameRunConfig(base, withRag({ maxContextDocs: 4 }))).toBe(false)
+  })
+
+  it("is false for a stored round recorded without the new fields", () => {
+    const legacy = stored(base) as EvalRun
+    const { contextMode: _mode, maxContextDocs: _max, ...rag } = legacy.config.rag
+    legacy.config.rag = rag as EvalRun["config"]["rag"]
+    expect(sameRunConfig(base, legacy)).toBe(false)
+  })
+})
+
 describe("mergeRuns", () => {
   it("adds a second block and recomputes the metrics over all questions", () => {
     const previous = stored(run([resultFor(byId(101)), resultFor(byId(102))])) as EvalRun
@@ -161,6 +182,17 @@ describe("mergeRuns", () => {
     expect(merged.commit).toBe("aaa1111, bbb2222")
     expect(discarded).toEqual([])
     expect(pending).toEqual([104])
+  })
+
+  it("recomputes the context sufficiency from the stored contextMissing", () => {
+    const sufficient = { ...resultFor(byId(101)), contextMissing: [] }
+    const missing = { ...resultFor(byId(102), "Não sei."), contextMissing: ["11%"] }
+    const previous = stored(run([sufficient, missing])) as EvalRun
+    const current = run([{ ...resultFor(byId(103)), contextMissing: [] }])
+    const { run: merged } = mergeRuns(previous, current, QUESTIONS)
+    expect(merged.scores.map((s) => s.contextSufficient)).toEqual([true, false, true])
+    expect(merged.scores[1]?.failureCause).toBe("busca")
+    expect(merged.metrics.contextSufficiency).toBeCloseTo(2 / 3)
   })
 
   it("replaces a question that ran again", () => {

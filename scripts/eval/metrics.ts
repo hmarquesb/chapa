@@ -1,7 +1,7 @@
 // Métricas da avaliação (S08, RF2). Funções puras: os números saem só dos resultados da rodada.
 import { countWords } from "@/core/router/conversation"
 import { includesNormalized } from "@/core/text"
-import type { AssistantReply, Usage } from "@/core/types"
+import type { AssistantReply, ContextBlock, Usage } from "@/core/types"
 import { addUsage } from "@/core/usage"
 import type { ReplyStatus } from "@/lib/types"
 import {
@@ -17,8 +17,11 @@ export type QuestionResult = {
   error?: string // nome do erro
   latencyMs: number // soma dos turnos
   usage: Usage // soma dos turnos
+  contextMissing?: string[] // termos de deve_conter ausentes do contexto; só no escopo
   judge?: { corretude: number; fidelidade: number; justificativa: string } | null
 }
+
+export type FailureCause = "busca" | "geracao"
 
 export type QuestionScore = {
   id: number
@@ -33,6 +36,8 @@ export type QuestionScore = {
   routeMatches: boolean | null // null: erro ou entrada bloqueada
   falseSmallTalk: boolean | null // só com rota_esperada "rag"; null no erro e no bloqueio
   conversationCorrect: boolean | null // só nos tipos de conversa
+  contextSufficient: boolean | null // null: fora do escopo, erro ou rodada antiga
+  failureCause: FailureCause | null // só no escopo, quando correct === false
 }
 
 export type RouteMetrics = {
@@ -62,6 +67,7 @@ export type Metrics = {
   usage: Usage
   judgeAvg?: { corretude: number; fidelidade: number } | null
   routing?: RouteMetrics // opcional: rodadas antigas não têm
+  contextSufficiency?: number | null // 0 a 1; ausente ou null em rodadas antigas
 }
 
 export const REFUSAL_STATUSES: ReadonlySet<ReplyStatus> = new Set([
@@ -72,6 +78,11 @@ export const REFUSAL_STATUSES: ReadonlySet<ReplyStatus> = new Set([
 
 export function isInScope(question: EvalQuestion): boolean {
   return IN_SCOPE_TYPES.has(question.tipo)
+}
+
+// Termos que não aparecem em nenhum bloco do contexto (um termo dividido entre dois blocos não conta).
+export function missingContextTerms(terms: string[], context: ContextBlock[]): string[] {
+  return terms.filter((term) => !context.some((block) => includesNormalized(block.content, term)))
 }
 
 export function scoreQuestion(result: QuestionResult): QuestionScore {
@@ -94,6 +105,8 @@ export function scoreQuestion(result: QuestionResult): QuestionScore {
     routeMatches: null,
     falseSmallTalk: null,
     conversationCorrect: null,
+    contextSufficient: null,
+    failureCause: null,
   }
   const clean = score.forbiddenFound.length === 0
 
@@ -132,6 +145,10 @@ export function scoreQuestion(result: QuestionResult): QuestionScore {
       clean
     // Erro não é recusa: conta só como não acertada.
     score.falseRefusal = reply !== null && REFUSAL_STATUSES.has(reply.status)
+    if (reply !== null && result.contextMissing !== undefined) {
+      score.contextSufficient = result.contextMissing.length === 0
+      if (!score.correct) score.failureCause = score.contextSufficient ? "geracao" : "busca"
+    }
   } else {
     const refused = reply !== null && REFUSAL_STATUSES.has(reply.status)
     score.refusedCorrectly = refused && clean
@@ -224,6 +241,11 @@ export function aggregate(results: QuestionResult[], maxWords: number): Metrics 
     usage: addUsage(...results.map((result) => result.usage)),
     routing: aggregateRouting(results, scores, maxWords),
   }
+  const measured = inScope.filter((score) => score.contextSufficient !== null)
+  metrics.contextSufficiency =
+    measured.length === 0
+      ? null
+      : ratio(countTrue(measured.map((s) => s.contextSufficient)), measured.length)
 
   // Sem juiz na rodada: o campo fica de fora. Com juiz mas sem nenhuma nota válida: null.
   const judged = results.filter((result) => result.judge !== undefined)

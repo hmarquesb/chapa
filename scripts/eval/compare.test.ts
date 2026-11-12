@@ -155,3 +155,38 @@ describe("renderComparison", () => {
     expect(() => renderComparison([])).toThrow()
   })
 })
+
+describe("renderComparison with the document context", () => {
+  it("shows the context sufficiency of both rounds and the contextMode row", () => {
+    const md = renderComparison([
+      run("v5-baseline", { contextMode: "chunks" }, { contextSufficiency: 0.8 }),
+      run("v5-docs", { contextMode: "documents" }, { contextSufficiency: 0.9 }),
+    ])
+    expect(row(md, "Contexto suficiente")).toBe("| Contexto suficiente | 80,0% | 90,0% |")
+    expect(row(md, "contextMode")).toBe("| contextMode | chunks | documents |")
+    expect(row(md, "maxContextDocs")).toBeUndefined()
+  })
+
+  it("shows a dash for a round recorded before the context sufficiency", () => {
+    const md = renderComparison([
+      run("v4", {}),
+      run("v5-baseline", {}, { contextSufficiency: 0.8 }),
+    ])
+    expect(row(md, "Contexto suficiente")).toBe("| Contexto suficiente | — | 80,0% |")
+  })
+
+  it("counts a round without the new fields as chunks and 3 documents", () => {
+    const old = run("v4", {})
+    const { contextMode: _mode, maxContextDocs: _max, ...legacyRag } = old.config.rag
+    old.config.rag = legacyRag as RagConfig
+    const same = renderComparison([old, run("v5-baseline", { contextMode: "chunks" })])
+    expect(row(same, "contextMode")).toBeUndefined()
+    expect(row(same, "maxContextDocs")).toBeUndefined()
+    const diff = renderComparison([
+      old,
+      run("v5-docs", { contextMode: "documents", maxContextDocs: 4 }),
+    ])
+    expect(row(diff, "contextMode")).toBe("| contextMode | chunks | documents |")
+    expect(row(diff, "maxContextDocs")).toBe("| maxContextDocs | 3 | 4 |")
+  })
+})

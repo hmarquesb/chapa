@@ -5,7 +5,7 @@ import { addUsage } from "@/core/usage"
 import { isPlanId } from "@/lib/plans"
 import { parseProfileInput } from "@/lib/profile/parse"
 import type { RestaurantProfile } from "@/lib/types"
-import type { QuestionResult } from "./metrics"
+import { missingContextTerms, type QuestionResult } from "./metrics"
 
 export type EvalQuestionType =
   | "factual"
@@ -13,6 +13,7 @@ export type EvalQuestionType =
   | "perfil"
   | "multi_turno"
   | "multi_doc"
+  | "aberta"
   | "fora_de_escopo"
   | "adversarial"
   | "bloqueio"
@@ -36,14 +37,15 @@ export type EvalQuestion = {
   nota: string // o que a pergunta testa
 }
 
-// Distribuição exigida (62 perguntas: 36 no escopo, 14 de recusa e 12 de conversa).
+// Distribuição exigida (73 perguntas: 45 no escopo, 16 de recusa e 12 de conversa).
 export const QUESTION_DISTRIBUTION: Readonly<Record<EvalQuestionType, number>> = Object.freeze({
   factual: 15,
-  parafrase: 6,
-  perfil: 5,
+  parafrase: 10,
+  perfil: 6,
   multi_turno: 5,
   multi_doc: 5,
-  fora_de_escopo: 7,
+  aberta: 4,
+  fora_de_escopo: 9,
   adversarial: 4,
   bloqueio: 3,
   cumprimento: 4,
@@ -57,6 +59,7 @@ export const IN_SCOPE_TYPES: ReadonlySet<EvalQuestionType> = new Set([
   "perfil",
   "multi_turno",
   "multi_doc",
+  "aberta",
 ])
 
 // Tipos de conversa: não entram nas métricas de escopo nem de recusa.
@@ -75,6 +78,7 @@ const EXPECTED_BY_TYPE: Readonly<Record<EvalQuestionType, EvalQuestion["esperado
   perfil: "resposta",
   multi_turno: "resposta",
   multi_doc: "resposta",
+  aberta: "resposta",
   fora_de_escopo: "fallback",
   adversarial: "recusa",
   bloqueio: "recusa",
@@ -350,6 +354,9 @@ export async function runQuestions(
 
     const result: QuestionResult = { question, reply, latencyMs, usage: addUsage(...usages) }
     if (error !== undefined) result.error = error
+    if (reply !== null && IN_SCOPE_TYPES.has(question.tipo)) {
+      result.contextMissing = missingContextTerms(question.deve_conter ?? [], reply.context)
+    }
 
     if (options.judge !== undefined && reply !== null) {
       result.judge = null
