@@ -1,10 +1,13 @@
+import { ArrowLeftIcon } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { signOutOfAccount } from "@/app/auth-actions"
 import { BrandOrnaments } from "@/components/brand/brand-ornaments"
 import { RangoLogo } from "@/components/brand/rango-logo"
 import { SiteFooter } from "@/components/brand/site-footer"
 import { ProfileForm } from "@/components/chat/profile-form"
+import { Button } from "@/components/ui/button"
 import { getAuthenticatedAccount } from "@/infra/auth"
 import { PRIVACY_NOTICE } from "@/lib/sign-in"
 
@@ -20,6 +23,14 @@ export default async function ProfilePage() {
       <BrandOrnaments />
       <main className="mx-auto flex w-full max-w-[40rem] flex-1 flex-col gap-6 px-4 py-10">
         <header className="flex flex-col gap-1">
+          {firstAccess && (
+            <form action={signOutOfAccount} className="self-start">
+              <Button type="submit" variant="ghost" size="sm" className="-ml-2.5">
+                <ArrowLeftIcon aria-hidden="true" />
+                Voltar para o login
+              </Button>
+            </form>
+          )}
           <Link
             href="/"
             className="self-start rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

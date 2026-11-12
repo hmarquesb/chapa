@@ -4,6 +4,7 @@ import {
   deleteSession,
   fetchHistory,
   listSessions,
+  markWelcomeSeen,
   NETWORK_ERROR_MESSAGE,
   saveProfile,
   sendMessage,
@@ -352,5 +353,30 @@ describe("deleteAccount", () => {
   it("reports a network failure with status 0", async () => {
     const { fn } = fakeFetch(new Error("offline"))
     expect(await deleteAccount(fn)).toEqual({ ok: false, status: 0, error: NETWORK_ERROR_MESSAGE })
+  })
+})
+
+describe("markWelcomeSeen", () => {
+  it("posts without a body and treats 204 as success", async () => {
+    const { fn, calls } = fakeFetch(new Response(null, { status: 204 }))
+    expect(await markWelcomeSeen(fn)).toEqual({ ok: true, data: null })
+    expect(calls[0]?.url).toBe("/api/account/welcome")
+    expect(calls[0]?.init?.method).toBe("POST")
+    expect(calls[0]?.init?.body).toBeUndefined()
+    expect(calls[0]?.init?.cache).toBe("no-store")
+  })
+
+  it("returns the status and message on error", async () => {
+    const { fn } = fakeFetch(json({ error: "Faça login." }, 401))
+    expect(await markWelcomeSeen(fn)).toEqual({ ok: false, status: 401, error: "Faça login." })
+  })
+
+  it("reports a network failure with status 0", async () => {
+    const { fn } = fakeFetch(new Error("offline"))
+    expect(await markWelcomeSeen(fn)).toEqual({
+      ok: false,
+      status: 0,
+      error: NETWORK_ERROR_MESSAGE,
+    })
   })
 })

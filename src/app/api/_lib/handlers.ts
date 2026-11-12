@@ -43,6 +43,7 @@ const ROUTES = {
   chat: "/api/chat",
   profile: "/api/profile",
   account: "/api/account",
+  welcome: "/api/account/welcome",
   history: "/api/sessions/[id]/messages", // the template, never the real path with the id
   sessions: "/api/sessions",
   session: "/api/sessions/[id]",
@@ -372,6 +373,28 @@ export function createDeleteAccountHandler(deps: {
     try {
       const account = await requireAccount(deps.authenticate, finish)
       await deps.accounts.delete(account.id)
+      finish({ status: 204 })
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
+    } catch (error) {
+      return failed(error, finish)
+    }
+  }
+}
+
+// ---------- POST /api/account/welcome ----------
+
+export function createWelcomeSeenHandler(deps: {
+  accounts: Pick<AccountRepository, "markWelcomeSeen">
+  authenticate: Authenticate
+  log?: Log
+}): (req: Request) => Promise<Response> {
+  const log = deps.log ?? logRequest
+
+  return async () => {
+    const finish = startRequest(ROUTES.welcome, "POST", log)
+    try {
+      const account = await requireAccount(deps.authenticate, finish)
+      await deps.accounts.markWelcomeSeen(account.id)
       finish({ status: 204 })
       return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
     } catch (error) {

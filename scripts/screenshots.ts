@@ -66,6 +66,13 @@ async function ask(page: Page, question: string): Promise<void> {
     .waitFor()
 }
 
+// The demo opens the welcome card on every load of the chat: close it before the shot.
+async function openChat(page: Page, baseUrl: string): Promise<void> {
+  await page.goto(baseUrl)
+  await page.getByRole("button", { name: "Entendi" }).click()
+  await page.getByRole("dialog").waitFor({ state: "hidden" })
+}
+
 async function capture(page: Page, shot: Shot, baseUrl: string, responses: { current: unknown }) {
   switch (shot.id) {
     case "entrada":
@@ -78,20 +85,24 @@ async function capture(page: Page, shot: Shot, baseUrl: string, responses: { cur
       await page.goto(`${baseUrl}/perfil`)
       break
     case "demo":
+      await openChat(page, baseUrl)
+      break
+    case "boas-vindas":
       await page.goto(baseUrl)
+      await page.getByRole("dialog", { name: "Boas-vindas ao Chapa" }).waitFor()
       break
     case "chat":
-      await page.goto(baseUrl)
+      await openChat(page, baseUrl)
       responses.current = ANSWERED_RESPONSE
       await ask(page, SHOT_QUESTION)
       break
     case "menu":
-      await page.goto(baseUrl)
+      await openChat(page, baseUrl)
       await page.getByRole("button", { name: /Menu da conta/ }).click()
       await page.getByRole("menu").waitFor()
       break
     case "avisos":
-      await page.goto(baseUrl)
+      await openChat(page, baseUrl)
       responses.current = FALLBACK_RESPONSE
       await ask(page, SHOT_OFF_TOPIC_QUESTION)
       responses.current = BLOCKED_RESPONSE

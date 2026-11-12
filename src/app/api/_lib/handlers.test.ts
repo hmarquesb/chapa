@@ -9,6 +9,7 @@ import {
   createLazyHandler,
   createListSessionsHandler,
   createProfileHandlers,
+  createWelcomeSeenHandler,
 } from "@/app/api/_lib/handlers"
 import type { LogEntry } from "@/app/api/_lib/log"
 import { type AppConfig, chunkConfigKey, config } from "@/config"
@@ -49,6 +50,7 @@ const ACCOUNT: AccountRecord = {
   createdAt: new Date("2026-11-01T12:00:00.000Z"),
   lastSeenAt: new Date("2026-11-06T11:00:00.000Z"),
   expiresAt: null,
+  welcomeSeenAt: null,
 }
 const OTHER_ACCOUNT: AccountRecord = { ...ACCOUNT, id: "3c9d8e7f-6a5b-4c4d-8e3f-2a1b0c9d8e7f" }
 const NOT_FOUND = "Esta conversa não existe mais. Começamos uma nova."
@@ -1359,6 +1361,68 @@ describe("createDeleteAccountHandler", () => {
 
   it("maps a database failure to 503", async () => {
     const { handler, failWith } = deleteSetup()
+    failWith(Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }))
+    expect((await handler(request())).status).toBe(503)
+  })
+})
+
+// ---------- POST /api/account/welcome ----------
+
+describe("createWelcomeSeenHandler", () => {
+  function welcomeSetup(authenticate: () => Promise<AccountRecord | null> = async () => ACCOUNT) {
+    const marked: string[] = []
+    const logs: LogEntry[] = []
+    let failWith: unknown = null
+    const handler = createWelcomeSeenHandler({
+      accounts: {
+        async markWelcomeSeen(id: string) {
+          if (failWith !== null) throw failWith
+          marked.push(id)
+        },
+      },
+      authenticate,
+      log: (entry) => logs.push(entry),
+    })
+    return {
+      handler,
+      marked,
+      logs,
+      failWith: (error: unknown) => {
+        failWith = error
+      },
+    }
+  }
+  const request = (body?: string) =>
+    new Request("http://localhost/api/account/welcome", { method: "POST", body })
+
+  it("marks the welcome as seen, answers 204 without a body and no-store", async () => {
+    const { handler, marked, logs } = welcomeSetup()
+    const res = await handler(request())
+    expect(res.status).toBe(204)
+    expect(await res.text()).toBe("")
+    expect(res.headers.get("cache-control")).toBe("no-store")
+    expect(marked).toEqual([ACCOUNT.id])
+    expect(logs[0]).toMatchObject({ route: "/api/account/welcome", method: "POST", status: 204 })
+    expect(logs[0]?.accountId).toBe(ACCOUNT.id)
+  })
+
+  it("answers 401 without a session and does not touch the repository", async () => {
+    const { handler, marked } = welcomeSetup(async () => null)
+    const res = await handler(request())
+    expect(res.status).toBe(401)
+    expect(await res.json()).toEqual({ error: UNAUTHENTICATED })
+    expect(marked).toEqual([])
+  })
+
+  it("ignores a body that was sent", async () => {
+    const { handler, marked } = welcomeSetup()
+    const res = await handler(request("not json {{{"))
+    expect(res.status).toBe(204)
+    expect(marked).toEqual([ACCOUNT.id])
+  })
+
+  it("maps a database failure to 503", async () => {
+    const { handler, failWith } = welcomeSetup()
     failWith(Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }))
     expect((await handler(request())).status).toBe(503)
   })

@@ -1,7 +1,16 @@
 // Pure planning of the screenshots: argument parsing and the list of shots.
 import { parseArgs } from "../lib/args"
 
-export const SHOT_IDS = ["entrada", "chat", "demo", "menu", "perfil", "avisos", "marca"] as const
+export const SHOT_IDS = [
+  "entrada",
+  "chat",
+  "demo",
+  "boas-vindas",
+  "menu",
+  "perfil",
+  "avisos",
+  "marca",
+] as const
 export type ShotId = (typeof SHOT_IDS)[number]
 export type ShotTheme = "light" | "dark"
 export type ShotViewport = "desktop" | "mobile"
