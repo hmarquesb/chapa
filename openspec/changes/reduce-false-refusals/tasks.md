@@ -53,14 +53,14 @@
 
 ## 8. Documentação
 
-- [ ] 8.1 Escrever a ADR 0027 e a linha no `docs/adr/README.md`
-- [ ] 8.2 Atualizar `docs/architecture.md`, `docs/business.md`, `docs/qa.md` e `AGENTS.md` nas seções listadas no `design.md`
-- [ ] 8.3 Atualizar o `README.md` nas seções listadas no `design.md`, com os números da rodada final e o resultado de cada passo (inclusive o que foi reprovado)
-- [ ] 8.4 Atualizar `eval/resultados/COMPARACAO.md` com a seção "Contexto por documento (`v5`)"
+- [x] 8.1 Escrever a ADR 0027 e a linha no `docs/adr/README.md`
+- [x] 8.2 Atualizar `docs/architecture.md`, `docs/business.md`, `docs/qa.md` e `AGENTS.md` nas seções listadas no `design.md`
+- [x] 8.3 Atualizar o `README.md` nas seções listadas no `design.md`, com os números da rodada final e o resultado de cada passo (inclusive o que foi reprovado)
+- [x] 8.4 Atualizar `eval/resultados/COMPARACAO.md` com a seção "Contexto por documento (`v5`)"
 
 ## 9. Portões
 
-- [ ] 9.1 `npm run lint`, `npm run typecheck` e `npm test` passam
+- [x] 9.1 `npm run lint`, `npm run typecheck` e `npm test` passam
 
 ## Workflow follow-up
 
