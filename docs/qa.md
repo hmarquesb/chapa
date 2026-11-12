@@ -52,7 +52,7 @@ npm run chat -- --sessao <uuid> --debug                              # retoma um
 
 ## Avaliação
 
-`npm run eval` passa as 73 perguntas de [`eval/perguntas.json`](../eval/perguntas.json) (45 no escopo, 16 de recusa e 12 de conversa, com os ids 101 a 173) pelo mesmo `handleMessage` da API, no banco `dev`, e grava um `.json` e um `.md` em [`eval/resultados/`](../eval/resultados/). As métricas e as metas estão em [`business.md`](business.md#metas-de-qualidade).
+`npm run eval` passa as 74 perguntas de [`eval/perguntas.json`](../eval/perguntas.json) (46 no escopo, 16 de recusa e 12 de conversa, com os ids 101 a 174) pelo mesmo `handleMessage` da API, no banco `dev`, e grava um `.json` e um `.md` em [`eval/resultados/`](../eval/resultados/). As métricas e as metas estão em [`business.md`](business.md#metas-de-qualidade).
 
 Os tipos `cumprimento`, `conversa` e `misto` testam o roteador ([ADR 0025](adr/0025-roteador-de-conversa-antes-do-rag.md)) e não entram no Hit@K, no acerto nem na recusa, para a rodada continuar comparável com a `v3`. O tipo `aberta` (ids 167 a 170) reúne perguntas amplas, com a resposta espalhada por várias seções de um documento, e conta como pergunta do escopo. Toda pergunta tem a `rota_esperada` (`cumprimento`, `conversa` ou `rag`), que a validação confere contra o tipo; as demais esperam `rag`, e o relatório mostra a rota escolhida em cada uma, o falso small talk e o acerto de rota.
 
@@ -68,7 +68,7 @@ npm run eval -- --label <nome> --preset padrao --context documents --max-docs 2 
 npm run eval -- --compare eval/resultados/v2.json eval/resultados/<nome>.json
 ```
 
-**Rodada completa em blocos.** Uma rodada das 73 perguntas faz cerca de 175 chamadas (a `v3`, de 50 perguntas, fez 106, sem juiz) e não deve ir de uma vez na cota gratuita. Rode em blocos de 10 com `--append`, que junta cada bloco ao `eval/resultados/<label>.json` existente e recalcula as métricas. O último bloco (151 a 162) é o novo e gasta pouco: os cumprimentos não chamam modelo.
+**Rodada completa em blocos.** Uma rodada das 74 perguntas faz cerca de 175 chamadas (a `v3`, de 50 perguntas, fez 106, sem juiz) e não deve ir de uma vez na cota gratuita. Rode em blocos de 10 com `--append`, que junta cada bloco ao `eval/resultados/<label>.json` existente e recalcula as métricas. O último bloco (151 a 162) é o novo e gasta pouco: os cumprimentos não chamam modelo.
 
 ```bash
 npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 101,102,103,104,105,106,107,108,109,110
@@ -103,7 +103,7 @@ Regras:
 
 - **Mesmo preset na ingestão e na rodada.** Os trechos de cada preset convivem no `dev`, separados por `embedding_model` e `chunk_config`.
 - **Uma variável por vez** na calibração, com `--only` nas perguntas afetadas para economizar cota. Cada tentativa vira uma linha em [`eval/resultados/CALIBRACAO.md`](../eval/resultados/CALIBRACAO.md): data, variável, valor, perguntas e efeito.
-- **Uma rodada é ruidosa.** Com 45 perguntas no escopo, cada uma vale 2,2 pontos. Antes de concluir que algo piorou, repita as perguntas que mudaram.
+- **Uma rodada é ruidosa.** Com 46 perguntas no escopo, cada uma vale 2,2 pontos. Antes de concluir que algo piorou, repita as perguntas que mudaram.
 - **Cota.** Use `--delay-ms` para respeitar o limite por minuto. Se a cota estourar, o eval grava o parcial (junto ao que já estava, com `--append`): espere e continue com `--append --only` nos pendentes, sem trocar de modelo. Espere cerca de 90 s entre uma ingestão e uma rodada.
 - **Linhas de base.** A `v5` é a linha de base atual (73 perguntas, com o roteador e o contexto por documento); a `v4` (62 perguntas) e a `v3` (50, sem as métricas de rota) são anteriores. As rodadas `v1`, `v2` e `cal-*` usaram a base anterior e outras perguntas: não compare com elas ([`COMPARACAO.md`](../eval/resultados/COMPARACAO.md)).
 - O juiz (`--judge`) é opcional e gasta uma chamada a mais por pergunta.

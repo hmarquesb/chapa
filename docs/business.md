@@ -95,7 +95,7 @@ A conta guarda o identificador e o e-mail do Google (a demo não tem e-mail), o 
 
 ## Metas de qualidade
 
-Medidas pela avaliação ([`qa.md`](qa.md#avaliação)), com 73 perguntas: 45 no escopo, 16 de recusa (fora do escopo, adversariais e de bloqueio) e 12 de conversa (cumprimento, conversa e mista):
+Medidas pela avaliação ([`qa.md`](qa.md#avaliação)), com 74 perguntas: 46 no escopo, 16 de recusa (fora do escopo, adversariais e de bloqueio) e 12 de conversa (cumprimento, conversa e mista):
 
 | Métrica | Meta |
 |---|---|

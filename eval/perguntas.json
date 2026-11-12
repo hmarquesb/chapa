@@ -746,5 +746,15 @@
     "esperado": "fallback",
     "rota_esperada": "rag",
     "nota": "Plano que não existe: o assistente não pode inventar uma comissão."
+  },
+  {
+    "id": 174,
+    "tipo": "parafrase",
+    "pergunta": "como falo com o financeiro?",
+    "fonte_esperada": ["09-suporte-e-chamados.md"],
+    "deve_conter": ["chamado", "Ajuda"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Variante da 164 em minúsculas: a caixa das letras não pode mudar a resposta."
   }
 ]

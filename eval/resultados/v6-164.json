@@ -1,0 +1,178 @@
+{
+  "label": "v6-164",
+  "preset": "padrao",
+  "date": "2026-11-12T20:45:13.547Z",
+  "commit": "c2ed999",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.5,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": true,
+      "contextMode": "documents",
+      "maxContextDocs": 3
+    },
+    "router": {
+      "enabled": true,
+      "maxWords": 12
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 164,
+        "tipo": "parafrase",
+        "pergunta": "Como falo com o Financeiro?",
+        "fonte_esperada": [
+          "09-suporte-e-chamados.md"
+        ],
+        "deve_conter": [
+          "chamado",
+          "Ajuda"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Pergunta curta sobre o contato com o Financeiro; a resposta passa pelo chat da tela Ajuda e pelo chamado."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Abra um chamado do tipo Financeiro em Ajuda > Abrir chamado.",
+        "sources": [
+          "11-pagamentos-e-fiscal.md",
+          "02-repasse-financeiro.md",
+          "01-planos-e-taxas.md"
+        ],
+        "retrieved": [
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6550864490428763,
+            "semantic": 0.7215520700612518,
+            "keyword": 0.5,
+            "content": "Pagamentos e fiscal — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado quando a NFS-e não estiver disponível no pr"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6389948326397925,
+            "semantic": 0.698564046628275,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado quando o repasse não cair na data esperada, "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6354555467790175,
+            "semantic": 0.693507923970025,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado se a comissão, a taxa de pagamento ou a mensalid"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Conferir os valores do mês",
+            "score": 0.6331996995723985,
+            "semantic": 0.6902852851034266,
+            "keyword": 0.5,
+            "content": "Pagamentos e fiscal — Conferir os valores do mês\n\nPara conferir o mês:\n\n1. Exporte o extrato em Financeiro > Extrato.\n2. Baixe a NFS-e do mês em Finan"
+          },
+          {
+            "source": "08-promocoes-e-cupons.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6316126960723791,
+            "semantic": 0.6880181372462559,
+            "keyword": 0.5,
+            "content": "Promoções e cupons — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado quando o desconto de um cupom descontado no "
+          }
+        ],
+        "context": [
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "",
+            "chars": 3794
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "",
+            "chars": 5342
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "",
+            "chars": 6043
+          }
+        ],
+        "searchQuery": "Como falo com o Financeiro?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 5719,
+          "outputTokens": 19
+        },
+        "latencyMs": 8061,
+        "routerMs": 5217,
+        "route": "rag"
+      },
+      "latencyMs": 8061,
+      "usage": {
+        "calls": 3,
+        "inputTokens": 5719,
+        "outputTokens": 19
+      },
+      "contextMissing": []
+    }
+  ],
+  "scores": [
+    {
+      "id": 164,
+      "inScope": true,
+      "hit": false,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    }
+  ],
+  "metrics": {
+    "total": 1,
+    "inScope": 1,
+    "hitAtK": 0,
+    "accuracy": 1,
+    "correctRefusal": 0,
+    "falseRefusal": 0,
+    "latencyP50Ms": 8061,
+    "latencyP95Ms": 8061,
+    "errors": 0,
+    "usage": {
+      "calls": 3,
+      "inputTokens": 5719,
+      "outputTokens": 19
+    },
+    "routing": {
+      "routeAccuracy": 1,
+      "falseSmallTalk": 0,
+      "falseSmallTalkIds": [],
+      "avoidedSearches": 0,
+      "greetingAccuracy": 0,
+      "conversationAccuracy": 0,
+      "mixedAccuracy": 0,
+      "shortRagLatencyAvgMs": 8061
+    },
+    "contextSufficiency": 1
+  }
+}
