@@ -92,7 +92,12 @@ Você pode desfazer a pausa quando quiser.
 Exemplo 2
 Contexto: Fotos do cardápio devem mostrar o prato real, com boa iluminação.
 Pergunta: Qual é o prazo para receber o repasse?
-Resposta: ${FALLBACK_MESSAGE}`
+Resposta: ${FALLBACK_MESSAGE}
+
+Exemplo 3
+Contexto: O tempo de preparo dos pedidos é ajustado na área de configurações da loja do Painel Rango, no campo de tempo de preparo.
+Pergunta: Onde eu mexo pra dar mais prazo pra cozinha?
+Resposta: Você ajusta isso na área de configurações da loja do Painel Rango, no campo de tempo de preparo.`
 
 export function buildRagPrompt(question: string, blocks: ContextBlock[]): string {
   const context =
@@ -105,6 +110,7 @@ export function buildRagPrompt(question: string, blocks: ContextBlock[]): string
 - Se a resposta não estiver no contexto, responda exatamente: ${FALLBACK_MESSAGE}
 - Não mostre seu raciocínio. Escreva só a resposta final.
 - Não invente números, prazos ou valores que não estejam no contexto.
+- A pergunta pode usar palavras diferentes das do contexto (gíria, sinônimo ou jeito informal). Se o contexto trata do assunto perguntado, responda com o que ele diz.
 
 ${FEW_SHOT_EXAMPLES}
 

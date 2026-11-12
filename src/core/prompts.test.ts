@@ -254,6 +254,37 @@ describe("buildRagPrompt", () => {
     expect(prompt).toMatch(/Exemplo 1/)
     expect(prompt).toMatch(/Exemplo 2/)
   })
+
+  it("adds the informal-wording instruction after the four existing ones", () => {
+    const instructions = prompt.slice(0, prompt.indexOf("Exemplos (fictícios"))
+    const lines = instructions.split("\n").filter((l) => l.startsWith("- "))
+    expect(lines).toHaveLength(5)
+    expect(lines[0]).toBe("- Responda só com base no contexto da base de conhecimento abaixo.")
+    expect(lines[1]).toBe(
+      `- Se a resposta não estiver no contexto, responda exatamente: ${FALLBACK_MESSAGE}`,
+    )
+    expect(lines[2]).toBe("- Não mostre seu raciocínio. Escreva só a resposta final.")
+    expect(lines[3]).toBe("- Não invente números, prazos ou valores que não estejam no contexto.")
+    expect(lines[4]).toBe(
+      "- A pergunta pode usar palavras diferentes das do contexto (gíria, sinônimo ou jeito informal). Se o contexto trata do assunto perguntado, responda com o que ele diz.",
+    )
+  })
+
+  it("keeps examples 1 and 2 and adds example 3 without digits", () => {
+    const e1 = prompt.indexOf("Exemplo 1")
+    const e2 = prompt.indexOf("Exemplo 2")
+    const e3 = prompt.indexOf("Exemplo 3")
+    expect(e1).toBeGreaterThan(-1)
+    expect(e2).toBeGreaterThan(e1)
+    expect(e3).toBeGreaterThan(e2)
+    expect(prompt).toContain("Como pauso a loja por um tempo?")
+    expect(prompt).toContain("Pergunta: Qual é o prazo para receber o repasse?")
+    const end = prompt.indexOf("Contexto da base de conhecimento:")
+    const example3 = prompt.slice(e3, end)
+    expect(example3).toContain("Painel Rango")
+    expect(example3).toContain("Onde eu mexo pra dar mais prazo pra cozinha?")
+    expect(example3.replace("Exemplo 3", "")).not.toMatch(/\d/)
+  })
 })
 
 describe("REWRITE_PROMPT and SUMMARY_PROMPT", () => {
