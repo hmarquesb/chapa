@@ -77,6 +77,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 | Texto fixo (fallback, bloqueio, avisos) | `src/core/messages.ts` | Nunca duplique o texto em outro arquivo |
 | Prompt de sistema ou do RAG | `src/core/prompts.ts` | O fallback no prompt vem de `FALLBACK_MESSAGE`. Rodar a avaliação |
 | Guardrail de entrada ou de saída | `src/core/guardrails.ts`, `src/core/messages.ts` | Bloqueie padrões, nunca palavras soltas. "O repasse cai via Pix?" tem que passar: acrescente o caso nos testes |
+| Cumprimento e roteador de conversa | `src/core/router/`, `src/core/messages.ts` | A regra só reconhece a mensagem inteira; acrescente o caso que deve seguir para o RAG nos testes |
 | Memória, resumo ou reescrita | `src/core/memory.ts`, `src/core/rewrite-query.ts` | O contexto do RAG não vai para `messages` |
 | Login e sessão | `src/infra/auth/` (`config.ts`, `callbacks.ts`, `env.ts`, `index.ts`), `src/app/auth-actions.ts`, `src/app/entrar/`, `src/core/accounts.ts`, `src/infra/db/account-repository.ts` | Só `src/infra/auth/` importa `next-auth`. Toda rota protegida confirma a conta no banco (`getAuthenticatedAccount`). Limites em `src/config.ts` (`accounts`) |
 | Conversas da conta | `src/core/conversations.ts`, `src/infra/db/session-repository.ts`, `src/app/api/sessions/`, `src/components/chat/conversation-list.tsx` | Toda porta de conversa recebe o dono (`SessionOwner`): nunca escreva uma consulta sem dono ([ADR 0021](docs/adr/0021-autorizacao-por-conta-no-repositorio.md)). Mudou uma consulta: rode `npm run authz-check` |

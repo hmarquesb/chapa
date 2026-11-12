@@ -58,7 +58,7 @@ Os temas que a base **não** cobre de propósito estão no [`knowledge-base/READ
 
 1. Abre a página e entra: "Testar como demo" (um clique, sem preencher nada) ou "Entrar com Google". No primeiro acesso, a tela "Conte sobre o seu restaurante" pede o plano (e, se quiser, o resto do perfil) antes do chat; a demo já vem preenchida.
 2. Escreve a dúvida ou escolhe uma das 3 perguntas de exemplo.
-3. Recebe a resposta com os arquivos usados como fontes, ou o fallback quando a base não cobre o assunto.
+3. Recebe a resposta com os arquivos usados como fontes, ou o fallback quando a base não cobre o assunto. Um cumprimento puro ("bom dia", "oi, tudo bem?") recebe uma saudação com o nome do restaurante, sem passar pela base.
 4. Pode continuar a conversa: o assistente entende perguntas que dependem das anteriores ("e no outro plano?").
 5. Vê as conversas anteriores da conta numa lista, reabre uma delas, apaga as que não quer mais ou começa uma conversa nova.
 6. Edita o perfil, sai ou exclui a conta (e as conversas, na hora) pelo menu da conta. Na demo, uma faixa avisa que a conta e as conversas são apagadas em 7 dias.
