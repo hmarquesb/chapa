@@ -30,7 +30,12 @@ export default async function ProfilePage() {
           Ajuda o assistente a adaptar as respostas ao seu restaurante. Só o plano é obrigatório.
         </p>
       </header>
-      <ProfileForm profile={account.profile} firstAccess={firstAccess} notice={PRIVACY_NOTICE} />
+      <ProfileForm
+        profile={account.profile}
+        firstAccess={firstAccess}
+        notice={PRIVACY_NOTICE}
+        needsReview={account.profileNeedsReview}
+      />
       <SiteFooter />
     </main>
   )

@@ -89,7 +89,6 @@ describe("parseProfileUpdate", () => {
         plan: "entrega",
         cuisine: { id: "pizza" },
         location: { uf: "RJ", cityCode: 3303302 },
-        hours: "",
       }),
     ).toEqual({
       ok: true,

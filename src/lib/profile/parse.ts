@@ -3,6 +3,7 @@ import { checkProfileText, profileTextMessage } from "@/lib/moderation/profile-t
 import { isPlanId } from "@/lib/plans"
 import { findCity } from "@/lib/profile/cities"
 import { isCuisineId } from "@/lib/profile/cuisines"
+import { parseWeekHours } from "@/lib/profile/hours"
 import { isUf } from "@/lib/profile/states"
 import {
   CUISINE_TEXT_MAX_CHARS,
@@ -75,7 +76,8 @@ function parseLocationShape(raw: unknown): ProfileLocation | Failure {
 }
 
 // Parser único do perfil v2: o PUT /api/profile (requirePlan), o CLI e o eval. Ordem: objeto,
-// version, campo desconhecido, plano, forma e tamanho de cada campo e, por último, o filtro de
+// version, campo desconhecido, plano, forma e tamanho de cada campo (o horário, com as regras dos
+// turnos) e, por último, o filtro de
 // texto (nome e texto de "Outro") e a cidade na lista. Os textos são aparados e os vazios caem.
 // A version vem antes para que o formulário antigo ({ plan, city }) receba "recarregue a página".
 export async function parseProfileInput(
@@ -95,14 +97,18 @@ export async function parseProfileInput(
     value.plan = body.plan
   }
 
-  for (const field of ["name", "hours"] as const) {
-    if (!(field in body)) continue
-    const raw = body[field]
+  if ("name" in body) {
+    const raw = body.name
     if (typeof raw !== "string" || raw.length > PROFILE_FIELD_MAX_CHARS) {
       return { ok: false, error: VALIDATION_MESSAGES.profile }
     }
     const trimmed = raw.trim()
-    if (trimmed !== "") value[field] = trimmed
+    if (trimmed !== "") value.name = trimmed
+  }
+  if (body.hours !== undefined) {
+    const hours = parseWeekHours(body.hours)
+    if (!hours.ok) return { ok: false, error: hours.error, field: hours.field }
+    if (hours.value !== undefined) value.hours = hours.value
   }
   if (body.cuisine !== undefined) {
     const cuisine = parseCuisine(body.cuisine)

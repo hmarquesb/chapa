@@ -263,9 +263,24 @@ describe("saveProfile", () => {
   })
 
   it("ignores an unknown field in the error body", async () => {
-    const { fn } = fakeFetch(json({ error: "Erro.", field: "hours" }, 400))
+    const { fn } = fakeFetch(json({ error: "Erro.", field: "cnpj" }, 400))
     const result = await saveProfile(profile, fn)
     expect(result).toEqual({ ok: false, status: 400, error: "Erro." })
+  })
+
+  it.each(["hours", "hours.seg", "hours.dom"])("keeps the %s field of a 400", async (field) => {
+    const { fn } = fakeFetch(json({ error: "Erro.", field }, 400))
+    expect(await saveProfile(profile, fn)).toEqual({
+      ok: false,
+      status: 400,
+      error: "Erro.",
+      field,
+    })
+  })
+
+  it("ignores an unknown day in the hours field", async () => {
+    const { fn } = fakeFetch(json({ error: "Erro.", field: "hours.xyz" }, 400))
+    expect(await saveProfile(profile, fn)).toEqual({ ok: false, status: 400, error: "Erro." })
   })
 
   it("rejects a reply without a profile object", async () => {

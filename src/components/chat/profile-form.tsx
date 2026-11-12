@@ -12,6 +12,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { saveProfile } from "@/lib/api-client"
 import { checkProfileText, profileTextMessage } from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
+import { parseWeekHours } from "@/lib/profile/hours"
+import { DAY_IDS, type DayId, type WeekHours } from "@/lib/profile/types"
 import {
   CUISINE_TEXT_MAX_CHARS,
   PLAN_IDS,
@@ -30,6 +32,7 @@ import {
   cuisineFromDraft,
   draftFromCuisine,
 } from "./cuisine-field"
+import { HoursEditor, type HoursFocusRequest } from "./hours-editor"
 import {
   EMPTY_LOCATION_DRAFT,
   type LocationDraft,
@@ -37,7 +40,15 @@ import {
   locationErrorTargetId,
 } from "./location-fields"
 
-type FieldErrors = Partial<Record<ProfileErrorField, string>>
+type FieldErrors = Partial<Record<"name" | "cuisine" | "location", string>>
+type DayErrors = Partial<Record<DayId, string>>
+
+const EMPTY_HOURS: WeekHours = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] }
+
+function dayOfHoursField(field: ProfileErrorField): DayId | null {
+  const day = DAY_IDS.find((id) => field === `hours.${id}`)
+  return day ?? null
+}
 
 const PLAN_REQUIRED_MESSAGE = "Escolha o plano do restaurante na Rango."
 
@@ -64,13 +75,21 @@ type ProfileFormProps = {
   profile: RestaurantProfile
   firstAccess: boolean
   notice: string
+  needsReview?: boolean
 }
 
-export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) {
+export function ProfileForm({
+  profile,
+  firstAccess,
+  notice,
+  needsReview = false,
+}: ProfileFormProps) {
   const router = useRouter()
   const idPrefix = useId()
   const [name, setName] = useState(profile.name ?? "")
-  const [hours, setHours] = useState(profile.hours ?? "")
+  const [hours, setHours] = useState<WeekHours>(profile.hours ?? EMPTY_HOURS)
+  const [dayErrors, setDayErrors] = useState<DayErrors>({})
+  const [hoursFocus, setHoursFocus] = useState<HoursFocusRequest | null>(null)
   const [plan, setPlan] = useState<PlanId | "">(profile.plan ?? "")
   const [cuisine, setCuisine] = useState<CuisineDraft>(() => draftFromCuisine(profile.cuisine))
   const [location, setLocation] = useState<LocationDraft>(() => locationDraftFrom(profile))
@@ -78,10 +97,10 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
   const [planError, setPlanError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const defaultHoursOpen = profile.hours !== undefined || needsReview
 
   const planGroupRef = useRef<HTMLDivElement>(null)
   const nameId = `${idPrefix}-name`
-  const hoursId = `${idPrefix}-hours`
   const cuisineId = `${idPrefix}-cuisine`
   const locationId = `${idPrefix}-location`
   const legendId = `${idPrefix}-plan-legend`
@@ -93,7 +112,11 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
     document.getElementById(id)?.focus()
   }
 
-  function setFieldError(key: ProfileErrorField, message: string | undefined): void {
+  function requestHoursFocus(day: DayId): void {
+    setHoursFocus((current) => ({ day, nonce: (current?.nonce ?? 0) + 1 }))
+  }
+
+  function setFieldError(key: keyof FieldErrors, message: string | undefined): void {
     setFieldErrors((current) => {
       const { [key]: _removed, ...rest } = current
       return message === undefined ? rest : { ...rest, [key]: message }
@@ -104,7 +127,10 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
     planGroupRef.current?.querySelector<HTMLElement>("[role=radio]")?.focus()
   }
 
-  function buildBody(selectedPlan: PlanId): ProfileUpdateRequest {
+  function buildBody(
+    selectedPlan: PlanId,
+    hoursValue: WeekHours | undefined,
+  ): ProfileUpdateRequest {
     const cuisineValue = cuisineFromDraft(cuisine)
     return {
       version: 2,
@@ -119,7 +145,7 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
             },
           }
         : {}),
-      ...(hours.trim() !== "" ? { hours: hours.trim() } : {}),
+      ...(hoursValue !== undefined ? { hours: hoursValue } : {}),
     }
   }
 
@@ -139,9 +165,21 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
     if (plan === "") return focusPlan()
     if (nextErrors.cuisine !== undefined) return focusById(cuisineErrorTargetId(cuisineId, cuisine))
 
+    const parsedHours = parseWeekHours(hours)
+    if (!parsedHours.ok) {
+      const day = dayOfHoursField(parsedHours.field)
+      if (day !== null) {
+        setDayErrors({ [day]: parsedHours.error })
+        setError(null)
+        return requestHoursFocus(day)
+      }
+      return setError(parsedHours.error)
+    }
+    setDayErrors({})
+
     setError(null)
     setSaving(true)
-    const result = await saveProfile(buildBody(plan))
+    const result = await saveProfile(buildBody(plan, parsedHours.value))
     if (result.ok) {
       router.push("/")
       router.refresh()
@@ -152,7 +190,14 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
       router.push("/entrar")
       return
     }
-    if (result.field !== undefined) {
+    const hoursDay = result.field === undefined ? null : dayOfHoursField(result.field)
+    if (result.field !== undefined && hoursDay !== null) {
+      setFieldErrors({})
+      setDayErrors({ [hoursDay]: result.error })
+      requestHoursFocus(hoursDay)
+      return
+    }
+    if (result.field !== undefined && result.field !== "hours") {
       setFieldErrors({ [result.field]: result.error })
       focusById(
         result.field === "name"
@@ -252,18 +297,16 @@ export function ProfileForm({ profile, firstAccess, notice }: ProfileFormProps) 
         }}
         {...(fieldErrors.location !== undefined ? { error: fieldErrors.location } : {})}
       />
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={hoursId}>Horário de funcionamento</Label>
-        <Input
-          id={hoursId}
-          name="hours"
-          value={hours}
-          maxLength={PROFILE_FIELD_MAX_CHARS}
-          placeholder="Ex.: 18h às 23h…"
-          autoComplete="off"
-          onChange={(event) => setHours(event.target.value)}
-        />
-      </div>
+      <HoursEditor
+        value={hours}
+        onChange={(next) => {
+          setHours(next)
+          setDayErrors({})
+        }}
+        errors={dayErrors}
+        defaultOpen={defaultHoursOpen}
+        focusRequest={hoursFocus}
+      />
       <p className="text-sm text-muted-foreground">{notice}</p>
       {error !== null && (
         <Alert variant="destructive" id={errorId} role="alert">

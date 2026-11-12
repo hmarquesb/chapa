@@ -15,9 +15,14 @@ export type RestaurantProfile = {
   name?: string
   cuisine?: Cuisine
   location?: ProfileLocation
-  hours?: string // texto livre até a change 3
+  hours?: WeekHours
 }
 
-export type ProfileErrorField = "name" | "cuisine" | "location"
+export const DAY_IDS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"] as const
+export type DayId = (typeof DAY_IDS)[number]
+export type Shift = { open: string; close: string } // "HH:MM", minutos 00 ou 30
+export type WeekHours = Record<DayId, Shift[]> // [] = fechado; no máximo 2 turnos
+
+export type ProfileErrorField = "name" | "cuisine" | "location" | "hours" | `hours.${DayId}`
 export type ProfileResponse = { profile: RestaurantProfile; needsReview: boolean }
 export type ProfileUpdateRequest = RestaurantProfile & { plan: PlanId }

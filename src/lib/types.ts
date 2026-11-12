@@ -27,7 +27,7 @@ export const PLAN_LABELS: Readonly<Record<PlanId, string>> = {
 }
 
 export const PROFILE_FIELDS = ["name", "plan", "cuisine", "location", "hours"] as const
-// Limite de name e hours; o texto de "Outro" usa CUISINE_TEXT_MAX_CHARS.
+// Limite de name; o texto de "Outro" usa CUISINE_TEXT_MAX_CHARS.
 export const PROFILE_FIELD_MAX_CHARS = 60
 
 // POST /api/chat

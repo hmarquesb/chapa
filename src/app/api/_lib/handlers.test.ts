@@ -1087,7 +1087,6 @@ describe("createProfileHandlers", () => {
     plan: "entrega",
     cuisine: { id: "pizza" },
     location: { uf: "RJ", cityCode: 3303302 },
-    hours: "",
   }
   const V2_SAVED = {
     version: 2,
