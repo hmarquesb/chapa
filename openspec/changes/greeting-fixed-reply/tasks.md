@@ -32,7 +32,7 @@
 - [x] 6.1 Aplicar a migração no `dev` com os comandos do `DEPLOY.md` ("Banco `dev` no Neon")
 - [x] 6.2 `npm run chat -- --nome "Cantina da Nonna" --debug`: "bom dia", "oi, tudo bem?" e "boa noite chapa" recebem a resposta fixa com 0 chamadas; "bom dia, quanto é a comissão do Plano Próprio?" segue para o RAG
 - [ ] 6.3 `npm run dev` como demo: "bom dia" mostra "Bom dia, Marmitaria Boa Panela! Em que posso ajudar?" no balão de resposta; recarregar a conversa mantém a aparência; `/marca` mostra o exemplo
-- [ ] 6.4 Aplicar a migração no `prod` (H5 parcial) antes do merge
+- [x] 6.4 Aplicar a migração no `prod` (H5 parcial) antes do merge
 
 ## 7. Portões
 
