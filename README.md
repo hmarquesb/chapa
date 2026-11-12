@@ -49,7 +49,7 @@ O Chapa existe para estudar, num problema concreto e de ponta a ponta:
 - **RAG híbrido:** busca semântica com embeddings somada à busca por palavras-chave em português.
 - **Memória de conversa:** histórico recente e resumo persistido por sessão.
 - **Guardrails:** bloqueio de dados sensíveis na entrada e checagem da resposta antes de exibi-la.
-- **Avaliação:** 73 perguntas sobre a base da Rango, com metas por métrica, rodadas em blocos para caber na cota gratuita.
+- **Avaliação:** 74 perguntas sobre a base da Rango, com metas por métrica, rodadas em blocos para caber na cota gratuita.
 - **Desenvolvimento guiado por specs com agentes de código:** cada parte do sistema é uma spec implementada por um subagente e revisada antes de entrar na `main`.
 
 ### Decisões tomadas para simplificar
@@ -70,7 +70,7 @@ Algumas escolhas facilitam o desenvolvimento e mantêm o custo em zero, mas não
 | Respostas completas, sem streaming ([ADR 0004](docs/adr/0004-sem-streaming.md)) | O guardrail de saída vê a resposta inteira antes do usuário | Streaming com uma checagem que acompanhe o texto |
 | Rate limit por IP guardado no próprio Postgres | Nenhum serviço a mais para manter | Um armazenamento dedicado, como Redis |
 | Ingestão, migrações e rodadas de avaliação manuais | Controle sobre o que chama API e grava em banco | Pipelines automatizados |
-| Avaliação com 73 perguntas, rodada em blocos, e acerto por termos esperados (juiz opcional, não usado nas rodadas) | Cabe na cota gratuita | Um conjunto maior, com juiz, rodando a cada mudança |
+| Avaliação com 74 perguntas, rodada em blocos, e acerto por termos esperados (juiz opcional, não usado nas rodadas) | Cabe na cota gratuita | Um conjunto maior, com juiz, rodando a cada mudança |
 
 As decisões completas, com contexto e alternativas, estão em [`docs/adr/`](docs/adr/README.md).
 
@@ -274,12 +274,12 @@ Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o
 
 **Metodologia.** `npm run eval` passa as perguntas de [`eval/perguntas.json`](eval/perguntas.json) pelo mesmo `handleMessage` da API, com o banco `dev`, e grava um `.json` e um `.md` por rodada em [`eval/resultados/`](eval/resultados/). As rodadas usaram `gemini-3.5-flash-lite` (resposta e reescrita), `gemini-embedding-001`, `--delay-ms 4000` e nenhum juiz.
 
-**As 73 perguntas** (ids 101 a 173; as 50 primeiras são as da `v3` e as 12 seguintes, as da `v4`):
+**As 74 perguntas** (ids 101 a 174; as 50 primeiras são as da `v3` e as 12 seguintes, as da `v4`):
 
 | Tipo | Quantidade | O que mede |
 |---|---|---|
 | Factual | 15 | Um fato de um documento, com pelo menos uma pergunta por documento (comissão na retirada, dia do repasse, prazo de contestação) |
-| Paráfrase | 10 | Dez das factuais, com gíria ou de outro jeito ("quanto a Rango morde de comissão…") |
+| Paráfrase | 11 | Onze das factuais, com gíria ou de outro jeito ("quanto a Rango morde de comissão…") |
 | Perfil | 6 | A resposta depende do plano do perfil (comissão, mensalidade, taxa de entrega, dinheiro na entrega) |
 | Multi-documento | 5 | A resposta junta dois documentos (cupom e repasse, conta bancária e repasse retido) |
 | Multi-turno | 5 | O segundo turno depende do primeiro ("E se for Pix?", "E se for urgente?") |
@@ -291,7 +291,7 @@ Uma entrada bloqueada não vai para o LLM nem para o banco, porque pode conter o
 | Conversa | 4 | Agradecimento, despedida e "o que você sabe fazer?", sem número nem fallback |
 | Misto | 4 | Saudação e dúvida na mesma mensagem ("bom dia! quanto é a comissão…"): tem que ir para o RAG |
 
-**Métricas.** Calculadas em [`scripts/eval/metrics.ts`](scripts/eval/metrics.ts). Hit@K, acerto e falsa recusa usam as 45 perguntas no escopo; a recusa correta usa as 16 de recusa. Os três tipos de conversa ficam de fora dessas quatro e têm métricas de rota próprias.
+**Métricas.** Calculadas em [`scripts/eval/metrics.ts`](scripts/eval/metrics.ts). Hit@K, acerto e falsa recusa usam as 46 perguntas no escopo; a recusa correta usa as 16 de recusa. Os três tipos de conversa ficam de fora dessas quatro e têm métricas de rota próprias.
 
 - **Hit@K:** algum dos arquivos esperados está entre os trechos recuperados.
 - **Acerto:** status `answered`, a resposta contém todos os termos esperados (por exemplo, "11%" ou "7 dias") e nenhum termo proibido (`nao_deve_conter`, como "22%" numa pergunta do Plano Próprio), sem diferenciar maiúsculas e acentos.
@@ -360,7 +360,7 @@ A customização é **RAG híbrido e engenharia de prompt** (prompt de sistema c
 | Rastreabilidade das fontes | Cada resposta vem de trechos com arquivo e seção, mostrados como fontes | O fato fica nos pesos, sem fonte para mostrar | O usuário vê os arquivos, e o `--debug` mostra trecho e score |
 | Custo e tempo de iteração | Mudar um parâmetro e rodar o eval | Montar dados, treinar e avaliar a cada ciclo | As 6 tentativas de calibração rodaram no mesmo dia, com `--only` |
 | Necessidade de GPU | Nenhuma: só chamadas de API | Treino em GPU, ou um serviço gerenciado de ajuste | Custo zero, no plano gratuito |
-| Volume de dados | Funciona com 11 documentos | Precisa de muitos pares pergunta–resposta revisados | O único conjunto rotulado é o eval, com 73 perguntas |
+| Volume de dados | Funciona com 11 documentos | Precisa de muitos pares pergunta–resposta revisados | O único conjunto rotulado é o eval, com 74 perguntas |
 
 **Decisão.** RAG resolve o que este problema pede: fatos que mudam, com fonte. O prompt resolve o tom, o formato e a recusa. O fine-tuning fixaria fatos que envelhecem e tiraria a rastreabilidade.
 
