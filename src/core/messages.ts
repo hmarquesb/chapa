@@ -1,5 +1,6 @@
 import "server-only"
 import type { InputBlockReason } from "@/core/guardrails"
+import type { GreetingKind, GreetingMatch } from "@/core/router/greeting"
 
 // Único lugar com o texto de fallback (AGENTS.md, regra 5 de IA e RAG).
 export const FALLBACK_MESSAGE =
@@ -26,3 +27,19 @@ export const OUTPUT_BLOCK_SIGNALS: string[] = [
   "me envie sua senha",
   "digite sua senha aqui",
 ]
+
+const GREETING_OPENINGS: Record<GreetingKind, string> = {
+  bom_dia: "Bom dia",
+  boa_tarde: "Boa tarde",
+  boa_noite: "Boa noite",
+  neutro: "Olá",
+}
+
+// Resposta fixa do cumprimento (sem LLM). O nome é o do perfil já limpo pelo filtro.
+export function greetingReply(match: GreetingMatch, name: string | undefined): string {
+  const opening = GREETING_OPENINGS[match.kind]
+  const trimmed = name?.trim()
+  const greeting = trimmed ? `${opening}, ${trimmed}!` : `${opening}!`
+  const wellBeing = match.asksHowAreYou ? " Tudo certo por aqui." : ""
+  return `${greeting}${wellBeing} Em que posso ajudar?`
+}

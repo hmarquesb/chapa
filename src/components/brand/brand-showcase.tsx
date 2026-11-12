@@ -32,6 +32,15 @@ const MESSAGES: readonly UiMessage[] = [
     createdAt: NOW,
   },
   {
+    key: "showcase-greeting",
+    role: "assistant",
+    // Illustrative text: the real greeting lives in src/core/messages.ts, which components cannot import.
+    content: "Bom dia, Marmitaria Boa Panela! Em que posso ajudar?",
+    status: "small_talk",
+    sources: [],
+    createdAt: NOW,
+  },
+  {
     key: "showcase-fallback",
     role: "assistant",
     // Illustrative text: the real fallback lives in src/core/messages.ts, which components cannot import.

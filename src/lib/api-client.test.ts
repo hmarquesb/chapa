@@ -53,6 +53,20 @@ describe("sendMessage", () => {
     })
   })
 
+  it("accepts a small_talk reply", async () => {
+    const greeting: ChatResponse = {
+      status: "small_talk",
+      answer: "Bom dia! Em que posso ajudar?",
+      sources: [],
+      sessionId: ID,
+    }
+    const { fn } = fakeFetch(json(greeting))
+    expect(await sendMessage({ sessionId: ID, message: "bom dia" }, fn)).toEqual({
+      ok: true,
+      data: greeting,
+    })
+  })
+
   it("returns the API error message and status", async () => {
     const { fn } = fakeFetch(json({ error: "Muitas mensagens. Espere um pouco." }, 429))
     expect(await sendMessage({ sessionId: ID, message: "Oi" }, fn)).toEqual({

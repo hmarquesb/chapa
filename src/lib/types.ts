@@ -13,7 +13,12 @@ export type {
 } from "@/lib/profile/types"
 export { CUISINE_TEXT_MAX_CHARS, PROFILE_VERSION } from "@/lib/profile/types"
 
-export type ReplyStatus = "answered" | "fallback" | "blocked_input" | "blocked_output"
+export type ReplyStatus =
+  | "answered"
+  | "small_talk"
+  | "fallback"
+  | "blocked_input"
+  | "blocked_output"
 
 export type Channel = "web" | "cli" | "eval"
 

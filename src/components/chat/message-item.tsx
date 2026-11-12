@@ -57,7 +57,8 @@ export function MessageItem({ message }: { message: UiMessage }) {
     )
   }
 
-  const answered = message.status === "answered" || message.status === null
+  const answered =
+    message.status === "answered" || message.status === "small_talk" || message.status === null
 
   return (
     <li className="flex animate-message-in items-start gap-2">

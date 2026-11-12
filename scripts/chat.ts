@@ -110,6 +110,7 @@ function printReply(reply: AssistantReply, debug: boolean): void {
 
   if (debug) {
     console.log("\n--- debug ---")
+    console.log(`Rota: ${reply.route ?? "(bloqueada)"}`)
     console.log(`Busca: ${reply.searchQuery === "" ? "(nenhuma)" : reply.searchQuery}`)
     console.log(`Trechos recuperados (${reply.retrieved.length}) [score | sem | kw]:`)
     for (const chunk of reply.retrieved) console.log(formatChunk(chunk))
