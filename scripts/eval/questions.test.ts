@@ -38,7 +38,7 @@ function q(overrides: Partial<EvalQuestion> & { id: number }): EvalQuestion {
   }
 }
 
-// Conjunto mínimo válido com a distribuição exigida (15/10/6/5/5/4/9/4/3/4/4/4), com uma pergunta
+// Conjunto mínimo válido com a distribuição exigida (15/11/6/5/5/4/9/4/3/4/4/4), com uma pergunta
 // factual por arquivo de FILES.
 function validSet(): EvalQuestion[] {
   const items: EvalQuestion[] = []
@@ -46,7 +46,7 @@ function validSet(): EvalQuestion[] {
   for (let i = 0; i < 15; i++) {
     items.push(q({ id: id++, fonte_esperada: [i === 0 ? "02-b.md" : "01-a.md"] }))
   }
-  for (let i = 0; i < 10; i++) items.push(q({ id: id++, tipo: "parafrase" }))
+  for (let i = 0; i < 11; i++) items.push(q({ id: id++, tipo: "parafrase" }))
   for (let i = 0; i < 6; i++) {
     items.push(q({ id: id++, tipo: "perfil", perfil: { version: 2, plan: "proprio" } }))
   }
@@ -148,14 +148,14 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect(KNOWLEDGE_FILES.length).toBe(11)
     const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     expect(result.ok ? [] : result.errors).toEqual([])
-    expect(result.ok && result.questions).toHaveLength(73)
+    expect(result.ok && result.questions).toHaveLength(74)
   })
 
-  it("uses the ids 101 to 173, the first 62 grouped by type in the distribution order", async () => {
+  it("uses the ids 101 to 174, the first 62 grouped by type in the distribution order", async () => {
     const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     expect(result.questions.map((item) => item.id)).toEqual(
-      Array.from({ length: 73 }, (_, i) => 101 + i),
+      Array.from({ length: 74 }, (_, i) => 101 + i),
     )
     const order: EvalQuestionType[] = [
       "factual",
@@ -170,7 +170,7 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
       "conversa",
       "misto",
     ]
-    // As perguntas 163 a 173 foram acrescentadas depois, sem renumerar as antigas.
+    // As perguntas 163 a 174 foram acrescentadas depois, sem renumerar as antigas.
     const types = result.questions.filter((item) => item.id <= 162).map((item) => item.tipo)
     expect([...types].sort((a, b) => order.indexOf(a) - order.indexOf(b))).toEqual(types)
   })
@@ -242,9 +242,9 @@ describe("validateQuestions", () => {
     ])
   })
 
-  it("requires exactly 73 items", async () => {
-    const errors = await errorsOf(validSet().slice(0, 72))
-    expect(errors).toContain("São 72 perguntas; precisam ser 73.")
+  it("requires exactly 74 items", async () => {
+    const errors = await errorsOf(validSet().slice(0, 73))
+    expect(errors).toContain("São 73 perguntas; precisam ser 74.")
   })
 
   it("rejects duplicated ids", async () => {
@@ -258,7 +258,7 @@ describe("validateQuestions", () => {
     replace(items, firstOf(items, "parafrase"), { tipo: "factual" })
     const errors = await errorsOf(items)
     expect(errors).toContain('Tipo "factual": 16 perguntas; precisam ser 15.')
-    expect(errors).toContain('Tipo "parafrase": 9 perguntas; precisam ser 10.')
+    expect(errors).toContain('Tipo "parafrase": 10 perguntas; precisam ser 11.')
   })
 
   it("accepts the aberta type as an in-scope question answered by the rag route", async () => {

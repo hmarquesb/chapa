@@ -37,10 +37,10 @@ export type EvalQuestion = {
   nota: string // o que a pergunta testa
 }
 
-// Distribuição exigida (73 perguntas: 45 no escopo, 16 de recusa e 12 de conversa).
+// Distribuição exigida (74 perguntas: 46 no escopo, 16 de recusa e 12 de conversa).
 export const QUESTION_DISTRIBUTION: Readonly<Record<EvalQuestionType, number>> = Object.freeze({
   factual: 15,
-  parafrase: 10,
+  parafrase: 11,
   perfil: 6,
   multi_turno: 5,
   multi_doc: 5,
