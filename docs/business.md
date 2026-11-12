@@ -58,7 +58,7 @@ Os temas que a base **não** cobre de propósito estão no [`knowledge-base/READ
 
 1. Abre a página e entra: "Testar como demo" (um clique, sem preencher nada) ou "Entrar com Google". No primeiro acesso, a tela "Conte sobre o seu restaurante" pede o plano (e, se quiser, o resto do perfil) antes do chat; a demo já vem preenchida.
 2. Escreve a dúvida ou escolhe uma das 3 perguntas de exemplo.
-3. Recebe a resposta com os arquivos usados como fontes, ou o fallback quando a base não cobre o assunto. Um cumprimento puro ("bom dia", "oi, tudo bem?") recebe uma saudação com o nome do restaurante, sem passar pela base.
+3. Recebe a resposta com os arquivos usados como fontes, ou o fallback quando a base não cobre o assunto. Um cumprimento puro ("bom dia", "oi, tudo bem?") recebe uma saudação com o nome do restaurante, sem passar pela base. Agradecimento, despedida e "o que você faz?" recebem uma resposta curta, também sem passar pela base.
 4. Pode continuar a conversa: o assistente entende perguntas que dependem das anteriores ("e no outro plano?").
 5. Vê as conversas anteriores da conta numa lista, reabre uma delas, apaga as que não quer mais ou começa uma conversa nova.
 6. Edita o perfil, sai ou exclui a conta (e as conversas, na hora) pelo menu da conta. Na demo, uma faixa avisa que a conta e as conversas são apagadas em 7 dias.
@@ -80,7 +80,7 @@ A conta guarda o identificador e o e-mail do Google (a demo não tem e-mail), o 
 - Cadastro de novos restaurantes e dúvidas de quem ainda não é parceiro.
 - Executar ações (mudar plano, pausar a loja, contestar um pedido). O assistente explica como fazer, não faz.
 - Receber ou devolver dado sensível: CPF, número de cartão e senha são bloqueados por padrão.
-- Responder fora da base: receitas, dados de concorrentes, opiniões e conselhos gerais.
+- Responder fora da base: receitas, dados de concorrentes, opiniões e conselhos gerais. Conversa fora do tema (piada, assunto geral) continua no fallback.
 - Dados reais do restaurante, e-mail e senha, link mágico, outros provedores de login, papéis (Dono, Gerente, Operador) e várias lojas por conta.
 
 ## Regras de conteúdo
@@ -113,6 +113,7 @@ Os resultados da última rodada estão no [`README.md`](../README.md) e em [`eva
 | Só restaurantes que já são parceiros | [0011](adr/0011-somente-parceiros-atuais.md) |
 | Login com Google e conta demo isolada por clique | [0020](adr/0020-login-google-e-conta-demo.md) (substitui a [0010](adr/0010-link-de-continuacao-em-vez-de-login.md)) |
 | Conversas por conta, com o acesso autorizado no repositório | [0021](adr/0021-autorizacao-por-conta-no-repositorio.md) |
+| Conversa curta respondida por um roteador, com o RAG como padrão seguro na dúvida | [0025](adr/0025-roteador-de-conversa-antes-do-rag.md) |
 | Respostas completas, sem streaming | [0004](adr/0004-sem-streaming.md) |
 | RAG e prompt em vez de fine-tuning | [0012](adr/0012-rag-e-prompt-em-vez-de-fine-tuning.md) |
 | Só o Gemini, no plano gratuito | [0009](adr/0009-somente-gemini.md), [0014](adr/0014-flash-lite-como-modelo-de-chat.md) |

@@ -11,6 +11,7 @@ import {
 import { buildRagPrompt, buildSystemInstruction } from "@/core/prompts"
 import { retrieve } from "@/core/rag/retrieve"
 import { rewriteQuery } from "@/core/rewrite-query"
+import { countWords, routeConversation } from "@/core/router/conversation"
 import { matchGreeting } from "@/core/router/greeting"
 import { includesNormalized } from "@/core/text"
 import type {
@@ -117,6 +118,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         searchQuery: "",
         usage: emptyUsage(),
         latencyMs: now() - startedAt,
+        routerMs: null,
         route: null,
       }
     }
@@ -154,6 +156,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         searchQuery: "",
         usage: emptyUsage(),
         latencyMs: now() - startedAt,
+        routerMs: null,
         route: "cumprimento",
       }
     }
@@ -180,6 +183,42 @@ export function createAssistant(deps: AssistantDeps): Assistant {
         }
       } catch {
         // O turno segue com o resumo antigo e as mensagens recentes; nada é gravado.
+      }
+    }
+
+    // Roteador de conversa: mensagens curtas, depois da memória (precisa da última resposta do
+    // Chapa) e antes da reescrita. Nunca lança: qualquer falha segue para o RAG.
+    let routerMs: number | null = null
+    if (config.router.enabled && countWords(message) <= config.router.maxWords) {
+      const lastMessage = recent.at(-1)
+      const routed = await routeConversation({
+        message,
+        lastReply: lastMessage?.role === "assistant" ? lastMessage.content : null,
+        name: profile.name,
+        llm,
+        model: config.models.fast,
+        now,
+      })
+      routerMs = routed.latencyMs
+      if (routed.usage !== null) usages.push(routed.usage)
+      if (routed.kind === "conversa") {
+        await sessions.appendTurn(sessionId, owner, {
+          user: message,
+          assistant: routed.answer,
+          status: "small_talk",
+          sources: [],
+        })
+        return {
+          status: "small_talk",
+          answer: routed.answer,
+          sources: [],
+          retrieved: [],
+          searchQuery: "",
+          usage: addUsage(...usages),
+          latencyMs: now() - startedAt,
+          routerMs,
+          route: "conversa",
+        }
       }
     }
 
@@ -261,6 +300,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
       searchQuery,
       usage: addUsage(...usages),
       latencyMs: now() - startedAt,
+      routerMs,
       route: "rag",
     }
   }

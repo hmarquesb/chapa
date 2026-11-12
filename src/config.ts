@@ -22,6 +22,10 @@ export type AppConfig = {
     embeddingDimensions: number
   }
   rag: RagConfig
+  router: {
+    enabled: boolean // liga o roteador de conversa (não é parâmetro de busca: fica fora do chunk_config)
+    maxWords: number // só mensagens com até essa quantidade de palavras passam pelo roteador
+  }
   memory: {
     recentMessages: number // mensagens recentes enviadas inteiras ao modelo
     summarizeAbove: number // acima disso, as mais antigas viram resumo
@@ -123,6 +127,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       embeddingDimensions: DEFAULT_MODELS.embeddingDimensions,
     },
     rag: { ...RAG_PRESETS.padrao },
+    router: { enabled: true, maxWords: 12 },
     memory: {
       recentMessages: 10,
       summarizeAbove: 16,

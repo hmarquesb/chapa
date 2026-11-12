@@ -9,7 +9,7 @@ import {
   greetingReply,
   OUTPUT_BLOCK_SIGNALS,
 } from "@/core/messages"
-import { REWRITE_PROMPT, SUMMARY_PROMPT } from "@/core/prompts"
+import { CONVERSATION_PROMPT, REWRITE_PROMPT, SUMMARY_PROMPT } from "@/core/prompts"
 import type {
   ChunkCandidate,
   ChunkRepository,
@@ -32,6 +32,7 @@ const EMBED_USAGE: Usage = { calls: 1, inputTokens: 5, outputTokens: 0 }
 const REWRITE_USAGE: Usage = { calls: 1, inputTokens: 50, outputTokens: 10 }
 const SUMMARY_USAGE: Usage = { calls: 1, inputTokens: 200, outputTokens: 60 }
 const ANSWER_USAGE: Usage = { calls: 1, inputTokens: 900, outputTokens: 120 }
+const ROUTER_USAGE: Usage = { calls: 1, inputTokens: 300, outputTokens: 20 }
 
 function candidate(
   id: number,
@@ -60,6 +61,7 @@ class FakeLlm implements LlmClient {
   answer: Responder = () => "O repasse é feito conforme o ciclo descrito no portal."
   rewrite: Responder = () => "Pergunta reescrita?"
   summary: Responder = () => "Resumo gerado."
+  router: Responder = () => "DUVIDA"
 
   get calls(): number {
     return this.generateCalls.length + this.embedCalls.length
@@ -71,8 +73,15 @@ class FakeLlm implements LlmClient {
 
   answerCalls(): GenerateInput[] {
     return this.generateCalls.filter(
-      (call) => call.system !== REWRITE_PROMPT && call.system !== SUMMARY_PROMPT,
+      (call) =>
+        call.system !== REWRITE_PROMPT &&
+        call.system !== SUMMARY_PROMPT &&
+        !call.system?.startsWith(CONVERSATION_PROMPT),
     )
+  }
+
+  routerCalls(): GenerateInput[] {
+    return this.generateCalls.filter((call) => call.system?.startsWith(CONVERSATION_PROMPT))
   }
 
   async generate(input: GenerateInput): Promise<{ text: string; usage: Usage }> {
@@ -82,7 +91,9 @@ class FakeLlm implements LlmClient {
         ? [this.rewrite, REWRITE_USAGE]
         : input.system === SUMMARY_PROMPT
           ? [this.summary, SUMMARY_USAGE]
-          : [this.answer, ANSWER_USAGE]
+          : input.system?.startsWith(CONVERSATION_PROMPT)
+            ? [this.router, ROUTER_USAGE]
+            : [this.answer, ANSWER_USAGE]
     const output = responder(input)
     if (output instanceof Error) throw output
     return { text: output, usage }
@@ -244,7 +255,11 @@ class FakeSessions implements SessionRepository {
   }
 }
 
-function setup(appConfig: AppConfig = config) {
+// Os testes antigos valem para o turno sem roteador; os do roteador usam ROUTER_ON.
+const ROUTER_OFF: AppConfig = { ...config, router: { ...config.router, enabled: false } }
+const ROUTER_ON: AppConfig = { ...config, router: { enabled: true, maxWords: 12 } }
+
+function setup(appConfig: AppConfig = ROUTER_OFF) {
   const llm = new FakeLlm()
   const chunks = new FakeChunks()
   const sessions = new FakeSessions()
@@ -298,6 +313,7 @@ describe("createAssistant().handleMessage", () => {
       searchQuery: "",
       usage: { calls: 0, inputTokens: 0, outputTokens: 0 },
       latencyMs: 25,
+      routerMs: null,
       route: null,
     })
     expect(llm.calls).toBe(0)
@@ -705,6 +721,7 @@ describe("createAssistant().handleMessage greeting turn", () => {
       searchQuery: "",
       usage: ZERO_USAGE,
       latencyMs: 25,
+      routerMs: null,
       route: "cumprimento",
     })
     expect(reply.answer).toBe(
@@ -793,5 +810,120 @@ describe("createAssistant().handleMessage greeting turn", () => {
     const reply = await send("123.456.789-09")
     expect(reply.status).toBe("blocked_input")
     expect(reply.route).toBeNull()
+  })
+})
+
+describe("createAssistant().handleMessage conversation router", () => {
+  const ZERO_USAGE: Usage = { calls: 0, inputTokens: 0, outputTokens: 0 }
+
+  it("answers an accepted conversation without embedding, as small_talk", async () => {
+    const { llm, chunks, sessions, send } = setup(ROUTER_ON)
+    llm.router = () => "Por nada! Qualquer coisa, é só chamar."
+    const reply = await send("obrigado!")
+
+    expect(reply).toEqual({
+      status: "small_talk",
+      answer: "Por nada! Qualquer coisa, é só chamar.",
+      sources: [],
+      retrieved: [],
+      searchQuery: "",
+      usage: ROUTER_USAGE,
+      latencyMs: 75,
+      routerMs: 25,
+      route: "conversa",
+    })
+    expect(llm.embedCalls).toEqual([])
+    expect(llm.answerCalls()).toEqual([])
+    expect(chunks.searchQueries).toEqual([])
+    expect(sessions.messages.map((m) => [m.role, m.content, m.status, m.sources])).toEqual([
+      ["user", "obrigado!", null, []],
+      ["assistant", "Por nada! Qualquer coisa, é só chamar.", "small_talk", []],
+    ])
+  })
+
+  it("sums the summary and the router usage on a conversation turn", async () => {
+    const { llm, sessions, send } = setup(ROUTER_ON)
+    sessions.seed(17)
+    llm.router = () => "De nada!"
+    const reply = await send("valeu")
+    expect(reply.route).toBe("conversa")
+    expect(reply.usage).toEqual({
+      calls: 2,
+      inputTokens: SUMMARY_USAGE.inputTokens + ROUTER_USAGE.inputTokens,
+      outputTokens: SUMMARY_USAGE.outputTokens + ROUTER_USAGE.outputTokens,
+    })
+  })
+
+  it("goes to the rag on the sentinel, summing the router usage", async () => {
+    const { llm, send } = setup(ROUTER_ON)
+    const reply = await send("Quando cai o repasse?")
+    expect(reply.route).toBe("rag")
+    expect(reply.status).toBe("answered")
+    expect(reply.routerMs).toBe(25)
+    expect(reply.usage).toEqual({
+      calls: 3,
+      inputTokens: ROUTER_USAGE.inputTokens + EMBED_USAGE.inputTokens + ANSWER_USAGE.inputTokens,
+      outputTokens: ROUTER_USAGE.outputTokens + ANSWER_USAGE.outputTokens,
+    })
+    expect(llm.routerCalls()).toHaveLength(1)
+  })
+
+  it("goes to the rag when the router fails, without its usage", async () => {
+    const { llm, send } = setup(ROUTER_ON)
+    llm.router = () => new LlmUnavailableError("fora do ar")
+    const reply = await send("Quando cai o repasse?")
+    expect(reply.route).toBe("rag")
+    expect(reply.routerMs).toBe(25)
+    expect(reply.usage.calls).toBe(2)
+  })
+
+  it("goes to the rag when the router answer has a digit", async () => {
+    const { llm, send } = setup(ROUTER_ON)
+    llm.router = () => "A taxa é 12%."
+    const reply = await send("e a taxa?")
+    expect(reply.route).toBe("rag")
+    expect(reply.usage.calls).toBe(3)
+  })
+
+  it("does not call the router above maxWords", async () => {
+    const { llm, send } = setup(ROUTER_ON)
+    const reply = await send(
+      "quando cai o repasse das vendas que fiz ontem à noite no plano próprio aqui",
+    )
+    expect(reply.route).toBe("rag")
+    expect(reply.routerMs).toBeNull()
+    expect(llm.routerCalls()).toEqual([])
+  })
+
+  it("does not call the router when it is off", async () => {
+    const { llm, send } = setup(ROUTER_OFF)
+    const reply = await send("obrigado!")
+    expect(reply.route).toBe("rag")
+    expect(reply.routerMs).toBeNull()
+    expect(llm.routerCalls()).toEqual([])
+  })
+
+  it("sends the last Chapa reply, and the profile name, to the router", async () => {
+    const { llm, sessions, send } = setup(ROUTER_ON)
+    sessions.seed(2)
+    await send("e no Entrega?", { version: 2, name: "Cantina da Nonna" })
+    const [call] = llm.routerCalls()
+    expect(call?.system).toContain("Cantina da Nonna")
+    expect(call?.messages[0]?.content).toContain("Última resposta do Chapa: mensagem antiga 2")
+  })
+
+  it("sends no last reply when the last message is the partner's", async () => {
+    const { llm, sessions, send } = setup(ROUTER_ON)
+    sessions.seed(1)
+    await send("e no Entrega?")
+    expect(llm.routerCalls()[0]?.messages[0]?.content).not.toContain("Última resposta")
+  })
+
+  it("keeps the greeting and the blocked input away from the model", async () => {
+    const { llm, send } = setup(ROUTER_ON)
+    expect((await send("bom dia")).route).toBe("cumprimento")
+    expect((await send("meu CPF é 123.456.789-09")).status).toBe("blocked_input")
+    expect(llm.generateCalls).toEqual([])
+    expect((await send("bom dia")).usage).toEqual(ZERO_USAGE)
   })
 })

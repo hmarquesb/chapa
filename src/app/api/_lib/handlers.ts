@@ -236,6 +236,7 @@ export function createChatHandler(deps: {
         status: 200,
         replyStatus: reply.status,
         replyRoute: reply.route ?? undefined,
+        routerMs: reply.routerMs ?? undefined,
         llmCalls: reply.usage.calls,
         inputTokens: reply.usage.inputTokens,
         outputTokens: reply.usage.outputTokens,

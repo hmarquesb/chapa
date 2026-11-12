@@ -111,6 +111,7 @@ const REPLY: AssistantReply = {
   searchQuery: "CONSULTA-INTERNA",
   usage: { calls: 3, inputTokens: 1200, outputTokens: 150 },
   latencyMs: 800,
+  routerMs: null,
   route: "rag",
 }
 
@@ -508,6 +509,16 @@ describe("request logs", () => {
     expect(logs[0]?.error).toBeUndefined()
   })
 
+  it("logs the router latency when the router ran and leaves it out otherwise", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.reply = { ...assistant.reply, routerMs: 412, route: "conversa", status: "small_talk" }
+    await handler(chatRequest(VALID))
+    expect(logs[0]).toMatchObject({ replyRoute: "conversa", routerMs: 412 })
+    assistant.reply = { ...assistant.reply, routerMs: null, route: "rag", status: "answered" }
+    await handler(chatRequest(VALID))
+    expect(logs[1]?.routerMs).toBeUndefined()
+  })
+
   it("log the greeting route with no model calls and keep the route out of the body", async () => {
     const { handler, assistant, logs } = chatSetup()
     assistant.reply = {
@@ -518,6 +529,7 @@ describe("request logs", () => {
       searchQuery: "",
       usage: { calls: 0, inputTokens: 0, outputTokens: 0 },
       latencyMs: 3,
+      routerMs: null,
       route: "cumprimento",
     }
     const response = await handler(chatRequest(VALID))

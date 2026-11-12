@@ -178,8 +178,8 @@ export type HandleMessageInput = {
   accountProfile?: RestaurantProfile
 }
 
-// Rota que decidiu o turno. A change conversation-router acrescenta "conversa".
-export type ReplyRoute = "cumprimento" | "rag"
+// Rota que decidiu o turno.
+export type ReplyRoute = "cumprimento" | "conversa" | "rag"
 
 export type AssistantReply = {
   status: ReplyStatus
@@ -189,6 +189,7 @@ export type AssistantReply = {
   searchQuery: string // pergunta usada na busca (reescrita ou original)
   usage: Usage // soma das chamadas de LLM do turno
   latencyMs: number
+  routerMs: number | null // latência da chamada do roteador; null quando ele não rodou
   route: ReplyRoute | null // null só no blocked_input: a mensagem bloqueada não chega à decisão
 }
 
