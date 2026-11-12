@@ -22,6 +22,7 @@ const INVALID_RESPONSE_MESSAGE = "O servidor mandou uma resposta inesperada. Ten
 
 const REPLY_STATUSES: readonly ReplyStatus[] = [
   "answered",
+  "small_talk",
   "fallback",
   "blocked_input",
   "blocked_output",

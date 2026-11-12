@@ -111,6 +111,7 @@ const REPLY: AssistantReply = {
   searchQuery: "CONSULTA-INTERNA",
   usage: { calls: 3, inputTokens: 1200, outputTokens: 150 },
   latencyMs: 800,
+  route: "rag",
 }
 
 class FakeAssistant implements Assistant {
@@ -498,12 +499,46 @@ describe("request logs", () => {
       method: "POST",
       status: 200,
       replyStatus: "answered",
+      replyRoute: "rag",
       llmCalls: 3,
       inputTokens: 1200,
       outputTokens: 150,
     })
     expect(logs[0]?.latencyMs).toBeGreaterThanOrEqual(0)
     expect(logs[0]?.error).toBeUndefined()
+  })
+
+  it("log the greeting route with no model calls and keep the route out of the body", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.reply = {
+      status: "small_talk",
+      answer: "Bom dia! Em que posso ajudar?",
+      sources: [],
+      retrieved: [],
+      searchQuery: "",
+      usage: { calls: 0, inputTokens: 0, outputTokens: 0 },
+      latencyMs: 3,
+      route: "cumprimento",
+    }
+    const response = await handler(chatRequest(VALID))
+    expect(logs[0]).toMatchObject({
+      replyStatus: "small_talk",
+      replyRoute: "cumprimento",
+      llmCalls: 0,
+    })
+    expect(await response.json()).toEqual({
+      status: "small_talk",
+      answer: "Bom dia! Em que posso ajudar?",
+      sources: [],
+      sessionId: expect.any(String),
+    })
+  })
+
+  it("omit the route from the log when the input was blocked", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.reply = { ...REPLY, status: "blocked_input", sources: [], route: null }
+    await handler(chatRequest(VALID))
+    expect(logs[0]?.replyRoute).toBeUndefined()
   })
 
   it("carry the accountId of the session and never the email", async () => {

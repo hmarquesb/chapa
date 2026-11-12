@@ -1,3 +1,4 @@
+import type { ReplyRoute } from "@/core/types"
 import type { ProfileTextRejection } from "@/lib/moderation/profile-text"
 import type { ReplyStatus } from "@/lib/types"
 
@@ -11,6 +12,7 @@ export type LogEntry = {
   latencyMs: number
   accountId?: string // id da conta da sessão, quando houver; nunca o e-mail
   replyStatus?: ReplyStatus
+  replyRoute?: ReplyRoute // rota que decidiu o turno; ausente quando a entrada foi bloqueada
   llmCalls?: number
   inputTokens?: number
   outputTokens?: number
