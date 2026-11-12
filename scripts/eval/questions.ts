@@ -16,6 +16,11 @@ export type EvalQuestionType =
   | "fora_de_escopo"
   | "adversarial"
   | "bloqueio"
+  | "cumprimento"
+  | "conversa"
+  | "misto"
+
+export type ExpectedRoute = "cumprimento" | "conversa" | "rag"
 
 export type EvalQuestion = {
   id: number
@@ -26,11 +31,12 @@ export type EvalQuestion = {
   fonte_esperada?: string[] // hit se QUALQUER uma estiver entre os recuperados; multi_doc também mede "todas"
   deve_conter?: string[] // todos os termos, sem diferenciar maiúsculas nem acentos
   nao_deve_conter?: string[] // 1 a 5 termos; nenhum pode aparecer na resposta
-  esperado: "resposta" | "fallback" | "recusa"
+  esperado: "resposta" | "fallback" | "recusa" | "conversa"
+  rota_esperada: ExpectedRoute // rota que a pergunta deve tomar (ADR 0025)
   nota: string // o que a pergunta testa
 }
 
-// Distribuição exigida (50 perguntas: 36 no escopo e 14 de recusa).
+// Distribuição exigida (62 perguntas: 36 no escopo, 14 de recusa e 12 de conversa).
 export const QUESTION_DISTRIBUTION: Readonly<Record<EvalQuestionType, number>> = Object.freeze({
   factual: 15,
   parafrase: 6,
@@ -40,6 +46,9 @@ export const QUESTION_DISTRIBUTION: Readonly<Record<EvalQuestionType, number>> =
   fora_de_escopo: 7,
   adversarial: 4,
   bloqueio: 3,
+  cumprimento: 4,
+  conversa: 4,
+  misto: 4,
 })
 
 export const IN_SCOPE_TYPES: ReadonlySet<EvalQuestionType> = new Set([
@@ -50,6 +59,16 @@ export const IN_SCOPE_TYPES: ReadonlySet<EvalQuestionType> = new Set([
   "multi_doc",
 ])
 
+// Tipos de conversa: não entram nas métricas de escopo nem de recusa.
+export const CONVERSATION_TYPES: ReadonlySet<EvalQuestionType> = new Set([
+  "cumprimento",
+  "conversa",
+  "misto",
+])
+
+const EXPECTED_ROUTE_BY_TYPE = (tipo: EvalQuestionType): ExpectedRoute =>
+  tipo === "cumprimento" ? "cumprimento" : tipo === "conversa" ? "conversa" : "rag"
+
 const EXPECTED_BY_TYPE: Readonly<Record<EvalQuestionType, EvalQuestion["esperado"]>> = {
   factual: "resposta",
   parafrase: "resposta",
@@ -59,6 +78,9 @@ const EXPECTED_BY_TYPE: Readonly<Record<EvalQuestionType, EvalQuestion["esperado
   fora_de_escopo: "fallback",
   adversarial: "recusa",
   bloqueio: "recusa",
+  cumprimento: "conversa",
+  conversa: "conversa",
+  misto: "resposta",
 }
 
 const TOTAL_QUESTIONS = Object.values(QUESTION_DISTRIBUTION).reduce((sum, n) => sum + n, 0)
@@ -125,6 +147,13 @@ async function validateItem(
   const expected = EXPECTED_BY_TYPE[tipo]
   if (item.esperado !== expected) add(`tipo ${tipo} precisa de esperado "${expected}".`)
 
+  // rota_esperada coerente com o tipo
+  const expectedRoute = EXPECTED_ROUTE_BY_TYPE(tipo)
+  if (item.rota_esperada === undefined) add("falta rota_esperada.")
+  else if (item.rota_esperada !== expectedRoute) {
+    add(`tipo ${tipo} precisa de rota_esperada "${expectedRoute}".`)
+  }
+
   // fonte_esperada
   const sources = item.fonte_esperada
   if (sources !== undefined && !isStringList(sources)) {
@@ -148,7 +177,10 @@ async function validateItem(
     terms.length >= 1 &&
     terms.length <= MAX_TERMS &&
     terms.every(isNonEmptyString)
-  if ((inScope || terms !== undefined) && !validTerms) {
+  if (
+    (inScope || tipo === "cumprimento" || tipo === "misto" || terms !== undefined) &&
+    !validTerms
+  ) {
     add(`deve_conter precisa ter de 1 a ${MAX_TERMS} termos não vazios.`)
   }
 
@@ -169,6 +201,9 @@ async function validateItem(
   // perfil
   if (tipo === "perfil" && !(isRecord(item.perfil) && isNonEmptyString(item.perfil.plan))) {
     add("perfil precisa de perfil.plan preenchido.")
+  }
+  if (tipo === "cumprimento" && !(isRecord(item.perfil) && isNonEmptyString(item.perfil.name))) {
+    add("cumprimento precisa de perfil.name preenchido.")
   }
   if (item.perfil !== undefined) {
     if (!isRecord(item.perfil)) {
