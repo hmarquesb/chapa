@@ -5,6 +5,8 @@
 // npm run eval -- --label v3 --preset padrao --delay-ms 4000 --append --only 101,102 (rodada em blocos)
 // npm run eval -- --label v4-regras --preset padrao --router off (só a regra local de cumprimento)
 // npm run eval -- --label teste-minscore --preset padrao --min-score 0.45 --only 3,9
+// npm run eval -- --label v5-baseline --preset padrao --context chunks (trechos em vez de documentos)
+// npm run eval -- --label teste-docs --preset padrao --max-docs 2 --only 3,9
 // npm run eval -- --compare eval/resultados/v1.json eval/resultados/v2.json
 import { execFileSync } from "node:child_process"
 import { randomUUID } from "node:crypto"
@@ -21,7 +23,7 @@ import {
 import { createAssistant } from "@/core/assistant"
 import { LlmQuotaError, LlmRequestError, LlmUnavailableError } from "@/core/errors"
 import { KNOWLEDGE_FILE_PATTERN } from "@/core/rag/ingest"
-import type { RetrievedChunk } from "@/core/types"
+import type { ContextBlock, RetrievedChunk } from "@/core/types"
 import { closeSql, createChunkRepository, createSessionRepository, getSql } from "@/infra/db"
 import { getLlmClient } from "@/infra/llm"
 import { mergeRuns, parseStoredRun, sameRunConfig } from "./eval/append"
@@ -96,9 +98,18 @@ function ragOverrides(flags: Flags): Partial<RagConfig> {
   const topK = numberFlag(flags, "top-k", true)
   const minScore = numberFlag(flags, "min-score", false)
   const alpha = numberFlag(flags, "alpha", false)
+  const maxDocs = numberFlag(flags, "max-docs", true)
+  const contextMode = stringFlag(flags, "context")
   if (topK !== undefined) overrides.topK = topK
   if (minScore !== undefined) overrides.minScore = minScore
   if (alpha !== undefined) overrides.alpha = alpha
+  if (maxDocs !== undefined) overrides.maxContextDocs = maxDocs
+  if (contextMode !== undefined) {
+    if (contextMode !== "chunks" && contextMode !== "documents") {
+      throw new UsageError(`--context aceita chunks ou documents (recebido: ${contextMode}).`)
+    }
+    overrides.contextMode = contextMode
+  }
   if (flags.rewrite === "false") overrides.rewriteQuery = false
   else if (flags.rewrite !== undefined) {
     throw new UsageError("Para desligar a reescrita, use --no-rewrite.")
@@ -224,13 +235,26 @@ function reduceChunk(chunk: RetrievedChunk): Omit<RetrievedChunk, "id"> {
   }
 }
 
+// O contexto gravado guarda só a origem e o tamanho; o texto não vai para o arquivo.
+// Resultados de blocos anteriores (--append) já vêm reduzidos do arquivo, sem `content`: mantêm o `chars`.
+function reduceContextBlock(
+  block: ContextBlock | { source: string; section: string; chars: number },
+) {
+  const chars = "content" in block ? block.content.length : block.chars
+  return { source: block.source, section: block.section, chars }
+}
+
 function serializeRun(run: EvalRun): string {
   const results = run.results.map((result) =>
     result.reply === null
       ? result
       : {
           ...result,
-          reply: { ...result.reply, retrieved: result.reply.retrieved.map(reduceChunk) },
+          reply: {
+            ...result.reply,
+            retrieved: result.reply.retrieved.map(reduceChunk),
+            context: result.reply.context.map(reduceContextBlock),
+          },
         },
   )
   return `${JSON.stringify({ ...run, results }, null, 2)}\n`
@@ -319,6 +343,12 @@ async function evaluate(flags: Flags): Promise<void> {
   console.log(
     `RAG: topK ${appConfig.rag.topK}, minScore ${appConfig.rag.minScore}, alpha ${appConfig.rag.alpha},` +
       ` rewriteQuery ${appConfig.rag.rewriteQuery}`,
+  )
+  console.log(
+    `Contexto: ${appConfig.rag.contextMode}` +
+      (appConfig.rag.contextMode === "documents"
+        ? ` (até ${appConfig.rag.maxContextDocs} documentos)`
+        : ""),
   )
   const { router } = appConfig
   console.log(

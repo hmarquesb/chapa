@@ -22,6 +22,7 @@ function reply(overrides: Partial<AssistantReply> = {}): AssistantReply {
     answer: "A comissão do Plano Básico é de 12%.",
     sources: ["01-planos-e-taxas.md"],
     retrieved: [chunk("01-planos-e-taxas.md", "Comissão", 0.69)],
+    context: [],
     searchQuery: "comissão",
     usage: { calls: 2, inputTokens: 100, outputTokens: 20 },
     latencyMs: 1234,
@@ -161,6 +162,34 @@ describe("renderReport", () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order)
   })
 
+  it("shows the context sufficiency without a target, the cause column and the cause in the failures", () => {
+    const ok = { ...okResult(), contextMissing: [] }
+    const fail = { ...failResult(), contextMissing: ["quarta"] }
+    const md = renderReport(buildRun([ok, fail, refuseResult()]))
+    expect(md).toContain("| Contexto suficiente | 50,0% | sem meta | — |")
+    expect(md).toContain("| Causa |")
+    expect(md).toContain(
+      "| 1 | factual | answered | rag → rag | ✅ | ✅ | 1234 ms | 01-planos-e-taxas.md | — |",
+    )
+    expect(md).toMatch(/\| 2 \| parafrase \| fallback \|.*\| busca \|/)
+    const failures = md.slice(md.indexOf("## Falhas"))
+    expect(failures).toContain("- Causa: busca")
+    expect(failures).toContain("- Termos ausentes do contexto: quarta")
+  })
+
+  it("names the generation cause when the context had the terms", () => {
+    const fail = { ...failResult(), contextMissing: [] }
+    const md = renderReport(buildRun([fail]))
+    expect(md).toContain("- Causa: geração")
+  })
+
+  it("leaves the context columns out of a round without contextMissing", () => {
+    const md = renderReport(buildRun([okResult(), failResult()]))
+    expect(md).not.toContain("Contexto suficiente")
+    expect(md).not.toContain("| Causa |")
+    expect(md).not.toContain("- Causa:")
+  })
+
   it("says 'Nenhuma falha' when every question passed", () => {
     const md = renderReport(buildRun([okResult(), refuseResult()]))
     expect(md.slice(md.indexOf("## Falhas"))).toContain("Nenhuma falha.")
@@ -186,7 +215,7 @@ describe("renderReport", () => {
     expect(failures).not.toContain("### Pergunta 3 ")
   })
 
-  it("accepts one wrong refusal out of 14 within the ≥ 92% target", () => {
+  it("accepts one wrong refusal out of 16 within the ≥ 92% target", () => {
     const refusals = Array.from({ length: 13 }, (_, i) => {
       const r = refuseResult()
       return { ...r, question: { ...Q_REFUSE, id: 100 + i } }

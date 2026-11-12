@@ -11,8 +11,10 @@ import {
 } from "@/core/messages"
 import { CONVERSATION_PROMPT, REWRITE_PROMPT, SUMMARY_PROMPT } from "@/core/prompts"
 import type {
+  Chunk,
   ChunkCandidate,
   ChunkRepository,
+  ChunkSetKey,
   ConversationSummaryRecord,
   EmbedInput,
   GenerateInput,
@@ -120,6 +122,16 @@ class FakeChunks implements ChunkRepository {
 
   async count(): Promise<number> {
     return this.candidates.length
+  }
+
+  listCalls: Array<{ key: ChunkSetKey; sources: string[] }> = []
+  stored: Chunk[] = []
+  listError: Error | null = null
+
+  async listBySources(key: ChunkSetKey, sources: string[]): Promise<Chunk[]> {
+    this.listCalls.push({ key, sources })
+    if (this.listError) throw this.listError
+    return this.stored
   }
 }
 
@@ -256,7 +268,13 @@ class FakeSessions implements SessionRepository {
 }
 
 // Os testes antigos valem para o turno sem roteador; os do roteador usam ROUTER_ON.
-const ROUTER_OFF: AppConfig = { ...config, router: { ...config.router, enabled: false } }
+// Os testes do fluxo geral usam o modo "chunks" (prompt igual ao de antes); o contexto por
+// documento tem o describe próprio, no fim do arquivo.
+const ROUTER_OFF: AppConfig = {
+  ...config,
+  router: { ...config.router, enabled: false },
+  rag: { ...config.rag, contextMode: "chunks" },
+}
 const ROUTER_ON: AppConfig = { ...config, router: { enabled: true, maxWords: 12 } }
 
 function setup(appConfig: AppConfig = ROUTER_OFF) {
@@ -310,6 +328,7 @@ describe("createAssistant().handleMessage", () => {
       answer: BLOCKED_INPUT_MESSAGES.sensitive_data,
       sources: [],
       retrieved: [],
+      context: [],
       searchQuery: "",
       usage: { calls: 0, inputTokens: 0, outputTokens: 0 },
       latencyMs: 25,
@@ -718,6 +737,7 @@ describe("createAssistant().handleMessage greeting turn", () => {
       answer: "Bom dia, Marmitaria Boa Panela! Em que posso ajudar?",
       sources: [],
       retrieved: [],
+      context: [],
       searchQuery: "",
       usage: ZERO_USAGE,
       latencyMs: 25,
@@ -826,6 +846,7 @@ describe("createAssistant().handleMessage conversation router", () => {
       answer: "Por nada! Qualquer coisa, é só chamar.",
       sources: [],
       retrieved: [],
+      context: [],
       searchQuery: "",
       usage: ROUTER_USAGE,
       latencyMs: 75,
@@ -925,5 +946,55 @@ describe("createAssistant().handleMessage conversation router", () => {
     expect((await send("meu CPF é 123.456.789-09")).status).toBe("blocked_input")
     expect(llm.generateCalls).toEqual([])
     expect((await send("bom dia")).usage).toEqual(ZERO_USAGE)
+  })
+})
+
+describe("createAssistant().handleMessage document context", () => {
+  const DOCS = withRag(ROUTER_OFF, { contextMode: "documents", maxContextDocs: 1 })
+  const CHUNKS = withRag(ROUTER_OFF, { contextMode: "chunks" })
+
+  it("sends whole documents and returns the sources of the context", async () => {
+    const { llm, chunks, send } = setup(DOCS)
+    chunks.stored = [
+      { source: "02-repasse-financeiro.md", section: "A", content: "parte A" },
+      { source: "02-repasse-financeiro.md", section: "B", content: "parte B" },
+    ]
+    const reply = await send("Quando cai o repasse?")
+
+    expect(chunks.listCalls).toHaveLength(1)
+    expect(chunks.listCalls[0]?.sources).toEqual(["02-repasse-financeiro.md"])
+    expect(reply.context).toEqual([
+      { source: "02-repasse-financeiro.md", section: "", content: "parte A\n\nparte B" },
+    ])
+    expect(llm.answerCalls()[0]?.messages[0]?.content).toContain("parte A\n\nparte B")
+    // O arquivo fora do limite (maxContextDocs 1) não vira fonte.
+    expect(reply.sources).toEqual(["02-repasse-financeiro.md"])
+    expect(reply.retrieved.length).toBeGreaterThan(1)
+  })
+
+  it("keeps the old prompt and sources in chunks mode, without re-reading", async () => {
+    const { chunks, send } = setup(CHUNKS)
+    const reply = await send("Quando cai o repasse?")
+    expect(chunks.listCalls).toEqual([])
+    expect(reply.sources).toEqual(["02-repasse-financeiro.md", "01-planos-e-taxas.md"])
+    expect(reply.context).toEqual(
+      reply.retrieved.map(({ source, section, content }) => ({ source, section, content })),
+    )
+  })
+
+  it("falls back without re-reading and with an empty context on an empty search", async () => {
+    const { chunks, send } = setup(DOCS)
+    chunks.candidates = WEAK_CANDIDATES
+    const reply = await send("Como funciona o programa de fidelidade?")
+    expect(reply.status).toBe("fallback")
+    expect(reply.context).toEqual([])
+    expect(chunks.listCalls).toEqual([])
+  })
+
+  it("does not persist the turn when the re-read fails", async () => {
+    const { chunks, sessions, send } = setup(DOCS)
+    chunks.listError = new Error("banco fora")
+    await expect(send("Quando cai o repasse?")).rejects.toThrow("banco fora")
+    expect(sessions.messages).toEqual([])
   })
 })

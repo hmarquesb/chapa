@@ -47,6 +47,9 @@ export type ChunkCandidate = Chunk & {
 
 export type RetrievedChunk = ChunkCandidate & { score: number }
 
+// Bloco do contexto enviado ao modelo: um trecho ou um documento inteiro (section "").
+export type ContextBlock = { source: string; section: string; content: string }
+
 export interface ChunkRepository {
   replaceAll(key: ChunkSetKey, chunks: Array<Chunk & { embedding: number[] }>): Promise<number>
   search(input: {
@@ -56,6 +59,8 @@ export interface ChunkRepository {
     limit: number
   }): Promise<ChunkCandidate[]>
   count(key: ChunkSetKey): Promise<number>
+  // Todos os trechos dos arquivos indicados no conjunto ativo, em ordem de id.
+  listBySources(key: ChunkSetKey, sources: string[]): Promise<Chunk[]>
 }
 
 // ---------- Sessões e mensagens ----------
@@ -189,6 +194,7 @@ export type AssistantReply = {
   answer: string
   sources: string[] // arquivos únicos, na ordem do score; [] se status !== "answered"
   retrieved: RetrievedChunk[] // para eval e debug; a API não expõe
+  context: ContextBlock[] // o que foi enviado ao modelo; [] sem geração; a API não expõe
   searchQuery: string // pergunta usada na busca (reescrita ou original)
   usage: Usage // soma das chamadas de LLM do turno
   latencyMs: number

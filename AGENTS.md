@@ -68,8 +68,8 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 | Mudança | Arquivos | Cuidados |
 |---|---|---|
 | Fluxo de uma mensagem (`handleMessage`) | `src/core/assistant.ts` | API, CLI e eval chamam a mesma função: a mudança vale nos três |
-| Busca, ranking, chunking, ingestão | `src/core/rag/` (`retrieve`, `rank`, `chunking`, `ingest`) e `scripts/ingest.ts` | Mudou o chunking: reingerir |
-| Parâmetro do RAG (`minScore`, `topK`, `alpha`, chunking) | `src/config.ts` (`RAG_PRESETS`) | Mudou qualquer parâmetro: rodar a avaliação ([`qa.md`](docs/qa.md#avaliação)) |
+| Busca, ranking, chunking, ingestão | `src/core/rag/` (`retrieve`, `rank`, `chunking`, `ingest`, `context`) e `scripts/ingest.ts` | Mudou o chunking: reingerir |
+| Parâmetro do RAG (`minScore`, `topK`, `alpha`, chunking, `contextMode`, `maxContextDocs`) | `src/config.ts` (`RAG_PRESETS`) | Mudou qualquer parâmetro: rodar a avaliação ([`qa.md`](docs/qa.md#avaliação)) |
 | Modelo de chat ou de embedding | `src/config.ts` | Modelo de embedding novo exige reingerir. Decisão de modelo vira ADR |
 | Chamada ao Gemini (retry, tokens) | `src/infra/llm/` (`gemini-client.ts`, `retry.ts`) | Único lugar que importa `@google/genai` |
 | Consulta ao banco | `src/infra/db/` (`*-repository.ts`, `mappers.ts`) | Toda busca filtra por `embedding_model` e `chunk_config` |

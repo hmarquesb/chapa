@@ -3,6 +3,8 @@
 
 export type ChunkStrategy = "markdown" | "fixed"
 
+export type ContextMode = "chunks" | "documents"
+
 export type RagConfig = {
   topK: number // quantos trechos vão para o prompt
   minScore: number // score híbrido mínimo para um trecho contar
@@ -12,6 +14,8 @@ export type RagConfig = {
   chunkSize: number // em caracteres
   chunkOverlap: number // em caracteres
   rewriteQuery: boolean // reescrever a pergunta com o histórico antes da busca
+  contextMode: ContextMode // o que vai ao modelo: os trechos da busca ou os documentos inteiros
+  maxContextDocs: number // no modo "documents", quantos arquivos entram no contexto (1 a 5)
 }
 
 export type AppConfig = {
@@ -88,16 +92,19 @@ export const MODEL_THINKING_LEVEL: Readonly<Record<string, ThinkingLevel>> = Obj
 })
 
 export const RAG_PRESETS: { padrao: RagConfig; baseline: RagConfig } = Object.freeze({
-  // Calibrado na S08: minScore 0.5 → 0.55 (ver eval/resultados/CALIBRACAO.md).
+  // Calibrado na S08: minScore 0.5 → 0.55; na change reduce-false-refusals, 0.55 → 0.50
+  // (cal-v5-minscore-050; ver eval/resultados/CALIBRACAO.md).
   padrao: Object.freeze({
     topK: 5,
-    minScore: 0.55,
+    minScore: 0.5,
     alpha: 0.7,
     candidateLimit: 30,
     chunkStrategy: "markdown",
     chunkSize: 1200,
     chunkOverlap: 150,
     rewriteQuery: true,
+    contextMode: "documents",
+    maxContextDocs: 3,
   }),
   // Configuração ingênua, ponto de partida da avaliação.
   baseline: Object.freeze({
@@ -109,6 +116,8 @@ export const RAG_PRESETS: { padrao: RagConfig; baseline: RagConfig } = Object.fr
     chunkSize: 500,
     chunkOverlap: 100,
     rewriteQuery: false,
+    contextMode: "chunks",
+    maxContextDocs: 3,
   }),
 })
 
@@ -191,6 +200,16 @@ function validateRag(rag: RagConfig): RagConfig {
   if (rag.chunkStrategy !== "markdown" && rag.chunkStrategy !== "fixed") {
     throw invalid(
       `chunkStrategy precisa ser "markdown" ou "fixed" (recebido: ${String(rag.chunkStrategy)}).`,
+    )
+  }
+  if (rag.contextMode !== "chunks" && rag.contextMode !== "documents") {
+    throw invalid(
+      `contextMode precisa ser "chunks" ou "documents" (recebido: ${String(rag.contextMode)}).`,
+    )
+  }
+  if (!Number.isInteger(rag.maxContextDocs) || rag.maxContextDocs < 1 || rag.maxContextDocs > 5) {
+    throw invalid(
+      `maxContextDocs precisa ser um inteiro de 1 a 5 (recebido: ${rag.maxContextDocs}).`,
     )
   }
   return rag

@@ -1,6 +1,6 @@
 import "server-only"
 import { FALLBACK_MESSAGE } from "@/core/messages"
-import type { ChatMessage, RetrievedChunk } from "@/core/types"
+import type { ChatMessage, ContextBlock } from "@/core/types"
 import { cuisineLabel } from "@/lib/profile/cuisines"
 import { formatWeekHours } from "@/lib/profile/hours"
 import { STATES } from "@/lib/profile/states"
@@ -72,7 +72,7 @@ export function buildSystemInstruction(input: {
   return parts.join("\n\n")
 }
 
-function sourceLabel(chunk: RetrievedChunk): string {
+function sourceLabel(chunk: ContextBlock): string {
   return chunk.section === ""
     ? `[Fonte: ${chunk.source}]`
     : `[Fonte: ${chunk.source} › ${chunk.section}]`
@@ -92,19 +92,25 @@ Você pode desfazer a pausa quando quiser.
 Exemplo 2
 Contexto: Fotos do cardápio devem mostrar o prato real, com boa iluminação.
 Pergunta: Qual é o prazo para receber o repasse?
-Resposta: ${FALLBACK_MESSAGE}`
+Resposta: ${FALLBACK_MESSAGE}
 
-export function buildRagPrompt(question: string, results: RetrievedChunk[]): string {
+Exemplo 3
+Contexto: O tempo de preparo dos pedidos é ajustado na área de configurações da loja do Painel Rango, no campo de tempo de preparo.
+Pergunta: Onde eu mexo pra dar mais prazo pra cozinha?
+Resposta: Você ajusta isso na área de configurações da loja do Painel Rango, no campo de tempo de preparo.`
+
+export function buildRagPrompt(question: string, blocks: ContextBlock[]): string {
   const context =
-    results.length === 0
+    blocks.length === 0
       ? "(nenhum trecho encontrado)"
-      : results.map((chunk) => `${sourceLabel(chunk)}\n${chunk.content}`).join("\n---\n")
+      : blocks.map((chunk) => `${sourceLabel(chunk)}\n${chunk.content}`).join("\n---\n")
 
   return `Instruções:
 - Responda só com base no contexto da base de conhecimento abaixo.
 - Se a resposta não estiver no contexto, responda exatamente: ${FALLBACK_MESSAGE}
 - Não mostre seu raciocínio. Escreva só a resposta final.
 - Não invente números, prazos ou valores que não estejam no contexto.
+- A pergunta pode usar palavras diferentes das do contexto (gíria, sinônimo ou jeito informal). Se o contexto trata do assunto perguntado, responda com o que ele diz.
 
 ${FEW_SHOT_EXAMPLES}
 

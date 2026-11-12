@@ -14,7 +14,15 @@ const CONFIG_FIELDS: Array<keyof RagConfig> = [
   "topK",
   "alpha",
   "rewriteQuery",
+  "contextMode",
+  "maxContextDocs",
 ]
+
+// Rodada gravada antes do contexto por documento: os trechos da busca, até 3 documentos.
+const CONFIG_DEFAULTS: Partial<Record<keyof RagConfig, string>> = {
+  contextMode: "chunks",
+  maxContextDocs: "3",
+}
 
 const METRIC_ROWS: Array<[string, (m: Metrics) => string]> = [
   ["Perguntas", (m) => String(m.total)],
@@ -23,6 +31,10 @@ const METRIC_ROWS: Array<[string, (m: Metrics) => string]> = [
   ["Acerto", (m) => formatPercent(m.accuracy)],
   ["Recusa correta", (m) => formatPercent(m.correctRefusal)],
   ["Falsa recusa", (m) => formatPercent(m.falseRefusal)],
+  [
+    "Contexto suficiente",
+    (m) => (m.contextSufficiency == null ? EMPTY : formatPercent(m.contextSufficiency)),
+  ],
   ["Latência p50", (m) => `${m.latencyP50Ms} ms`],
   ["Latência p95", (m) => `${m.latencyP95Ms} ms`],
   ["Erros", (m) => String(m.errors)],
@@ -94,7 +106,7 @@ export function renderComparison(runs: EvalRun[]): string {
   }
 
   for (const field of CONFIG_FIELDS) {
-    const values = runs.map((run) => String(run.config.rag[field]))
+    const values = runs.map((run) => String(run.config.rag[field] ?? CONFIG_DEFAULTS[field]))
     if (new Set(values).size > 1) lines.push(row(field, values))
   }
 

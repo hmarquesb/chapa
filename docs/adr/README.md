@@ -32,6 +32,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0024](0024-perfil-estruturado-e-municipios-do-ibge.md) | Estruturar a cozinha e o local do perfil e guardar os municípios do IBGE no repositório | Aceito |
 | [0025](0025-roteador-de-conversa-antes-do-rag.md) | Responder a conversa curta com um roteador antes do RAG, com o RAG como padrão seguro | Aceito |
 | [0026](0026-ilustracao-da-marca.md) | Ilustrar a marca com tokens `art-*` só para desenho e ornamentos em SVG inline | Aceito |
+| [0027](0027-busca-por-trecho-contexto-por-documento.md) | Buscar por trecho e enviar ao modelo os documentos inteiros dos melhores trechos | Aceito |
 
 ## Modelo
 

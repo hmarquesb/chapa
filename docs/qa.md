@@ -52,9 +52,9 @@ npm run chat -- --sessao <uuid> --debug                              # retoma um
 
 ## Avaliação
 
-`npm run eval` passa as 62 perguntas de [`eval/perguntas.json`](../eval/perguntas.json) (36 no escopo, 14 de recusa e 12 de conversa, com os ids 101 a 162) pelo mesmo `handleMessage` da API, no banco `dev`, e grava um `.json` e um `.md` em [`eval/resultados/`](../eval/resultados/). As métricas e as metas estão em [`business.md`](business.md#metas-de-qualidade).
+`npm run eval` passa as 73 perguntas de [`eval/perguntas.json`](../eval/perguntas.json) (45 no escopo, 16 de recusa e 12 de conversa, com os ids 101 a 173) pelo mesmo `handleMessage` da API, no banco `dev`, e grava um `.json` e um `.md` em [`eval/resultados/`](../eval/resultados/). As métricas e as metas estão em [`business.md`](business.md#metas-de-qualidade).
 
-Os tipos `cumprimento`, `conversa` e `misto` testam o roteador ([ADR 0025](adr/0025-roteador-de-conversa-antes-do-rag.md)) e não entram no Hit@K, no acerto nem na recusa, para a rodada continuar comparável com a `v3`. Toda pergunta tem a `rota_esperada` (`cumprimento`, `conversa` ou `rag`), que a validação confere contra o tipo; as 50 perguntas de antes esperam `rag`, e o relatório mostra a rota escolhida em cada uma, o falso small talk e o acerto de rota.
+Os tipos `cumprimento`, `conversa` e `misto` testam o roteador ([ADR 0025](adr/0025-roteador-de-conversa-antes-do-rag.md)) e não entram no Hit@K, no acerto nem na recusa, para a rodada continuar comparável com a `v3`. O tipo `aberta` (ids 167 a 170) reúne perguntas amplas, com a resposta espalhada por várias seções de um documento, e conta como pergunta do escopo. Toda pergunta tem a `rota_esperada` (`cumprimento`, `conversa` ou `rag`), que a validação confere contra o tipo; as demais esperam `rag`, e o relatório mostra a rota escolhida em cada uma, o falso small talk e o acerto de rota.
 
 ```bash
 npm run ingest -- --preset padrao                                   # ⚠️ antes, se a base, o chunking ou o modelo mudou
@@ -63,27 +63,34 @@ npm run eval -- --label <nome> --preset padrao --router off --delay-ms 4000 --ap
 npm run eval -- --label <nome> --preset padrao --only 116,121       # só algumas perguntas, sobrescrevendo o arquivo
 npm run eval -- --label <nome> --preset padrao --min-score 0.5 --only 116,121
 npm run eval -- --label <nome> --preset padrao --no-rewrite --only 135
+npm run eval -- --label <nome> --preset padrao --context chunks --only 116,121   # ⚠️ contexto por trecho, como antes da v5
+npm run eval -- --label <nome> --preset padrao --context documents --max-docs 2 --only 116,121
 npm run eval -- --compare eval/resultados/v2.json eval/resultados/<nome>.json
 ```
 
-**Rodada completa em blocos.** Uma rodada das 62 perguntas faz de 100 a 225 chamadas (a `v3`, de 50 perguntas, fez 106, sem juiz) e não deve ir de uma vez na cota gratuita. Rode em blocos de 10 com `--append`, que junta cada bloco ao `eval/resultados/<label>.json` existente e recalcula as métricas. O último bloco (151 a 162) é o novo e gasta pouco: os cumprimentos não chamam modelo.
+**Rodada completa em blocos.** Uma rodada das 73 perguntas faz cerca de 175 chamadas (a `v3`, de 50 perguntas, fez 106, sem juiz) e não deve ir de uma vez na cota gratuita. Rode em blocos de 10 com `--append`, que junta cada bloco ao `eval/resultados/<label>.json` existente e recalcula as métricas. O último bloco (151 a 162) é o novo e gasta pouco: os cumprimentos não chamam modelo.
 
 ```bash
-npm run eval -- --label v4 --preset padrao --delay-ms 4000 --append --only 101,102,103,104,105,106,107,108,109,110
-npm run eval -- --label v4 --preset padrao --delay-ms 4000 --append --only 111,112,113,114,115,116,117,118,119,120
-npm run eval -- --label v4 --preset padrao --delay-ms 4000 --append --only 121,122,123,124,125,126,127,128,129,130
-npm run eval -- --label v4 --preset padrao --delay-ms 4000 --append --only 131,132,133,134,135,136,137,138,139,140
-npm run eval -- --label v4 --preset padrao --delay-ms 4000 --append --only 141,142,143,144,145,146,147,148,149,150
-npm run eval -- --label v4 --preset padrao --delay-ms 4000 --append --only 151,152,153,154,155,156,157,158,159,160,161,162
+npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 101,102,103,104,105,106,107,108,109,110
+npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 111,112,113,114,115,116,117,118,119,120
+npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 121,122,123,124,125,126,127,128,129,130
+npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 131,132,133,134,135,136,137,138,139,140
+npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 141,142,143,144,145,146,147,148,149,150
+npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 151,152,153,154,155,156,157,158,159,160,161,162
+npm run eval -- --label v5 --preset padrao --delay-ms 4000 --append --only 163,164,165,166,167,168,169,170,171,172,173
 ```
 
-Três rodadas completas servem de comparação, todas pelos mesmos blocos (trocando o `--label` e as flags):
+Rodadas completas servem de comparação, todas pelos mesmos blocos (trocando o `--label` e as flags); a `v4` e as anteriores usam os ids 101 a 162.
 
 | Rodada | Comando base | O que mede |
 |---|---|---|
 | `v4` | `--label v4 --preset padrao` | A configuração padrão, com o roteador ligado: a nova linha de base |
 | `v4-regras` | `--label v4-regras --preset padrao --router off` | Só a regra de cumprimento, sem o roteador: o que o roteador acrescenta |
 | `v4-baseline` | `--label v4-baseline --preset baseline` | O preset `baseline`, com o roteador desligado por padrão |
+| `v5-baseline` | `--label v5-baseline --preset padrao --context chunks` | O `padrao` com o contexto por trecho: a linha de base da change `reduce-false-refusals` |
+| `v5-docs` | `--label v5-docs --preset padrao` | O contexto por documento, ainda com `minScore` 0.55 e o prompt antigo (o `v5-docs-rep` repete as perguntas que mudaram) |
+| `v5-prompt` | `--label v5-prompt --preset padrao --min-score 0.55` | A instrução de linguagem informal e o Exemplo 3 no prompt |
+| `v5` | `--label v5 --preset padrao` | A configuração final: documentos, prompt novo e `minScore` 0.50 (a nova linha de base) |
 
 `--router on|off` liga ou desliga o roteador na rodada; sem a flag, fica ligado no `padrao` e desligado no `baseline`. A escolha vai para o `config` do `.json` e para o terminal.
 
@@ -96,9 +103,9 @@ Regras:
 
 - **Mesmo preset na ingestão e na rodada.** Os trechos de cada preset convivem no `dev`, separados por `embedding_model` e `chunk_config`.
 - **Uma variável por vez** na calibração, com `--only` nas perguntas afetadas para economizar cota. Cada tentativa vira uma linha em [`eval/resultados/CALIBRACAO.md`](../eval/resultados/CALIBRACAO.md): data, variável, valor, perguntas e efeito.
-- **Uma rodada é ruidosa.** Com 36 perguntas no escopo, cada uma vale 2,8 pontos. Antes de concluir que algo piorou, repita as perguntas que mudaram.
+- **Uma rodada é ruidosa.** Com 45 perguntas no escopo, cada uma vale 2,2 pontos. Antes de concluir que algo piorou, repita as perguntas que mudaram.
 - **Cota.** Use `--delay-ms` para respeitar o limite por minuto. Se a cota estourar, o eval grava o parcial (junto ao que já estava, com `--append`): espere e continue com `--append --only` nos pendentes, sem trocar de modelo. Espere cerca de 90 s entre uma ingestão e uma rodada.
-- **Linhas de base.** A `v4` é a linha de base atual (62 perguntas, com o roteador); a `v3` é a anterior, de 50 perguntas e sem as métricas de rota. As rodadas `v1`, `v2` e `cal-*` usaram a base anterior e outras perguntas: não compare com elas ([`COMPARACAO.md`](../eval/resultados/COMPARACAO.md)).
+- **Linhas de base.** A `v5` é a linha de base atual (73 perguntas, com o roteador e o contexto por documento); a `v4` (62 perguntas) e a `v3` (50, sem as métricas de rota) são anteriores. As rodadas `v1`, `v2` e `cal-*` usaram a base anterior e outras perguntas: não compare com elas ([`COMPARACAO.md`](../eval/resultados/COMPARACAO.md)).
 - O juiz (`--judge`) é opcional e gasta uma chamada a mais por pergunta.
 - As sessões do eval usam o canal `eval` e são apagadas pelo cron depois de 7 dias.
 

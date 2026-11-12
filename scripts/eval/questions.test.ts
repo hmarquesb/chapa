@@ -38,7 +38,7 @@ function q(overrides: Partial<EvalQuestion> & { id: number }): EvalQuestion {
   }
 }
 
-// Conjunto mínimo válido com a distribuição exigida (15/6/5/5/5/7/4/3/4/4/4), com uma pergunta
+// Conjunto mínimo válido com a distribuição exigida (15/10/6/5/5/4/9/4/3/4/4/4), com uma pergunta
 // factual por arquivo de FILES.
 function validSet(): EvalQuestion[] {
   const items: EvalQuestion[] = []
@@ -46,8 +46,8 @@ function validSet(): EvalQuestion[] {
   for (let i = 0; i < 15; i++) {
     items.push(q({ id: id++, fonte_esperada: [i === 0 ? "02-b.md" : "01-a.md"] }))
   }
-  for (let i = 0; i < 6; i++) items.push(q({ id: id++, tipo: "parafrase" }))
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 10; i++) items.push(q({ id: id++, tipo: "parafrase" }))
+  for (let i = 0; i < 6; i++) {
     items.push(q({ id: id++, tipo: "perfil", perfil: { version: 2, plan: "proprio" } }))
   }
   for (let i = 0; i < 5; i++) {
@@ -56,7 +56,8 @@ function validSet(): EvalQuestion[] {
   for (let i = 0; i < 5; i++) {
     items.push(q({ id: id++, tipo: "multi_turno", pergunta: undefined, turnos: ["a", "b"] }))
   }
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 4; i++) items.push(q({ id: id++, tipo: "aberta" }))
+  for (let i = 0; i < 9; i++) {
     items.push({
       id: id++,
       tipo: "fora_de_escopo",
@@ -147,14 +148,14 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect(KNOWLEDGE_FILES.length).toBe(11)
     const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     expect(result.ok ? [] : result.errors).toEqual([])
-    expect(result.ok && result.questions).toHaveLength(62)
+    expect(result.ok && result.questions).toHaveLength(73)
   })
 
-  it("uses the ids 101 to 162, grouped by type in the distribution order", async () => {
+  it("uses the ids 101 to 173, the first 62 grouped by type in the distribution order", async () => {
     const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     expect(result.questions.map((item) => item.id)).toEqual(
-      Array.from({ length: 62 }, (_, i) => 101 + i),
+      Array.from({ length: 73 }, (_, i) => 101 + i),
     )
     const order: EvalQuestionType[] = [
       "factual",
@@ -169,7 +170,8 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
       "conversa",
       "misto",
     ]
-    const types = result.questions.map((item) => item.tipo)
+    // As perguntas 163 a 173 foram acrescentadas depois, sem renumerar as antigas.
+    const types = result.questions.filter((item) => item.id <= 162).map((item) => item.tipo)
     expect([...types].sort((a, b) => order.indexOf(a) - order.indexOf(b))).toEqual(types)
   })
 
@@ -240,9 +242,9 @@ describe("validateQuestions", () => {
     ])
   })
 
-  it("requires exactly 62 items", async () => {
-    const errors = await errorsOf(validSet().slice(0, 61))
-    expect(errors).toContain("São 61 perguntas; precisam ser 62.")
+  it("requires exactly 73 items", async () => {
+    const errors = await errorsOf(validSet().slice(0, 72))
+    expect(errors).toContain("São 72 perguntas; precisam ser 73.")
   })
 
   it("rejects duplicated ids", async () => {
@@ -256,7 +258,31 @@ describe("validateQuestions", () => {
     replace(items, firstOf(items, "parafrase"), { tipo: "factual" })
     const errors = await errorsOf(items)
     expect(errors).toContain('Tipo "factual": 16 perguntas; precisam ser 15.')
-    expect(errors).toContain('Tipo "parafrase": 5 perguntas; precisam ser 6.')
+    expect(errors).toContain('Tipo "parafrase": 9 perguntas; precisam ser 10.')
+  })
+
+  it("accepts the aberta type as an in-scope question answered by the rag route", async () => {
+    const items = validSet()
+    const index = firstOf(items, "aberta")
+    expect(items[index]).toMatchObject({ esperado: "resposta", rota_esperada: "rag" })
+    expect(await errorsOf(items)).toEqual([])
+    expect(IN_SCOPE_TYPES.has("aberta")).toBe(true)
+  })
+
+  it("requires deve_conter in an aberta question", async () => {
+    const items = validSet()
+    const id = replace(items, firstOf(items, "aberta"), { deve_conter: undefined })
+    expect(await errorsOf(items)).toContain(
+      `Pergunta ${id}: deve_conter precisa ter de 1 a 3 termos não vazios.`,
+    )
+  })
+
+  it("requires esperado resposta and route rag in an aberta question", async () => {
+    const items = validSet()
+    const id = replace(items, firstOf(items, "aberta"), { esperado: "fallback" })
+    expect(await errorsOf(items)).toContain(
+      `Pergunta ${id}: tipo aberta precisa de esperado "resposta".`,
+    )
   })
 
   it("rejects an unknown type", async () => {
@@ -534,6 +560,7 @@ function reply(overrides: Partial<AssistantReply> = {}): AssistantReply {
     answer: "resposta",
     sources: ["01-a.md"],
     retrieved: [],
+    context: [],
     searchQuery: "busca",
     usage: ONE_CALL,
     latencyMs: 100,
@@ -583,6 +610,39 @@ describe("runQuestions", () => {
     pergunta: undefined,
     turnos: ["Faço entrega própria.", "E a comissão?"],
     perfil: { version: 2, name: "Loja" },
+  })
+
+  it("records the context terms missing in the last turn of in-scope questions", async () => {
+    const block = (content: string) => ({ source: "01-a.md", section: "", content })
+    const turnContexts = [[block("sem nada")], [block("A comissão é 11%.")]]
+    let call = 0
+    const assistant = fakeAssistant((input) =>
+      input.message === "Qual a comissão?"
+        ? reply({ context: [block("A comissão é 12%.")] })
+        : reply({ context: turnContexts[call++] ?? [] }),
+    )
+    const { options } = baseOptions(assistant)
+    const withTerms = { ...single, deve_conter: ["12%", "900"] }
+    const multiTerms = { ...multi, deve_conter: ["11%"] }
+    const { results } = await runQuestions([withTerms, multiTerms], options)
+    expect(results[0]?.contextMissing).toEqual(["900"])
+    expect(results[1]?.contextMissing).toEqual([])
+  })
+
+  it("leaves contextMissing out for out-of-scope questions and errors", async () => {
+    const outOfScope = q({
+      id: 3,
+      tipo: "fora_de_escopo",
+      esperado: "fallback",
+      deve_conter: undefined,
+    })
+    const assistant = fakeAssistant((input) =>
+      input.message === "Qual a comissão?" ? new LlmUnavailableError() : reply(),
+    )
+    const { options } = baseOptions(assistant)
+    const { results } = await runQuestions([single, outOfScope], options)
+    expect(results[0]?.contextMissing).toBeUndefined()
+    expect(results[1]?.contextMissing).toBeUndefined()
   })
 
   it("runs each question in a new eval session and sums turns in multi_turno", async () => {

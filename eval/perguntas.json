@@ -630,5 +630,121 @@
     "esperado": "resposta",
     "rota_esperada": "rag",
     "nota": "Cumprimento seguido do prazo de contestação: segue para o RAG."
+  },
+  {
+    "id": 163,
+    "tipo": "parafrase",
+    "pergunta": "Esqueci minha senha do Painel Rango, como troco?",
+    "fonte_esperada": ["10-conta-acessos-e-seguranca.md"],
+    "deve_conter": ["Esqueci minha senha"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Pergunta informal sobre a troca de senha; a resposta está na seção de senha, com o link da tela de login."
+  },
+  {
+    "id": 164,
+    "tipo": "parafrase",
+    "pergunta": "Como falo com o Financeiro?",
+    "fonte_esperada": ["09-suporte-e-chamados.md"],
+    "deve_conter": ["chamado", "Ajuda"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Pergunta curta sobre o contato com o Financeiro; a resposta passa pelo chat da tela Ajuda e pelo chamado."
+  },
+  {
+    "id": 165,
+    "tipo": "parafrase",
+    "pergunta": "quanto a Rango cobra pra adiantar a grana das vendas?",
+    "fonte_esperada": ["02-repasse-financeiro.md"],
+    "deve_conter": ["2,49%"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Gíria para antecipação do repasse: 'adiantar a grana' no lugar de antecipação."
+  },
+  {
+    "id": 166,
+    "tipo": "parafrase",
+    "pergunta": "o cliente pagou no pix, vocês descontam quanto?",
+    "fonte_esperada": ["01-planos-e-taxas.md"],
+    "deve_conter": ["1,5%"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Pergunta informal sobre a taxa do Pix, com a palavra solta 'pix' que não pode ser bloqueada."
+  },
+  {
+    "id": 167,
+    "tipo": "aberta",
+    "pergunta": "Como devo montar meu cardápio?",
+    "fonte_esperada": ["04-cardapio-e-fotos.md"],
+    "deve_conter": ["categorias"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Pergunta ampla: a resposta está espalhada por várias seções do documento de cardápio."
+  },
+  {
+    "id": 168,
+    "tipo": "aberta",
+    "pergunta": "O que eu preciso saber sobre o repasse?",
+    "fonte_esperada": ["02-repasse-financeiro.md"],
+    "deve_conter": ["quarta"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Pergunta ampla sobre o repasse: ciclo semanal, dia do pagamento e antecipação em seções diferentes."
+  },
+  {
+    "id": 169,
+    "tipo": "aberta",
+    "pergunta": "Como funciona o suporte da Rango?",
+    "fonte_esperada": ["09-suporte-e-chamados.md"],
+    "deve_conter": ["chat", "chamado"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Pergunta ampla sobre suporte: canais, prazos e chamados em seções diferentes."
+  },
+  {
+    "id": 170,
+    "tipo": "aberta",
+    "pergunta": "Quais cuidados devo ter com a segurança da minha conta?",
+    "fonte_esperada": ["10-conta-acessos-e-seguranca.md"],
+    "deve_conter": ["2 etapas"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Pergunta ampla sobre segurança: senha, verificação em 2 etapas e perfis de acesso."
+  },
+  {
+    "id": 171,
+    "tipo": "perfil",
+    "pergunta": "Quero saber qual a diferença de preço do meu plano para o mais básico. Estou pensando em mudar",
+    "perfil": {
+      "version": 2,
+      "name": "Cantina do Beto",
+      "plan": "misto",
+      "location": {
+        "uf": "SP",
+        "cityCode": 3509502
+      }
+    },
+    "fonte_esperada": ["01-planos-e-taxas.md"],
+    "deve_conter": ["139", "99"],
+    "esperado": "resposta",
+    "rota_esperada": "rag",
+    "nota": "Comparação de mensalidade usando o plano do perfil (Misto, R$ 139,00) contra o mais básico (Próprio, R$ 99,00)."
+  },
+  {
+    "id": 172,
+    "tipo": "fora_de_escopo",
+    "pergunta": "Dá para parcelar a mensalidade do plano em duas vezes?",
+    "esperado": "fallback",
+    "rota_esperada": "rag",
+    "nota": "Parcelamento da mensalidade: a base não prevê, então a resposta correta é o fallback."
+  },
+  {
+    "id": 173,
+    "tipo": "fora_de_escopo",
+    "pergunta": "Qual é a comissão do Plano Premium?",
+    "nao_deve_conter": ["11%", "22%"],
+    "esperado": "fallback",
+    "rota_esperada": "rag",
+    "nota": "Plano que não existe: o assistente não pode inventar uma comissão."
   }
 ]

@@ -1,0 +1,288 @@
+{
+  "label": "v5-prompt-rep2",
+  "preset": "padrao",
+  "date": "2026-11-12T19:38:42.220Z",
+  "commit": "0ce5b73",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.55,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": true,
+      "contextMode": "documents",
+      "maxContextDocs": 3
+    },
+    "router": {
+      "enabled": true,
+      "maxWords": 12
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 135,
+        "tipo": "multi_turno",
+        "turnos": [
+          "Um pedido venceu sem aceite e contou como cancelado pela minha loja. Por quê?",
+          "E se eu não concordar com isso?"
+        ],
+        "fonte_esperada": [
+          "03-cancelamentos-e-contestacoes.md"
+        ],
+        "deve_conter": [
+          "contest",
+          "7 dias"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "\"E se eu não concordar?\": contestação em até 7 dias de um pedido que venceu sem aceite e contou contra a loja."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "1. Abra o pedido em Pedidos > Histórico.\n2. Use o botão Contestar.\n3. Explique o que aconteceu e, se tiver, anexe fotos ou prints.",
+        "sources": [
+          "03-cancelamentos-e-contestacoes.md",
+          "05-horarios-pausas-e-disponibilidade.md"
+        ],
+        "retrieved": [
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Aceite do pedido",
+            "score": 0.7096273300653374,
+            "semantic": 0.7458961858076248,
+            "keyword": 0.625,
+            "content": "Cancelamentos e contestações — Aceite do pedido\n\nTodo pedido novo chega ao Rango Loja e à tela Pedidos do Painel Rango e precisa ser aceito pela loja."
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Quem cancela e quem arca com o custo",
+            "score": 0.6788534118935551,
+            "semantic": 0.7019334455622216,
+            "keyword": 0.625,
+            "content": "Cancelamentos e contestações — Quem cancela e quem arca com o custo\n\nA regra de quem arca com o pedido cancelado depende de quem cancelou e de quando."
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Fechamento preventivo",
+            "score": 0.619758795408372,
+            "semantic": 0.6710839934405314,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Fechamento preventivo\n\nO fechamento preventivo protege o cliente de pedir numa loja que não está respondendo. Qua"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Pausa programada",
+            "score": 0.6100907862158228,
+            "semantic": 0.6037011231654612,
+            "keyword": 0.625,
+            "content": "Horários, pausas e disponibilidade — Pausa programada\n\nA pausa programada fecha a loja por um tempo, dentro do horário de funcionamento, e reabre sozi"
+          },
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "Como cancelar um pedido",
+            "score": 0.5993103413784094,
+            "semantic": 0.6954433448262992,
+            "keyword": 0.375,
+            "content": "Cancelamentos e contestações — Como cancelar um pedido\n\nA loja cancela um pedido pela tela Pedidos ou pelo Rango Loja, escolhendo um motivo. Avise o c"
+          }
+        ],
+        "context": [
+          {
+            "source": "03-cancelamentos-e-contestacoes.md",
+            "section": "",
+            "chars": 4757
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "",
+            "chars": 4417
+          }
+        ],
+        "searchQuery": "O que fazer se eu não concordar com o cancelamento automático do pedido por falta de aceite?",
+        "usage": {
+          "calls": 4,
+          "inputTokens": 4048,
+          "outputTokens": 63
+        },
+        "latencyMs": 3594,
+        "routerMs": 746,
+        "route": "rag"
+      },
+      "latencyMs": 5430,
+      "usage": {
+        "calls": 6,
+        "inputTokens": 6041,
+        "outputTokens": 121
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 164,
+        "tipo": "parafrase",
+        "pergunta": "Como falo com o Financeiro?",
+        "fonte_esperada": [
+          "09-suporte-e-chamados.md"
+        ],
+        "deve_conter": [
+          "chamado",
+          "Ajuda"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Pergunta curta sobre o contato com o Financeiro; a resposta passa pelo chat da tela Ajuda e pelo chamado."
+      },
+      "reply": {
+        "status": "fallback",
+        "answer": "Não encontrei essa informação na base do parceiro. Fale com o suporte pelo Painel Rango.",
+        "sources": [],
+        "retrieved": [
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6550864490428763,
+            "semantic": 0.7215520700612518,
+            "keyword": 0.5,
+            "content": "Pagamentos e fiscal — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado quando a NFS-e não estiver disponível no pr"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6389948326397925,
+            "semantic": 0.698564046628275,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado quando o repasse não cair na data esperada, "
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6354555467790175,
+            "semantic": 0.693507923970025,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado se a comissão, a taxa de pagamento ou a mensalid"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Conferir os valores do mês",
+            "score": 0.6331996995723985,
+            "semantic": 0.6902852851034266,
+            "keyword": 0.5,
+            "content": "Pagamentos e fiscal — Conferir os valores do mês\n\nPara conferir o mês:\n\n1. Exporte o extrato em Financeiro > Extrato.\n2. Baixe a NFS-e do mês em Finan"
+          },
+          {
+            "source": "08-promocoes-e-cupons.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6316126960723791,
+            "semantic": 0.6880181372462559,
+            "keyword": 0.5,
+            "content": "Promoções e cupons — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado quando o desconto de um cupom descontado no "
+          }
+        ],
+        "context": [
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "",
+            "chars": 3794
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "",
+            "chars": 5342
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "",
+            "chars": 6043
+          }
+        ],
+        "searchQuery": "Como falo com o Financeiro?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 5669,
+          "outputTokens": 25
+        },
+        "latencyMs": 2692,
+        "routerMs": 957,
+        "route": "rag"
+      },
+      "latencyMs": 2692,
+      "usage": {
+        "calls": 3,
+        "inputTokens": 5669,
+        "outputTokens": 25
+      },
+      "contextMissing": []
+    }
+  ],
+  "scores": [
+    {
+      "id": 135,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": false,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": "geracao"
+    },
+    {
+      "id": 164,
+      "inScope": true,
+      "hit": false,
+      "hitAll": null,
+      "correct": false,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": true,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": "geracao"
+    }
+  ],
+  "metrics": {
+    "total": 2,
+    "inScope": 2,
+    "hitAtK": 0.5,
+    "accuracy": 0,
+    "correctRefusal": 0,
+    "falseRefusal": 0.5,
+    "latencyP50Ms": 2692,
+    "latencyP95Ms": 5430,
+    "errors": 0,
+    "usage": {
+      "calls": 9,
+      "inputTokens": 11710,
+      "outputTokens": 146
+    },
+    "routing": {
+      "routeAccuracy": 1,
+      "falseSmallTalk": 0,
+      "falseSmallTalkIds": [],
+      "avoidedSearches": 0,
+      "greetingAccuracy": 0,
+      "conversationAccuracy": 0,
+      "mixedAccuracy": 0,
+      "shortRagLatencyAvgMs": 4061
+    },
+    "contextSufficiency": 1
+  }
+}

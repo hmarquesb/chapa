@@ -38,6 +38,9 @@ function setup() {
     async count() {
       return 0
     },
+    async listBySources() {
+      return []
+    },
   }
   return { llm, chunks, embedCalls, searchCalls }
 }

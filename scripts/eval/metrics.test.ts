@@ -3,6 +3,7 @@ import type { AssistantReply, RetrievedChunk, Usage } from "@/core/types"
 import {
   aggregate,
   type Metrics,
+  missingContextTerms,
   percentile,
   type QuestionResult,
   ROUTE_TARGETS,
@@ -30,6 +31,7 @@ function reply(overrides: Partial<AssistantReply> = {}): AssistantReply {
     answer: "A comissão do Plano Básico é de 12% e o repasse cai na Quarta-feira.",
     sources: ["01-planos-e-taxas.md"],
     retrieved: [chunk("01-planos-e-taxas.md")],
+    context: [],
     searchQuery: "comissão",
     usage: ONE_CALL,
     latencyMs: 100,
@@ -107,6 +109,8 @@ describe("scoreQuestion", () => {
       routeMatches: true,
       falseSmallTalk: false,
       conversationCorrect: null,
+      contextSufficient: null,
+      failureCause: null,
     })
   })
 
@@ -172,6 +176,8 @@ describe("scoreQuestion", () => {
       routeMatches: true,
       falseSmallTalk: false,
       conversationCorrect: null,
+      contextSufficient: null,
+      failureCause: null,
     })
     expect(scoreQuestion(result(OUT_OF_SCOPE, { status: "blocked_output" }))).toMatchObject({
       refusedCorrectly: true,
@@ -268,6 +274,8 @@ describe("scoreQuestion", () => {
       routeMatches: null,
       falseSmallTalk: null,
       conversationCorrect: null,
+      contextSufficient: null,
+      failureCause: null,
     })
     expect(scoreQuestion(result(MULTI_DOC, null, { error: "X" }))).toMatchObject({
       hit: false,
@@ -376,6 +384,7 @@ describe("aggregate", () => {
         mixedAccuracy: 0,
         shortRagLatencyAvgMs: null,
       },
+      contextSufficiency: null,
     })
   })
 })
@@ -564,5 +573,118 @@ describe("aggregate routing", () => {
 
   it("exposes the route targets", () => {
     expect(ROUTE_TARGETS).toEqual({ falseSmallTalk: 0, routeAccuracy: 0.95 })
+  })
+})
+
+describe("missingContextTerms", () => {
+  const block = (content: string) => ({ source: "01-a.md", section: "", content })
+
+  it.each([
+    ["term present without accent", ["Quarta"], [block("O repasse cai na quarta-feira.")], []],
+    ["accented term in unaccented text", ["antecipação"], [block("antecipacao do repasse")], []],
+    ["term absent", ["6%"], [block("A comissão é 12%.")], ["6%"]],
+    ["some terms absent", ["12%", "900"], [block("Comissão de 12%.")], ["900"]],
+    ["empty context", ["12%", "900"], [], ["12%", "900"]],
+    [
+      "term spread over two blocks",
+      ["quarta feira"],
+      [block("quarta"), block("feira")],
+      ["quarta feira"],
+    ],
+    ["terms in different blocks", ["12%", "900"], [block("12%"), block("900")], []],
+  ])("%s", (_name, terms, context, expected) => {
+    expect(missingContextTerms(terms, context)).toEqual(expected)
+  })
+})
+
+describe("scoreQuestion context sufficiency", () => {
+  it("right file, wrong section: hit, context insufficient, cause busca", () => {
+    const score = scoreQuestion(
+      result(
+        { deve_conter: ["6%"] },
+        { status: "fallback", answer: "Não encontrei." },
+        { contextMissing: ["6%"] },
+      ),
+    )
+    expect(score).toMatchObject({
+      hit: true,
+      correct: false,
+      contextSufficient: false,
+      failureCause: "busca",
+    })
+  })
+
+  it("context had the answer: cause geracao", () => {
+    const score = scoreQuestion(
+      result(
+        { deve_conter: ["1200", "900"] },
+        { status: "fallback", answer: "Não encontrei." },
+        { contextMissing: [] },
+      ),
+    )
+    expect(score).toMatchObject({ contextSufficient: true, failureCause: "geracao" })
+  })
+
+  it("no chunk passed the cut: insufficient, cause busca", () => {
+    const score = scoreQuestion(
+      result(
+        {},
+        { status: "fallback", answer: "Não encontrei.", retrieved: [], context: [] },
+        { contextMissing: ["12%"] },
+      ),
+    )
+    expect(score).toMatchObject({ contextSufficient: false, failureCause: "busca" })
+  })
+
+  it("a correct answer has no failure cause", () => {
+    const score = scoreQuestion(result({}, {}, { contextMissing: [] }))
+    expect(score).toMatchObject({ correct: true, contextSufficient: true, failureCause: null })
+  })
+
+  it("out of scope: both null", () => {
+    const score = scoreQuestion(
+      result(OUT_OF_SCOPE, { status: "fallback", answer: "x" }, { contextMissing: [] }),
+    )
+    expect(score).toMatchObject({ contextSufficient: null, failureCause: null })
+  })
+
+  it("old round without contextMissing: both null", () => {
+    const score = scoreQuestion(result({}, { status: "fallback", answer: "x" }))
+    expect(score).toMatchObject({ contextSufficient: null, failureCause: null })
+  })
+
+  it("error: both null", () => {
+    const score = scoreQuestion(result({}, null, { error: "Error" }))
+    expect(score).toMatchObject({ contextSufficient: null, failureCause: null })
+  })
+})
+
+describe("aggregate contextSufficiency", () => {
+  it("is the share of in-scope questions with the full terms in the context", () => {
+    const metrics = aggregate(
+      [
+        result({ id: 1 }, {}, { contextMissing: [] }),
+        result({ id: 2 }, {}, { contextMissing: ["12%"] }),
+        result({ id: 3 }, {}, { contextMissing: [] }),
+        result({ id: 4 }, {}, { contextMissing: [] }),
+      ],
+      12,
+    )
+    expect(metrics.contextSufficiency).toBe(0.75)
+  })
+
+  it("is null when no question has contextMissing (old round)", () => {
+    expect(aggregate([result({})], 12).contextSufficiency).toBeNull()
+  })
+
+  it("ignores out-of-scope questions", () => {
+    const metrics = aggregate(
+      [
+        result({ id: 1 }, {}, { contextMissing: [] }),
+        result({ id: 2, ...OUT_OF_SCOPE }, { status: "fallback", answer: "x" }),
+      ],
+      12,
+    )
+    expect(metrics.contextSufficiency).toBe(1)
   })
 })

@@ -110,6 +110,7 @@ const REPLY: AssistantReply = {
       score: 0.93,
     },
   ],
+  context: [],
   searchQuery: "CONSULTA-INTERNA",
   usage: { calls: 3, inputTokens: 1200, outputTokens: 150 },
   latencyMs: 800,
@@ -528,6 +529,7 @@ describe("request logs", () => {
       answer: "Bom dia! Em que posso ajudar?",
       sources: [],
       retrieved: [],
+      context: [],
       searchQuery: "",
       usage: { calls: 0, inputTokens: 0, outputTokens: 0 },
       latencyMs: 3,
@@ -927,6 +929,9 @@ class FakeChunks implements ChunkRepository {
     throw new Error("not used")
   }
   async search(): Promise<never[]> {
+    throw new Error("not used")
+  }
+  async listBySources(): Promise<never[]> {
     throw new Error("not used")
   }
   async count(key: ChunkSetKey) {

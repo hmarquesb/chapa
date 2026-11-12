@@ -34,7 +34,7 @@ export function routerMaxWords(run: Pick<EvalRun, "config">): number {
 const ANSWER_PREVIEW_CHARS = 300
 const EMPTY = "—"
 
-// Metas da avaliação. Recusa correta ≥ 92%: no máximo 1 erro nas 14 perguntas de recusa.
+// Metas da avaliação. Recusa correta ≥ 92%: no máximo 1 erro nas 16 perguntas de recusa.
 export const TARGETS = {
   hitAtK: 0.85,
   accuracy: 0.8,
@@ -133,6 +133,11 @@ function renderMetrics(metrics: Metrics): string[] {
       null,
     ),
   ]
+  if (metrics.contextSufficiency != null) {
+    lines.push(
+      metricRow("Contexto suficiente", formatPercent(metrics.contextSufficiency), "sem meta", null),
+    )
+  }
   if (metrics.judgeAvg !== undefined) {
     const judge = metrics.judgeAvg
     lines.push(
@@ -198,11 +203,19 @@ function passed(score: QuestionScore): boolean | null {
   return score.inScope ? score.correct : score.refusedCorrectly
 }
 
+function causeLabel(cause: QuestionScore["failureCause"] | undefined): string {
+  if (cause === "busca") return "busca"
+  if (cause === "geracao") return "geração"
+  return EMPTY
+}
+
 function renderQuestions(run: EvalRun): string[] {
   const withJudge = run.results.some((result) => result.judge !== undefined)
   const withRoute = run.metrics.routing !== undefined
+  const withCause = run.metrics.contextSufficiency != null
   const header = ["Id", "Tipo", "Status", "Hit", "Correto", "Latência", "Fontes"]
   if (withRoute) header.splice(3, 0, "Rota")
+  if (withCause) header.push("Causa")
   if (withJudge) header.push("Juiz (corretude/fidelidade)")
   const lines = [
     "## Por pergunta",
@@ -228,6 +241,7 @@ function renderQuestions(run: EvalRun): string[] {
       const expected = result.question.rota_esperada ?? EMPTY
       columns.splice(3, 0, `${expected} → ${result.reply?.route ?? EMPTY}`)
     }
+    if (withCause) columns.push(causeLabel(score?.failureCause ?? null))
     if (withJudge) {
       columns.push(result.judge ? `${result.judge.corretude}/${result.judge.fidelidade}` : EMPTY)
     }
@@ -300,6 +314,10 @@ function renderFailures(run: EvalRun): string[] {
     lines.push(`- Pergunta: ${messages.join(" → ")}`)
     lines.push(`- Esperado: ${expectedText(result)}`)
     lines.push(`- Motivo: ${reason}`)
+    if (score.failureCause != null) lines.push(`- Causa: ${causeLabel(score.failureCause)}`)
+    if (result.contextMissing !== undefined && result.contextMissing.length > 0) {
+      lines.push(`- Termos ausentes do contexto: ${result.contextMissing.join(", ")}`)
+    }
     if (result.reply !== null) {
       lines.push(`- Resposta: ${truncate(oneLine(result.reply.answer), ANSWER_PREVIEW_CHARS)}`)
       if (result.reply.searchQuery !== "") {
