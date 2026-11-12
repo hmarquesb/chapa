@@ -34,15 +34,15 @@
 
 ## 5. Checkpoint A: contexto por documento (orquestrador, com autorização)
 
-- [ ] 5.1 `npm run chat -- --plano misto --debug --context chunks` contra o `dev` com as quatro perguntas da proposta; colar os trechos, os scores e o status de cada uma na descrição do PR
-- [ ] 5.2 Rodada `v5-baseline` em blocos: `--label v5-baseline --preset padrao --context chunks --delay-ms 4000 --append`, até `Pendentes: nenhuma`
-- [ ] 5.3 Rodada `v5-docs` em blocos: `--label v5-docs --preset padrao --delay-ms 4000 --append`, até `Pendentes: nenhuma`
-- [ ] 5.4 `npm run eval -- --compare eval/resultados/v5-baseline.json eval/resultados/v5-docs.json`; repetir uma vez as perguntas que mudaram de resultado; aplicar o critério do passo 2 da proposta. Se não passar, voltar o `padrao` para `contextMode: "chunks"`. Registrar a decisão no `CALIBRACAO.md`
+- [x] 5.1 `npm run chat -- --plano misto --debug --context chunks` contra o `dev` com as quatro perguntas da proposta; colar os trechos, os scores e o status de cada uma na descrição do PR
+- [x] 5.2 Rodada `v5-baseline` em blocos: `--label v5-baseline --preset padrao --context chunks --delay-ms 4000 --append`, até `Pendentes: nenhuma`
+- [x] 5.3 Rodada `v5-docs` em blocos: `--label v5-docs --preset padrao --delay-ms 4000 --append`, até `Pendentes: nenhuma`
+- [x] 5.4 `npm run eval -- --compare eval/resultados/v5-baseline.json eval/resultados/v5-docs.json`; repetir uma vez as perguntas que mudaram de resultado; aplicar o critério do passo 2 da proposta. Se não passar, voltar o `padrao` para `contextMode: "chunks"`. Registrar a decisão no `CALIBRACAO.md`
 
 ## 6. Prompt do RAG (só depois da 5.4)
 
-- [ ] 6.1 Em `prompts.test.ts`, escrever os casos: a instrução nova está no prompt; o Exemplo 3 existe e não tem dígitos; os exemplos 1 e 2, as quatro instruções atuais e o `SYSTEM_PROMPT` não mudaram
-- [ ] 6.2 Acrescentar a instrução e o Exemplo 3 em `src/core/prompts.ts` até a 6.1 passar
+- [x] 6.1 Em `prompts.test.ts`, escrever os casos: a instrução nova está no prompt; o Exemplo 3 existe e não tem dígitos; os exemplos 1 e 2, as quatro instruções atuais e o `SYSTEM_PROMPT` não mudaram
+- [x] 6.2 Acrescentar a instrução e o Exemplo 3 em `src/core/prompts.ts` até a 6.1 passar
 
 ## 7. Checkpoint B: prompt e minScore (orquestrador, com autorização)
 
