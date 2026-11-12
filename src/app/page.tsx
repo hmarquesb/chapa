@@ -10,6 +10,7 @@ import { ProfileReviewBanner } from "@/components/chat/profile-review-banner"
 import { ProfileSummary } from "@/components/chat/profile-summary"
 import { getAuthenticatedAccount, isGoogleEnabled } from "@/infra/auth"
 import { DEMO_ACCOUNT_LABEL } from "@/lib/sign-in"
+import { shouldOpenWelcome } from "@/lib/welcome"
 
 export default async function Home({
   searchParams,
@@ -38,7 +39,14 @@ export default async function Home({
             </p>
             <ProfileSummary profile={account.profile} />
           </div>
-          <AccountMenu label={label} signOutAction={signOutOfAccount} />
+          <AccountMenu
+            label={label}
+            signOutAction={signOutOfAccount}
+            welcome={{
+              openOnLoad: shouldOpenWelcome({ isDemo, welcomeSeenAt: account.welcomeSeenAt }),
+              persist: !isDemo,
+            }}
+          />
         </header>
         {account.profileNeedsReview && <ProfileReviewBanner />}
         {isDemo && <DemoBanner googleEnabled={isGoogleEnabled()} googleAction={signInWithGoogle} />}

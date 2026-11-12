@@ -1,10 +1,11 @@
 "use client"
 
-import { ChevronDownIcon, LogOutIcon, Trash2Icon, UserPenIcon } from "lucide-react"
+import { ChevronDownIcon, InfoIcon, LogOutIcon, Trash2Icon, UserPenIcon } from "lucide-react"
 import Link from "next/link"
 import { useRef, useState } from "react"
 import { ThemeMenuGroup } from "@/components/brand/theme-toggle"
 import { DeleteAccountDialog } from "@/components/chat/delete-account-dialog"
+import { WelcomeDialog } from "@/components/chat/welcome-dialog"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -14,14 +15,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { markWelcomeSeen } from "@/lib/api-client"
 
-type AccountMenuProps = { label: string; signOutAction: () => Promise<void> }
+type AccountMenuProps = {
+  label: string
+  signOutAction: () => Promise<void>
+  welcome: { openOnLoad: boolean; persist: boolean }
+}
 
-export function AccountMenu({ label, signOutAction }: AccountMenuProps) {
+export function AccountMenu({ label, signOutAction, welcome }: AccountMenuProps) {
   // The form lives outside the menu: the menu content unmounts when an item is selected, which
   // would cancel a submit started from inside it.
   const formRef = useRef<HTMLFormElement>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [welcomeOpen, setWelcomeOpen] = useState(welcome.openOnLoad)
+  const welcomeRecorded = useRef(false)
+
+  function changeWelcomeOpen(next: boolean): void {
+    setWelcomeOpen(next)
+    if (next || !welcome.persist || welcomeRecorded.current) return
+    welcomeRecorded.current = true
+    // Fire and forget: a failure only means the card opens again on the next load.
+    void markWelcomeSeen()
+  }
 
   return (
     <>
@@ -31,6 +47,7 @@ export function AccountMenu({ label, signOutAction }: AccountMenuProps) {
         onOpenChange={setDeleteOpen}
         signOutAction={signOutAction}
       />
+      <WelcomeDialog open={welcomeOpen} onOpenChange={changeWelcomeOpen} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -50,6 +67,10 @@ export function AccountMenu({ label, signOutAction }: AccountMenuProps) {
             {label}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => setWelcomeOpen(true)}>
+            <InfoIcon aria-hidden="true" />
+            Sobre o Chapa
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/perfil">
               <UserPenIcon aria-hidden="true" />
