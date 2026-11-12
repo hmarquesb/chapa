@@ -17,9 +17,16 @@ const COLOR_NAMES =
 const UTILITY_PREFIXES =
   "bg|text|border|ring|fill|stroke|from|to|via|outline|shadow|divide|placeholder|caret|decoration|accent"
 
+const ART_FORBIDDEN_PREFIXES = "text|border|ring|outline|decoration|placeholder|caret"
+
 const PATTERNS: readonly RegExp[] = [
   // hex colors with 3, 4, 6 or 8 digits (not "#conteudo" or "#/path")
   /(?<![\w&])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])/g,
+  // illustration tones are drawing only: never text, border, focus or button colors
+  new RegExp(
+    `(?<![\\w-])(?:${ART_FORBIDDEN_PREFIXES})-art-[a-z]+(?:/[\\w.%[\\]]+)?(?![\\w-])`,
+    "g",
+  ),
   // color functions
   /\b(?:rgba?|hsla?|oklch|oklab)\(/g,
   // Tailwind default palette, with an optional shade and an optional /opacity
@@ -61,6 +68,15 @@ describe("findFixedColors", () => {
     expect(findFixedColors("color: #2A1E2266")).toHaveLength(1)
     expect(findFixedColors("rgb(0 0 0)")).toHaveLength(1)
     expect(findFixedColors("a: oklch(0.5 0 0)")).toHaveLength(1)
+  })
+
+  it("keeps the art-* tones for drawing only", () => {
+    expect(findFixedColors("text-art-mustard")).toHaveLength(1)
+    expect(findFixedColors("border-art-plum")).toHaveLength(1)
+    expect(findFixedColors("ring-art-clay")).toHaveLength(1)
+    expect(findFixedColors("fill-art-plum")).toEqual([])
+    expect(findFixedColors("stroke-art-cream")).toEqual([])
+    expect(findFixedColors("bg-art-mustard")).toEqual([])
   })
 
   it("lets tokens, anchors and ordinary words through", () => {
