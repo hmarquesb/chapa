@@ -1,7 +1,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: Ler e salvar o perfil da conta
-`GET /api/profile` SHALL responder 200 com `{ profile, needsReview }`: o perfil da conta logada no formato v2 e se ele precisa de revisão (ver `answer-generation`, "Perfil salvo no formato antigo"). `PUT /api/profile` SHALL receber o perfil v2 `{ version: 2, plan, name?, cuisine?, location?, hours? }`, aparar os textos, descartar os campos vazios, salvar o perfil na conta e responder 200 com `{ profile, needsReview: false }`. O `plan` MUST ser `proprio`, `entrega` ou `misto`. `cuisine` MUST ser `{ id }`, com um id da lista de cozinhas, ou `{ id: "outro", text }`, com o texto de 1 a 30 caracteres. `location` MUST ser `{ uf }` ou `{ uf, cityCode }`, com uma das 27 UFs e o código IBGE de um município dessa UF. `name` é texto de até 60 caracteres, e `hours` segue "Horário do perfil na API".
+`GET /api/profile` SHALL responder 200 com `{ profile, needsReview }`: o perfil da conta logada no formato v2 e se ele precisa de revisão (ver `answer-generation`, "Perfil salvo no formato antigo"). `PUT /api/profile` SHALL receber o perfil v2 `{ version: 2, plan, name?, cuisine?, location?, hours? }`, aparar os textos, descartar os campos vazios, salvar o perfil na conta e responder 200 com `{ profile, needsReview: false }`. Cada campo MUST seguir o formato do cenário "Formato de cada campo".
+
+#### Scenario: Formato de cada campo
+- **WHEN** a conta envia `PUT /api/profile`
+- **THEN** o `plan` é `proprio`, `entrega` ou `misto`; `cuisine` é `{ id }`, com um id da lista de cozinhas, ou `{ id: "outro", text }`, com o texto de 1 a 30 caracteres; `location` é `{ uf }` ou `{ uf, cityCode }`, com uma das 27 UFs e o código IBGE de um município dessa UF; `name` é texto de até 60 caracteres; `hours` segue "Horário do perfil na API"; fora disso, a resposta é 400
 
 #### Scenario: Salvar o perfil
 - **WHEN** a conta envia `PUT /api/profile` com `{ "version": 2, "name": "  Pizzaria Bella ", "plan": "entrega", "cuisine": { "id": "pizza" }, "location": { "uf": "RJ", "cityCode": 3303302 } }`
