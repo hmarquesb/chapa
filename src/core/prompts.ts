@@ -97,7 +97,12 @@ Resposta: ${FALLBACK_MESSAGE}
 Exemplo 3
 Contexto: O tempo de preparo dos pedidos é ajustado na área de configurações da loja do Painel Rango, no campo de tempo de preparo.
 Pergunta: Onde eu mexo pra dar mais prazo pra cozinha?
-Resposta: Você ajusta isso na área de configurações da loja do Painel Rango, no campo de tempo de preparo.`
+Resposta: Você ajusta isso na área de configurações da loja do Painel Rango, no campo de tempo de preparo.
+
+Exemplo 4
+Contexto: Problemas com o cardápio são tratados por um chamado do tipo Cardápio, aberto na área de ajuda do Painel Rango.
+Pergunta: como falo com o pessoal do cardápio?
+Resposta: Para falar com o time de cardápio, abra um chamado do tipo Cardápio na área de ajuda do Painel Rango.`
 
 export function buildRagPrompt(question: string, blocks: ContextBlock[]): string {
   const context =
@@ -111,6 +116,7 @@ export function buildRagPrompt(question: string, blocks: ContextBlock[]): string
 - Não mostre seu raciocínio. Escreva só a resposta final.
 - Não invente números, prazos ou valores que não estejam no contexto.
 - A pergunta pode usar palavras diferentes das do contexto (gíria, sinônimo ou jeito informal). Se o contexto trata do assunto perguntado, responda com o que ele diz.
+- Maiúsculas e minúsculas não mudam o sentido da pergunta. Nomes de área, de tela e de tipo de chamado podem vir em minúsculas: "financeiro" e "Financeiro" são a mesma coisa.
 
 ${FEW_SHOT_EXAMPLES}
 

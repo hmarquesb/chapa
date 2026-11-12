@@ -255,10 +255,18 @@ describe("buildRagPrompt", () => {
     expect(prompt).toMatch(/Exemplo 2/)
   })
 
-  it("adds the informal-wording instruction after the four existing ones", () => {
+  it("tells the model that letter case does not change the meaning of the question", () => {
+    expect(prompt).toContain(
+      '- Maiúsculas e minúsculas não mudam o sentido da pergunta. Nomes de área, de tela e de tipo de chamado podem vir em minúsculas: "financeiro" e "Financeiro" são a mesma coisa.',
+    )
+    expect(prompt).toContain(`responda exatamente: ${FALLBACK_MESSAGE}`)
+    expect(prompt).toMatch(/Exemplo 3/)
+  })
+
+  it("keeps the four original instructions and the informal-wording one in order", () => {
     const instructions = prompt.slice(0, prompt.indexOf("Exemplos (fictícios"))
     const lines = instructions.split("\n").filter((l) => l.startsWith("- "))
-    expect(lines).toHaveLength(5)
+    expect(lines).toHaveLength(6)
     expect(lines[0]).toBe("- Responda só com base no contexto da base de conhecimento abaixo.")
     expect(lines[1]).toBe(
       `- Se a resposta não estiver no contexto, responda exatamente: ${FALLBACK_MESSAGE}`,
@@ -279,11 +287,21 @@ describe("buildRagPrompt", () => {
     expect(e3).toBeGreaterThan(e2)
     expect(prompt).toContain("Como pauso a loja por um tempo?")
     expect(prompt).toContain("Pergunta: Qual é o prazo para receber o repasse?")
-    const end = prompt.indexOf("Contexto da base de conhecimento:")
-    const example3 = prompt.slice(e3, end)
+    const example3 = prompt.slice(e3, prompt.indexOf("Exemplo 4", e3))
     expect(example3).toContain("Painel Rango")
     expect(example3).toContain("Onde eu mexo pra dar mais prazo pra cozinha?")
     expect(example3.replace("Exemplo 3", "")).not.toMatch(/\d/)
+  })
+
+  it("adds example 4, with an area name in lowercase, after example 3 and without digits", () => {
+    const e3 = prompt.indexOf("Exemplo 3")
+    const e4 = prompt.indexOf("Exemplo 4")
+    expect(e4).toBeGreaterThan(e3)
+    const example4 = prompt.slice(e4, prompt.indexOf("Contexto da base de conhecimento:"))
+    expect(example4).toContain("chamado do tipo Cardápio")
+    expect(example4).toContain("Pergunta: como falo com o pessoal do cardápio?")
+    expect(example4).not.toContain(FALLBACK_MESSAGE)
+    expect(example4.replace("Exemplo 4", "")).not.toMatch(/\d/)
   })
 })
 
