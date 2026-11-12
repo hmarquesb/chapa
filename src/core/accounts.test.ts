@@ -24,6 +24,7 @@ class FakeAccounts {
       createdAt: NOW,
       lastSeenAt: NOW,
       expiresAt: input.expiresAt,
+      welcomeSeenAt: null,
     }
   }
 }

@@ -13,7 +13,7 @@ export function createAccountRepository(sql: Sql): AccountRepository {
         values ('google', ${googleSub}, ${email})
         on conflict (google_sub) do update
           set email = excluded.email, last_seen_at = now()
-        returning id, kind, email, profile, created_at, last_seen_at, expires_at
+        returning id, kind, email, profile, created_at, last_seen_at, expires_at, welcome_seen_at
       `
       return toAccountRecord(row, await upgradeProfile(row.profile))
     },
@@ -23,7 +23,7 @@ export function createAccountRepository(sql: Sql): AccountRepository {
       const [row] = await sql<[AccountRow]>`
         insert into public.accounts (kind, profile, expires_at)
         values ('demo', ${sql.json(profile)}, ${expiresAt})
-        returning id, kind, email, profile, created_at, last_seen_at, expires_at
+        returning id, kind, email, profile, created_at, last_seen_at, expires_at, welcome_seen_at
       `
       return toAccountRecord(row, await upgradeProfile(row.profile))
     },
@@ -39,7 +39,7 @@ export function createAccountRepository(sql: Sql): AccountRepository {
 
     async findActive(id, now) {
       const [row] = await sql<[AccountRow?]>`
-        select id, kind, email, profile, created_at, last_seen_at, expires_at
+        select id, kind, email, profile, created_at, last_seen_at, expires_at, welcome_seen_at
         from public.accounts
         where id = ${id} and (expires_at is null or expires_at > ${now})
       `
@@ -48,6 +48,13 @@ export function createAccountRepository(sql: Sql): AccountRepository {
 
     async touchLastSeen(id) {
       await sql`update public.accounts set last_seen_at = now() where id = ${id}`
+    },
+
+    async markWelcomeSeen(id) {
+      await sql`
+        update public.accounts set welcome_seen_at = coalesce(welcome_seen_at, now())
+        where id = ${id}
+      `
     },
 
     async deleteExpired({ now, googleInactiveBefore }) {

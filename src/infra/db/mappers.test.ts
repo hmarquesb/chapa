@@ -185,6 +185,7 @@ describe("toAccountRecord", () => {
           created_at: CREATED,
           last_seen_at: "2026-11-05T12:30:00.000Z",
           expires_at: null,
+          welcome_seen_at: null,
         },
         { profile: { version: 2, name: "Pizzaria Bella" }, needsReview: false },
       ),
@@ -197,7 +198,25 @@ describe("toAccountRecord", () => {
       createdAt: CREATED,
       lastSeenAt: ACTIVE,
       expiresAt: null,
+      welcomeSeenAt: null,
     })
+  })
+
+  it("maps a filled welcome_seen_at to a Date", () => {
+    const record = toAccountRecord(
+      {
+        id: ACCOUNT_ID,
+        kind: "google",
+        email: "dono@exemplo.com",
+        profile: {},
+        created_at: CREATED,
+        last_seen_at: CREATED,
+        expires_at: null,
+        welcome_seen_at: "2026-11-05T12:10:00.000Z",
+      },
+      { profile: { version: 2 }, needsReview: false },
+    )
+    expect(record.welcomeSeenAt).toEqual(new Date("2026-11-05T12:10:00.000Z"))
   })
 
   it("maps a demo account without an email and with expires_at", () => {
@@ -210,6 +229,7 @@ describe("toAccountRecord", () => {
         created_at: CREATED,
         last_seen_at: CREATED,
         expires_at: "2026-11-12T12:00:00.000Z",
+        welcome_seen_at: null,
       },
       { profile: { version: 2 }, needsReview: false },
     )
@@ -228,6 +248,7 @@ describe("toAccountRecord", () => {
         created_at: CREATED,
         last_seen_at: CREATED,
         expires_at: CREATED,
+        welcome_seen_at: null,
       },
       { profile: { version: 2 }, needsReview: true },
     )

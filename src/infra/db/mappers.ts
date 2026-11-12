@@ -58,6 +58,7 @@ export type AccountRow = {
   created_at: Timestamp
   last_seen_at: Timestamp
   expires_at: Timestamp | null
+  welcome_seen_at: Timestamp | null
 }
 
 function toNumber(value: Numeric): number {
@@ -106,6 +107,7 @@ export function toAccountRecord(
     createdAt: toDate(row.created_at),
     lastSeenAt: toDate(row.last_seen_at),
     expiresAt: row.expires_at === null ? null : toDate(row.expires_at),
+    welcomeSeenAt: row.welcome_seen_at === null ? null : toDate(row.welcome_seen_at),
   }
 }
 

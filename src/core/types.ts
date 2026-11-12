@@ -140,6 +140,7 @@ export type AccountRecord = {
   createdAt: Date
   lastSeenAt: Date
   expiresAt: Date | null // só demo
+  welcomeSeenAt: Date | null // nulo até a conta fechar o card; demo nunca grava
 }
 
 export interface AccountRepository {
@@ -151,6 +152,8 @@ export interface AccountRepository {
   // null se a conta não existe ou se expires_at <= now.
   findActive(id: string, now: Date): Promise<AccountRecord | null>
   touchLastSeen(id: string): Promise<void>
+  // Grava now() só se ainda estiver nulo (o primeiro registro vale). O id existe: quem chama já autenticou.
+  markWelcomeSeen(id: string): Promise<void>
   // Demo com expires_at <= now e Google com last_seen_at < googleInactiveBefore. Devolve quantas.
   deleteExpired(input: { now: Date; googleInactiveBefore: Date }): Promise<number>
   // Apaga a conta; as conversas vão junto (on delete cascade). true se apagou.
