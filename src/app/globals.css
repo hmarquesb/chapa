@@ -26,6 +26,11 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-art-cream: var(--art-cream);
+  --color-art-mustard: var(--art-mustard);
+  --color-art-tangerine: var(--art-tangerine);
+  --color-art-clay: var(--art-clay);
+  --color-art-plum: var(--art-plum);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -93,6 +98,12 @@
   --sidebar-accent-foreground: #2a1e22;
   --sidebar-border: #e8dad0;
   --sidebar-ring: #7a2e3b;
+  --art-plum: #5b1b2c;
+  --art-clay: #c2654d;
+  --art-tangerine: #e7823b;
+  --art-mustard: #eaa93c;
+  --art-cream: #f2debd;
+  --art-opacity: 1;
   --radius: 1rem;
   --elevation-soft: 0 1px 2px rgb(42 30 34 / 6%), 0 2px 8px rgb(42 30 34 / 6%);
   --elevation-raised: 0 4px 12px rgb(42 30 34 / 10%), 0 12px 32px rgb(42 30 34 / 12%);
@@ -136,6 +147,12 @@
   --sidebar-accent-foreground: #f3e9e4;
   --sidebar-border: #3a2d31;
   --sidebar-ring: #cf7686;
+  --art-plum: #8a3a4e;
+  --art-clay: #b9654f;
+  --art-tangerine: #d9813f;
+  --art-mustard: #d9a24a;
+  --art-cream: #cdb591;
+  --art-opacity: 0.45;
   --elevation-soft: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 8px rgb(0 0 0 / 25%);
   --elevation-raised: 0 4px 12px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 40%);
 }

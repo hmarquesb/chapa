@@ -24,7 +24,7 @@ export const BRAND_PRINCIPLES: readonly BrandPrinciple[] = [
     name: "Original",
     summary: "Nada herdado de outra marca de delivery.",
     inPractice:
-      "Vinho e canela, Bricolage Grotesque e uma espátula: nenhum símbolo ou mascote emprestado.",
+      "Vinho e canela, Bricolage Grotesque, uma espátula e uma ilustração própria de formas chapadas: nenhum símbolo ou mascote emprestado.",
   },
 ]
 
@@ -99,3 +99,13 @@ export const AVOIDED: readonly string[] = [
   "Nome, ícone ou ilustração de empresa real.",
   "Ícones de entrega, como moto ou sacola.",
 ]
+
+export const ART_SWATCHES: readonly Swatch[] = [
+  { token: "art-plum", name: "Ameixa-funda", usage: "Formas grandes e o fundo da arte." },
+  { token: "art-clay", name: "Terracota", usage: "Folhas, tigelas e meias-luas." },
+  { token: "art-tangerine", name: "Tangerina", usage: "Destaques quentes e sementes." },
+  { token: "art-mustard", name: "Mostarda", usage: "Ramos, espirais e pontos de luz." },
+  { token: "art-cream", name: "Creme", usage: "Vapor e contornos claros." },
+]
+
+export const ART_RULE = "Só desenho: nunca texto, borda, foco ou botão."

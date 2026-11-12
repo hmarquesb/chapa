@@ -41,3 +41,6 @@ yarn-error.log*
 
 # Screenshots (npm run screenshots)
 .screenshots/
+
+# Art references (outside git)
+/assets/arts/

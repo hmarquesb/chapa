@@ -39,6 +39,11 @@ export const COLOR_TOKENS = [
   "sidebar-accent-foreground",
   "sidebar-border",
   "sidebar-ring",
+  "art-plum",
+  "art-clay",
+  "art-tangerine",
+  "art-mustard",
+  "art-cream",
 ] as const
 
 export type ColorToken = (typeof COLOR_TOKENS)[number]
@@ -80,6 +85,11 @@ export const PALETTE: Readonly<Record<ThemeName, Readonly<Record<ColorToken, str
     "sidebar-accent-foreground": "#2A1E22",
     "sidebar-border": "#E8DAD0",
     "sidebar-ring": "#7A2E3B",
+    "art-plum": "#5B1B2C",
+    "art-clay": "#C2654D",
+    "art-tangerine": "#E7823B",
+    "art-mustard": "#EAA93C",
+    "art-cream": "#F2DEBD",
   },
   dark: {
     background: "#1D1517",
@@ -117,6 +127,11 @@ export const PALETTE: Readonly<Record<ThemeName, Readonly<Record<ColorToken, str
     "sidebar-accent-foreground": "#F3E9E4",
     "sidebar-border": "#3A2D31",
     "sidebar-ring": "#CF7686",
+    "art-plum": "#8A3A4E",
+    "art-clay": "#B9654F",
+    "art-tangerine": "#D9813F",
+    "art-mustard": "#D9A24A",
+    "art-cream": "#CDB591",
   },
 }
 

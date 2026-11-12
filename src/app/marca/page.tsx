@@ -1,10 +1,14 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { OrnamentClusterArt } from "@/components/brand/brand-ornaments"
 import { BrandShowcase } from "@/components/brand/brand-showcase"
+import { LoginArt } from "@/components/brand/login-art"
 import { RangoLogo } from "@/components/brand/rango-logo"
 import { SiteFooter } from "@/components/brand/site-footer"
 import { ThemeToggle } from "@/components/brand/theme-toggle"
 import {
+  ART_RULE,
+  ART_SWATCHES,
   AVOIDED,
   BRAND_PRINCIPLES,
   MOTION,
@@ -206,6 +210,63 @@ export default function BrandPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </Section>
+
+      <Section id="ilustracao" title="Ilustração">
+        <p className="text-sm text-muted-foreground">
+          Formas chapadas em cinco tons próprios, que mudam com o tema. {ART_RULE}
+        </p>
+        <div className="overflow-x-auto rounded-2xl border">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th scope="col" className="px-3 py-2 font-medium">
+                  Tom
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  Claro
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  Escuro
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  Uso
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {ART_SWATCHES.map((swatch) => (
+                <tr key={swatch.token} className="border-b last:border-b-0">
+                  <th scope="row" className="px-3 py-2 font-normal">
+                    <span className="flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="size-6 shrink-0 rounded-md border"
+                        style={{ backgroundColor: PALETTE.light[swatch.token] }}
+                      />
+                      {swatch.name}
+                    </span>
+                  </th>
+                  <td className="px-3 py-2">
+                    <code>{PALETTE.light[swatch.token]}</code>
+                  </td>
+                  <td className="px-3 py-2">
+                    <code>{PALETTE.dark[swatch.token]}</code>
+                  </td>
+                  <td className="px-3 py-2">{swatch.usage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <LoginArt className="aspect-[3/2] w-full max-w-[40rem] rounded-2xl border" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {(["top-right", "bottom-left", "bottom-right"] as const).map((cluster) => (
+            <div key={cluster} className="flex justify-center rounded-2xl border bg-card p-4">
+              <OrnamentClusterArt cluster={cluster} className="w-full max-w-[14rem]" />
+            </div>
+          ))}
         </div>
       </Section>
 
