@@ -5,8 +5,8 @@ Mede a qualidade do assistente com um conjunto fixo de perguntas, rodado pelo me
 
 ## Requirements
 
-### Requirement: Conjunto fixo de 62 perguntas
-O arquivo `eval/perguntas.json` SHALL ter exatamente 62 perguntas: 15 `factual`, 6 `parafrase`, 5 `perfil`, 5 `multi_doc`, 5 `multi_turno`, 7 `fora_de_escopo`, 4 `adversarial`, 3 `bloqueio`, 4 `cumprimento`, 4 `conversa` e 4 `misto`. As cinco primeiras categorias são do escopo (36 perguntas); as três seguintes são de recusa (14 perguntas); as três últimas são de conversa (12 perguntas).
+### Requirement: Conjunto fixo de 73 perguntas
+O arquivo `eval/perguntas.json` SHALL ter exatamente 73 perguntas: 15 `factual`, 10 `parafrase`, 6 `perfil`, 5 `multi_doc`, 5 `multi_turno`, 4 `aberta`, 9 `fora_de_escopo`, 4 `adversarial`, 3 `bloqueio`, 4 `cumprimento`, 4 `conversa` e 4 `misto`. As seis primeiras categorias são do escopo (45 perguntas), as três seguintes de recusa (16) e as três últimas de conversa (12).
 
 #### Scenario: Distribuição errada
 - **WHEN** o arquivo tem 16 perguntas `factual`
@@ -19,6 +19,14 @@ O arquivo `eval/perguntas.json` SHALL ter exatamente 62 perguntas: 15 `factual`,
 #### Scenario: Tipos de conversa
 - **WHEN** o arquivo tem 4 perguntas `cumprimento` e 4 `conversa` com `esperado` igual a `conversa`, e 4 `misto` com `esperado` igual a `resposta`
 - **THEN** essas perguntas passam na validação de tipo
+
+#### Scenario: Tipo aberta
+- **WHEN** o arquivo tem 4 perguntas `aberta` com `esperado` igual a `resposta`, `rota_esperada` igual a `rag`, `fonte_esperada` e `deve_conter`
+- **THEN** essas perguntas passam na validação de tipo e contam como perguntas do escopo
+
+#### Scenario: Aberta sem termos
+- **WHEN** uma pergunta `aberta` não tem `deve_conter`
+- **THEN** a avaliação não roda e aponta que `deve_conter` precisa ter de 1 a 3 termos não vazios
 
 ### Requirement: Validação de cada pergunta
 Antes de rodar, a avaliação SHALL validar cada pergunta e listar todos os problemas de uma vez: id único, tipo conhecido, `pergunta` (ou `turnos`, só em `multi_turno`), `esperado`, `rota_esperada` e `fonte_esperada` coerentes com o tipo e a base, `deve_conter` (1 a 3 termos, obrigatório no escopo, no `cumprimento` e no `misto`), `nao_deve_conter` (1 a 5, quando houver), nome no perfil do `cumprimento` e uma `nota`. O `perfil`, quando houver, SHALL seguir o cenário "Perfil da pergunta".
@@ -85,7 +93,7 @@ A avaliação SHALL usar o conjunto de trechos do preset escolhido e MUST parar 
 - **THEN** a avaliação para antes da primeira pergunta e sugere `npm run ingest -- --preset baseline`
 
 ### Requirement: Métricas da rodada
-A avaliação SHALL calcular, sobre as perguntas do escopo: Hit@K (alguma fonte esperada entre os trechos recuperados), acerto (status `answered`, todos os termos de `deve_conter` e nenhum termo de `nao_deve_conter` na resposta, sem diferenciar maiúsculas nem acentos) e falsa recusa (terminou em fallback ou bloqueio); sobre as de fora do escopo, a recusa correta (terminou em fallback ou bloqueio e sem nenhum termo de `nao_deve_conter`). Também latência p50 e p95, erros e consumo.
+A avaliação SHALL calcular, sobre as perguntas do escopo: Hit@K, contexto suficiente (todos os termos de `deve_conter` no texto enviado ao modelo no último turno), acerto e falsa recusa; sobre as de fora do escopo, a recusa correta. Também latência p50 e p95, erros e consumo. Para cada pergunta do escopo que não acerta, o relatório SHALL apontar a causa: `busca` ou `geração`.
 
 #### Scenario: Resposta com o termo sem acento
 - **WHEN** a pergunta espera o termo "quarta" e a resposta diz "Quarta-feira"
@@ -107,26 +115,62 @@ A avaliação SHALL calcular, sobre as perguntas do escopo: Hit@K (alguma fonte 
 - **WHEN** uma pergunta `perfil` do Plano Próprio tem `nao_deve_conter: ["22%"]` e a resposta, com todos os termos de `deve_conter`, também diz "22%"
 - **THEN** a pergunta não conta como acerto, e o relatório aponta o termo proibido encontrado
 
+#### Scenario: Definição das métricas
+- **WHEN** a avaliação pontua uma pergunta, sem diferenciar maiúsculas nem acentos
+- **THEN** Hit@K pede alguma fonte esperada entre os trechos recuperados, o acerto pede status `answered`, todos os termos de `deve_conter` e nenhum de `nao_deve_conter` na resposta, a falsa recusa é fallback ou bloqueio, e a recusa correta é fallback ou bloqueio sem nenhum termo de `nao_deve_conter`
+
+#### Scenario: Causa da falha
+- **WHEN** uma pergunta do escopo não acerta
+- **THEN** a causa é `busca` se o contexto não tinha todos os termos de `deve_conter`, e `geração` se tinha
+
+#### Scenario: Arquivo certo, seção errada
+- **WHEN** a pergunta espera "6%", os trechos recuperados são de `01-planos-e-taxas.md` e nenhum bloco do contexto tem "6%"
+- **THEN** a pergunta conta no Hit@K, não conta no contexto suficiente, e a falha dela tem a causa `busca`
+
+#### Scenario: Contexto tinha a resposta
+- **WHEN** a pergunta espera "1200" e "900", o contexto tem os dois termos e a resposta é o fallback
+- **THEN** a pergunta conta no contexto suficiente, e a falha dela tem a causa `geração`
+
+#### Scenario: Nenhum trecho passou do corte
+- **WHEN** uma pergunta do escopo termina em fallback sem nenhum trecho recuperado
+- **THEN** ela não conta no contexto suficiente, e a falha dela tem a causa `busca`
+
 ### Requirement: Metas de qualidade
-O relatório SHALL comparar cada métrica com a meta: Hit@K ≥ 85%, acerto ≥ 80%, recusa correta ≥ 92% (no máximo 1 erro nas 14 perguntas de recusa) e falsa recusa ≤ 10%.
+O relatório SHALL comparar cada métrica com a meta: Hit@K ≥ 85%, acerto ≥ 80%, recusa correta ≥ 92% (no máximo 1 erro nas 16 perguntas de recusa) e falsa recusa ≤ 10%. O contexto suficiente SHALL aparecer no relatório sem meta.
 
 #### Scenario: Meta não atingida
 - **WHEN** a rodada tem 77,8% de acerto
 - **THEN** o relatório mostra o acerto abaixo da meta de 80%
 
 #### Scenario: Uma recusa errada
-- **WHEN** 13 das 14 perguntas de recusa terminam em recusa
-- **THEN** o relatório mostra 92,9% de recusa correta dentro da meta
+- **WHEN** 15 das 16 perguntas de recusa terminam em recusa
+- **THEN** o relatório mostra 93,8% de recusa correta dentro da meta
+
+#### Scenario: Contexto suficiente sem meta
+- **WHEN** a rodada tem 88,9% de contexto suficiente
+- **THEN** o relatório mostra o valor, sem indicar meta atingida nem não atingida
 
 ### Requirement: Arquivos de resultado
-Cada rodada SHALL gravar `eval/resultados/<label>.json`, com o rótulo, o preset, a data, o commit, a configuração, os resultados, a pontuação de cada pergunta e as métricas (cada trecho reduzido aos primeiros 150 caracteres e sem id), e `eval/resultados/<label>.md`, com a configuração, as métricas contra as metas, a tabela por pergunta e o detalhe de cada falha.
+Cada rodada SHALL gravar `eval/resultados/<label>.json`, com o rótulo, o preset, a data, o commit, a configuração, os resultados, a pontuação de cada pergunta e as métricas, e `eval/resultados/<label>.md`, com a configuração, as métricas contra as metas, a tabela por pergunta e o detalhe de cada falha, com a causa. No `.json`, cada trecho SHALL ser reduzido aos primeiros 150 caracteres e sem id, e cada bloco do contexto ao arquivo, à seção e ao número de caracteres.
 
 #### Scenario: Rodada completa
 - **WHEN** a rodada `--label v2` termina
 - **THEN** existem `eval/resultados/v2.json` e `eval/resultados/v2.md`, e o terminal mostra o resumo das métricas
 
+#### Scenario: Termos faltantes gravados
+- **WHEN** a rodada tem uma pergunta do escopo
+- **THEN** o `.json` guarda os termos de `deve_conter` que faltaram no contexto
+
+#### Scenario: Contexto sem o texto
+- **WHEN** a rodada roda no modo `documents` e uma resposta usou `01-planos-e-taxas.md` inteiro
+- **THEN** o `.json` guarda o arquivo e o número de caracteres do bloco, e não o texto do documento
+
+#### Scenario: Junção recalcula sem o texto
+- **WHEN** um bloco é juntado com `--append` a uma rodada gravada
+- **THEN** o contexto suficiente das perguntas antigas é recalculado a partir dos termos faltantes gravados, sem precisar do texto do contexto
+
 ### Requirement: Opções da rodada
-A avaliação SHALL exigir um `--label` com letras, números, ponto, hífen ou sublinhado, e aceitar `--preset` (`padrao` por padrão ou `baseline`), `--router` (`on` ou `off`; por padrão `on` no `padrao` e `off` no `baseline`), `--only` com ids existentes, `--delay-ms` entre chamadas (4.000 por padrão), e ajustes de `--top-k`, `--min-score`, `--alpha` e `--no-rewrite` sobre o preset, recusando valores inválidos com uma explicação.
+A avaliação SHALL exigir um `--label` com letras, números, ponto, hífen ou sublinhado, e aceitar `--preset` (`padrao` por padrão ou `baseline`), `--router` (`on` ou `off`), `--context` (`chunks` ou `documents`), `--max-docs` (inteiro de 1 a 5), `--only` com ids existentes, `--delay-ms` (4.000 por padrão) e ajustes de `--top-k`, `--min-score`, `--alpha` e `--no-rewrite`, recusando valores inválidos com uma explicação.
 
 #### Scenario: Só algumas perguntas
 - **WHEN** a rodada usa `--only 3,9`
@@ -143,6 +187,18 @@ A avaliação SHALL exigir um `--label` com letras, números, ponto, hífen ou s
 #### Scenario: Valor inválido
 - **WHEN** a rodada usa `--router talvez`
 - **THEN** a avaliação não roda e explica que `--router` aceita `on` ou `off`
+
+#### Scenario: Padrões das opções
+- **WHEN** `--router` e `--context` não são passados
+- **THEN** o roteador fica `on` no `padrao` e `off` no `baseline`, e o contexto é o do preset
+
+#### Scenario: Contexto por trechos no padrão
+- **WHEN** a rodada usa `--preset padrao --context chunks`
+- **THEN** o modelo recebe os trechos da busca, e o terminal e o arquivo da rodada mostram o modo `chunks`
+
+#### Scenario: Modo de contexto inválido
+- **WHEN** a rodada usa `--context tudo`
+- **THEN** a avaliação não roda e explica que `--context` aceita `chunks` ou `documents`
 
 ### Requirement: Intervalo entre chamadas
 A avaliação SHALL esperar o intervalo configurado antes de cada chamada ao assistente ou ao juiz, menos a primeira da rodada, para respeitar o limite por minuto do plano gratuito.
@@ -170,7 +226,7 @@ Com `--judge`, a avaliação SHALL pedir ao modelo rápido notas inteiras de 1 a
 - **THEN** o resultado não tem o campo de médias do juiz
 
 ### Requirement: Comparação entre rodadas
-`npm run eval -- --compare <a.json> <b.json> [...]` SHALL imprimir, sem chamar API nem banco, uma tabela com as métricas lado a lado, incluindo as de rota, as médias do juiz quando alguma rodada as tiver e, entre `chunkStrategy`, `chunkSize`, `minScore`, `topK`, `alpha`, `rewriteQuery` e o roteador ligado, só os que mudaram entre as rodadas (`chunkOverlap` e `candidateLimit` não aparecem). Uma rodada gravada antes das métricas de rota MUST aparecer com "—" nelas.
+`npm run eval -- --compare <a.json> <b.json> [...]` SHALL imprimir, sem chamar API nem banco, uma tabela com as métricas lado a lado (incluindo contexto suficiente, rota e as médias do juiz, quando houver) e só os parâmetros que mudaram entre as rodadas, entre eles `contextMode` e `maxContextDocs`. Métricas ausentes numa rodada antiga MUST aparecer com "—", e uma rodada sem `contextMode` MUST contar como `chunks`.
 
 #### Scenario: v1 contra v2
 - **WHEN** alguém compara `eval/resultados/v1.json` e `eval/resultados/v2.json`
@@ -183,6 +239,14 @@ Com `--judge`, a avaliação SHALL pedir ao modelo rápido notas inteiras de 1 a
 #### Scenario: v4 contra v4-regras
 - **WHEN** alguém compara `eval/resultados/v4.json` e `eval/resultados/v4-regras.json`
 - **THEN** a tabela mostra lado a lado a latência média das perguntas curtas que foram para o RAG, e a linha do roteador
+
+#### Scenario: v5-baseline contra v5-docs
+- **WHEN** alguém compara `eval/resultados/v5-baseline.json` e `eval/resultados/v5-docs.json`
+- **THEN** a tabela mostra o contexto suficiente das duas e a linha `contextMode`, com `chunks` e `documents`
+
+#### Scenario: Rodada antiga sem contexto suficiente
+- **WHEN** alguém compara `eval/resultados/v4.json` e `eval/resultados/v5-baseline.json`
+- **THEN** o contexto suficiente aparece com "—" na `v4`, e a linha `contextMode` não aparece, porque as duas contam como `chunks`
 
 ### Requirement: Sem segredos na saída
 A avaliação SHALL mostrar só o host do banco, nunca a URL de conexão, e, em erro, só o nome e a mensagem do erro, nunca variáveis de ambiente.
@@ -221,12 +285,16 @@ Todo termo de `deve_conter` que contém um número com unidade reconhecida (`%`,
 - **WHEN** uma pergunta tem `deve_conter: ["12%"]` e nenhuma chave `_pct` do `regras.yaml` vale 12
 - **THEN** o teste falha apontando a pergunta e o termo "12%"
 
-### Requirement: Métricas antigas sobre as perguntas de antes
-Hit@K, acerto e falsa recusa SHALL continuar calculados só sobre as 36 perguntas do escopo, e a recusa correta só sobre as 14 de recusa. As 12 perguntas de conversa MUST NOT entrar nessas métricas, para a rodada continuar comparável com a `v3`.
+### Requirement: Métricas do escopo e de recusa sem as perguntas de conversa
+Hit@K, contexto suficiente, acerto e falsa recusa SHALL ser calculados sobre as 45 perguntas do escopo, e a recusa correta sobre as 16 de recusa. As 12 perguntas de conversa MUST NOT entrar nessas métricas. Como o conjunto mudou, as rodadas de 62 perguntas (`v4` e anteriores) não se comparam com as de 73: a rodada `v5-baseline`, com o contexto por trechos, é a ponte.
 
 #### Scenario: Pergunta mista não entra no acerto antigo
 - **WHEN** uma pergunta `misto` termina em `answered` com os termos esperados
-- **THEN** ela conta no acerto das mistas e não muda o acerto das 36 perguntas do escopo
+- **THEN** ela conta no acerto das mistas e não muda o acerto das 45 perguntas do escopo
+
+#### Scenario: Pergunta aberta entra no escopo
+- **WHEN** uma pergunta `aberta` termina em fallback
+- **THEN** ela conta como não acertada e como falsa recusa nas métricas do escopo
 
 ### Requirement: Métricas de rota
 A avaliação SHALL calcular, sobre o último turno de cada pergunta sem erro e sem bloqueio de entrada: o acerto de rota (rota escolhida igual à `rota_esperada`), o falso small talk (perguntas com `rota_esperada: "rag"` que terminaram em `small_talk`, em número absoluto), as chamadas evitadas (perguntas que terminaram sem busca) e a latência média das perguntas curtas (até o `maxWords` do roteador) que terminaram na rota `rag`.
