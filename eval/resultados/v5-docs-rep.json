@@ -1,0 +1,1171 @@
+{
+  "label": "v5-docs-rep",
+  "preset": "padrao",
+  "date": "2026-11-12T19:26:32.467Z",
+  "commit": "fcb5d51",
+  "config": {
+    "models": {
+      "chat": "gemini-3.5-flash-lite",
+      "fast": "gemini-3.5-flash-lite",
+      "embedding": "gemini-embedding-001",
+      "embeddingDimensions": 768
+    },
+    "rag": {
+      "topK": 5,
+      "minScore": 0.55,
+      "alpha": 0.7,
+      "candidateLimit": 30,
+      "chunkStrategy": "markdown",
+      "chunkSize": 1200,
+      "chunkOverlap": 150,
+      "rewriteQuery": true,
+      "contextMode": "documents",
+      "maxContextDocs": 3
+    },
+    "router": {
+      "enabled": true,
+      "maxWords": 12
+    }
+  },
+  "results": [
+    {
+      "question": {
+        "id": 116,
+        "tipo": "parafrase",
+        "pergunta": "quanto a Rango morde de comissão quando o cliente passa aqui e leva o pedido?",
+        "fonte_esperada": [
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "6%"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Paráfrase com gíria da 101 (comissão de 6% na retirada)."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Nos pedidos de retirada no balcão, a comissão é de 6%.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "02-repasse-financeiro.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Os três planos",
+            "score": 0.7332457601196212,
+            "semantic": 0.7617796573137445,
+            "keyword": 0.6666666666666666,
+            "content": "Planos e taxas — Os três planos\n\nA Rango oferece três planos para lojas parceiras. A diferença entre eles é quem faz a entrega e, por isso, quanto a l"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "O que é o repasse",
+            "score": 0.6912969200457451,
+            "semantic": 0.7494717905415406,
+            "keyword": 0.5555555555555556,
+            "content": "Repasse financeiro — O que é o repasse\n\nO repasse é a transferência que a Rango faz para a conta bancária da loja com o dinheiro das vendas pagas pelo"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos do repasse",
+            "score": 0.6786710734702452,
+            "semantic": 0.7790539144813027,
+            "keyword": 0.4444444444444444,
+            "content": "Repasse financeiro — Descontos do repasse\n\nO repasse chega líquido. Do valor das vendas pagas pelo app, a Rango desconta:\n\n- A comissão do plano, calc"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Exemplo de conta de um pedido",
+            "score": 0.6768595576402228,
+            "semantic": 0.7764660347241277,
+            "keyword": 0.4444444444444444,
+            "content": "Planos e taxas — Exemplo de conta de um pedido\n\nExemplo: no Plano Próprio, um cliente faz um pedido com R$ 80,00 em itens, escolhe uma taxa de entrega"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão por plano",
+            "score": 0.6574716433744501,
+            "semantic": 0.7963880619635002,
+            "keyword": 0.3333333333333333,
+            "content": "Planos e taxas — Comissão por plano\n\nA comissão é a parte de cada pedido que fica com a Rango. O percentual depende do plano:\n\n- Plano Próprio: comiss"
+          }
+        ],
+        "context": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "",
+            "chars": 6043
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "",
+            "chars": 5342
+          }
+        ],
+        "searchQuery": "quanto a Rango morde de comissão quando o cliente passa aqui e leva o pedido?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 3933,
+          "outputTokens": 17
+        },
+        "latencyMs": 10237,
+        "routerMs": null,
+        "route": "rag"
+      },
+      "latencyMs": 10237,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 3933,
+        "outputTokens": 17
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 119,
+        "tipo": "parafrase",
+        "pergunta": "mandei a foto do x-salada e voltou recusada, qual tamanho de imagem vocês aceitam?",
+        "fonte_esperada": [
+          "04-cardapio-e-fotos.md"
+        ],
+        "deve_conter": [
+          "1200",
+          "900"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Paráfrase da 104 (resolução mínima da foto), partindo de uma foto recusada."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "1. Use formatos JPG ou PNG.\n2. Respeite o tamanho máximo de arquivo de 5 MB.\n3. Garanta a resolução mínima de 1200 × 900 px, na horizontal.",
+        "sources": [
+          "04-cardapio-e-fotos.md"
+        ],
+        "retrieved": [
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "Fotos: formato, tamanho e resolução",
+            "score": 0.657347445161807,
+            "semantic": 0.7832236229584256,
+            "keyword": 0.36363636363636365,
+            "content": "Cardápio e fotos — Fotos: formato, tamanho e resolução\n\nCada item pode ter uma foto. As fotos precisam seguir estas regras:\n\n- Formatos aceitos: JPG o"
+          },
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "O que a foto deve mostrar",
+            "score": 0.5689564760716841,
+            "semantic": 0.6959118489335747,
+            "keyword": 0.2727272727272727,
+            "content": "Cardápio e fotos — O que a foto deve mostrar\n\nA foto deve mostrar o produto que o cliente vai receber, sem montagens que mudem o tamanho ou a aparênci"
+          }
+        ],
+        "context": [
+          {
+            "source": "04-cardapio-e-fotos.md",
+            "section": "",
+            "chars": 4423
+          }
+        ],
+        "searchQuery": "mandei a foto do x-salada e voltou recusada, qual tamanho de imagem vocês aceitam?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 1849,
+          "outputTokens": 48
+        },
+        "latencyMs": 24300,
+        "routerMs": null,
+        "route": "rag"
+      },
+      "latencyMs": 24300,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 1849,
+        "outputTokens": 48
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 124,
+        "tipo": "perfil",
+        "pergunta": "Qual comissão eu pago nos pedidos de clientes que ficam fora da minha área de entrega?",
+        "perfil": {
+          "version": 2,
+          "name": "Pastelaria Dona Lu",
+          "plan": "misto",
+          "location": {
+            "uf": "MG",
+            "cityCode": 3106200
+          }
+        },
+        "fonte_esperada": [
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "22%"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Comissão do Plano Misto fora da área própria (22%), com o plano vindo só do perfil."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Como a Pastelaria Dona Lu está no Plano Misto, os pedidos de clientes fora da sua área própria, mas dentro da área de atendimento, são entregues pela Rango e pagam a comissão do Plano Entrega, que é de 22%.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "11-pagamentos-e-fiscal.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Dinheiro na entrega",
+            "score": 0.7681670741380935,
+            "semantic": 0.6688101059115622,
+            "keyword": 1,
+            "content": "Planos e taxas — Dinheiro na entrega\n\nO pagamento em dinheiro na entrega não tem taxa de pagamento. Ele só existe no Plano Próprio e na área própria d"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Área própria e raio do Plano Misto",
+            "score": 0.7597224618541489,
+            "semantic": 0.717970863873274,
+            "keyword": 0.8571428571428571,
+            "content": "Planos e taxas — Área própria e raio do Plano Misto\n\nNo Plano Misto, a área própria é a região em que a loja faz as entregas com a equipe dela. O raio"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Comissão por plano",
+            "score": 0.7473133440870721,
+            "semantic": 0.7002435527774499,
+            "keyword": 0.8571428571428571,
+            "content": "Planos e taxas — Comissão por plano\n\nA comissão é a parte de cada pedido que fica com a Rango. O percentual depende do plano:\n\n- Plano Próprio: comiss"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Exemplo de conta de um pedido",
+            "score": 0.7427531085323962,
+            "semantic": 0.6937289305564843,
+            "keyword": 0.8571428571428571,
+            "content": "Planos e taxas — Exemplo de conta de um pedido\n\nExemplo: no Plano Próprio, um cliente faz um pedido com R$ 80,00 em itens, escolhe uma taxa de entrega"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Restrições de cada forma",
+            "score": 0.7347666280084223,
+            "semantic": 0.6210951828691746,
+            "keyword": 1,
+            "content": "Pagamentos e fiscal — Restrições de cada forma\n\n- **Dinheiro na entrega:** só existe no Plano Próprio e na área própria do Plano Misto, porque é a equ"
+          }
+        ],
+        "context": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "",
+            "chars": 6043
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "",
+            "chars": 3794
+          }
+        ],
+        "searchQuery": "Qual comissão eu pago nos pedidos de clientes que ficam fora da minha área de entrega?",
+        "usage": {
+          "calls": 2,
+          "inputTokens": 3477,
+          "outputTokens": 53
+        },
+        "latencyMs": 2837,
+        "routerMs": null,
+        "route": "rag"
+      },
+      "latencyMs": 2837,
+      "usage": {
+        "calls": 2,
+        "inputTokens": 3477,
+        "outputTokens": 53
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 126,
+        "tipo": "perfil",
+        "pergunta": "Posso aceitar pagamento em dinheiro na entrega?",
+        "perfil": {
+          "version": 2,
+          "name": "Marmitaria Sabor Caseiro",
+          "plan": "entrega"
+        },
+        "fonte_esperada": [
+          "11-pagamentos-e-fiscal.md",
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "online"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Dinheiro na entrega no Plano Entrega: não é aceito, o pagamento é sempre online; o plano vem só do perfil."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Olá! O pagamento em dinheiro na entrega só existe no Plano Próprio e na área própria do Plano Misto, porque é a equipe da loja que recebe o dinheiro. No seu plano, que é o Plano Entrega, os pedidos são sempre pagos online.",
+        "sources": [
+          "11-pagamentos-e-fiscal.md",
+          "01-planos-e-taxas.md",
+          "02-repasse-financeiro.md"
+        ],
+        "retrieved": [
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Restrições de cada forma",
+            "score": 0.7171697436529919,
+            "semantic": 0.7673853480757027,
+            "keyword": 0.6,
+            "content": "Pagamentos e fiscal — Restrições de cada forma\n\n- **Dinheiro na entrega:** só existe no Plano Próprio e na área própria do Plano Misto, porque é a equ"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Dinheiro na entrega",
+            "score": 0.7106590242855767,
+            "semantic": 0.7580843204079667,
+            "keyword": 0.6,
+            "content": "Planos e taxas — Dinheiro na entrega\n\nO pagamento em dinheiro na entrega não tem taxa de pagamento. Ele só existe no Plano Próprio e na área própria d"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Formas de pagamento",
+            "score": 0.6658838963669969,
+            "semantic": 0.6941198519528526,
+            "keyword": 0.6,
+            "content": "Pagamentos e fiscal — Formas de pagamento\n\nO cliente pode pagar um pedido na Rango de seis formas:\n\n- Cartão de crédito.\n- Cartão de débito.\n- Pix.\n- "
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "O que é o repasse",
+            "score": 0.6480500054902647,
+            "semantic": 0.6686428649860925,
+            "keyword": 0.6,
+            "content": "Repasse financeiro — O que é o repasse\n\nO repasse é a transferência que a Rango faz para a conta bancária da loja com o dinheiro das vendas pagas pelo"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Taxas de pagamento online",
+            "score": 0.6393249737150827,
+            "semantic": 0.6561785338786896,
+            "keyword": 0.6,
+            "content": "Pagamentos e fiscal — Taxas de pagamento online\n\nCada pagamento online tem uma taxa, cobrada da loja e descontada do repasse:\n\n- Cartão de crédito, ca"
+          }
+        ],
+        "context": [
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "",
+            "chars": 3794
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "",
+            "chars": 6043
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "",
+            "chars": 5342
+          }
+        ],
+        "searchQuery": "Posso aceitar pagamento em dinheiro na entrega?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 5607,
+          "outputTokens": 56
+        },
+        "latencyMs": 4043,
+        "routerMs": 2323,
+        "route": "rag"
+      },
+      "latencyMs": 4043,
+      "usage": {
+        "calls": 3,
+        "inputTokens": 5607,
+        "outputTokens": 56
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 132,
+        "tipo": "multi_turno",
+        "turnos": [
+          "Estou no Plano Próprio. Quanto é a mensalidade?",
+          "E no outro plano, em que a Rango faz as entregas?"
+        ],
+        "fonte_esperada": [
+          "01-planos-e-taxas.md"
+        ],
+        "deve_conter": [
+          "139"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "\"E no outro plano?\": o segundo turno só faz sentido com o plano do primeiro; mensalidade do Plano Entrega (R$ 139,00)."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "No plano em que a Rango faz as entregas (Plano Entrega), a mensalidade é de R$ 139,00 por mês. Ela é descontada no primeiro repasse do mês, a menos que a loja fique isenta.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "07-embalagem-e-entrega.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Mensalidade e isenção",
+            "score": 0.8168551526449495,
+            "semantic": 0.8097930752070706,
+            "keyword": 0.8333333333333334,
+            "content": "Planos e taxas — Mensalidade e isenção\n\nAlém da comissão, cada plano tem uma mensalidade:\n\n- Plano Próprio: R$ 99,00 por mês.\n- Plano Entrega: R$ 139,"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Os três planos",
+            "score": 0.7983068272559373,
+            "semantic": 0.7832954675084819,
+            "keyword": 0.8333333333333334,
+            "content": "Planos e taxas — Os três planos\n\nA Rango oferece três planos para lojas parceiras. A diferença entre eles é quem faz a entrega e, por isso, quanto a l"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Rango Chama",
+            "score": 0.7439956154655905,
+            "semantic": 0.777136593522272,
+            "keyword": 0.6666666666666666,
+            "content": "Planos e taxas — Rango Chama\n\nO Rango Chama é o entregador avulso da Rango, para lojas que fazem entrega própria (Plano Próprio e área própria do Plan"
+          },
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "Entrega própria e entrega Rango",
+            "score": 0.7341798721333388,
+            "semantic": 0.763114103047627,
+            "keyword": 0.6666666666666666,
+            "content": "Embalagem e entrega — Entrega própria e entrega Rango\n\nO plano define quem faz a entrega:\n\n- **Entrega própria:** no Plano Próprio e na área própria d"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de entrega por plano",
+            "score": 0.7288957907323654,
+            "semantic": 0.7555654153319508,
+            "keyword": 0.6666666666666666,
+            "content": "Planos e taxas — Taxa de entrega por plano\n\n- **Plano Próprio:** a loja define a taxa de entrega, em até 5 faixas de distância, na tela Configurações "
+          }
+        ],
+        "context": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "",
+            "chars": 6043
+          },
+          {
+            "source": "07-embalagem-e-entrega.md",
+            "section": "",
+            "chars": 4310
+          }
+        ],
+        "searchQuery": "Qual é o valor da mensalidade no plano em que a Rango faz as entregas?",
+        "usage": {
+          "calls": 4,
+          "inputTokens": 4470,
+          "outputTokens": 76
+        },
+        "latencyMs": 11975,
+        "routerMs": 1180,
+        "route": "rag"
+      },
+      "latencyMs": 22352,
+      "usage": {
+        "calls": 7,
+        "inputTokens": 9011,
+        "outputTokens": 121
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 134,
+        "tipo": "multi_turno",
+        "turnos": [
+          "Como eu peço para a Rango remover uma avaliação com ofensa?",
+          "E quanto tempo vocês levam para responder?"
+        ],
+        "fonte_esperada": [
+          "06-avaliacoes-e-reputacao.md"
+        ],
+        "deve_conter": [
+          "3 dias úteis"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "\"E quanto tempo para responder?\": prazo de resposta da moderação (3 dias úteis), sabendo que o assunto é a remoção de uma avaliação."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "A Rango responde em até 3 dias úteis.",
+        "sources": [
+          "06-avaliacoes-e-reputacao.md",
+          "09-suporte-e-chamados.md",
+          "05-horarios-pausas-e-disponibilidade.md"
+        ],
+        "retrieved": [
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Moderação manual",
+            "score": 0.7716133788725027,
+            "semantic": 0.8344476841035754,
+            "keyword": 0.625,
+            "content": "Avaliações e reputação — Moderação manual\n\nA loja pode pedir a remoção de uma avaliação que viole as regras da Rango, como comentários com ofensas, da"
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.6846043386520437,
+            "semantic": 0.763720483788634,
+            "keyword": 0.5,
+            "content": "Avaliações e reputação — Quando abrir um chamado\n\nUse o botão Pedir moderação na tela Avaliações para pedir a remoção de uma avaliação. Abra um chamad"
+          },
+          {
+            "source": "09-suporte-e-chamados.md",
+            "section": "Escalonamento e ouvidoria",
+            "score": 0.6824172064764954,
+            "semantic": 0.7605960092521363,
+            "keyword": 0.5,
+            "content": "Suporte e chamados — Escalonamento e ouvidoria\n\nSe um chamado for reaberto 2 vezes e o problema continuar, a loja pode levar o caso à ouvidoria da Ran"
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "Fechamento preventivo",
+            "score": 0.6376901264734087,
+            "semantic": 0.6967001806762981,
+            "keyword": 0.5,
+            "content": "Horários, pausas e disponibilidade — Fechamento preventivo\n\nO fechamento preventivo protege o cliente de pedir numa loja que não está respondendo. Qua"
+          },
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "Como a nota é calculada",
+            "score": 0.6245040754115221,
+            "semantic": 0.7314343934450316,
+            "keyword": 0.375,
+            "content": "Avaliações e reputação — Como a nota é calculada\n\nA nota da loja é a média das notas das avaliações recebidas nos últimos 90 dias. Avaliações mais ant"
+          }
+        ],
+        "context": [
+          {
+            "source": "06-avaliacoes-e-reputacao.md",
+            "section": "",
+            "chars": 4005
+          },
+          {
+            "source": "09-suporte-e-chamados.md",
+            "section": "",
+            "chars": 4480
+          },
+          {
+            "source": "05-horarios-pausas-e-disponibilidade.md",
+            "section": "",
+            "chars": 4417
+          }
+        ],
+        "searchQuery": "Quanto tempo a Rango leva para responder ao pedido de moderação de uma avaliação?",
+        "usage": {
+          "calls": 4,
+          "inputTokens": 4955,
+          "outputTokens": 32
+        },
+        "latencyMs": 9932,
+        "routerMs": 721,
+        "route": "rag"
+      },
+      "latencyMs": 24059,
+      "usage": {
+        "calls": 7,
+        "inputTokens": 8469,
+        "outputTokens": 86
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 163,
+        "tipo": "parafrase",
+        "pergunta": "Esqueci minha senha do Painel Rango, como troco?",
+        "fonte_esperada": [
+          "10-conta-acessos-e-seguranca.md"
+        ],
+        "deve_conter": [
+          "Esqueci minha senha"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Pergunta informal sobre a troca de senha; a resposta está na seção de senha, com o link da tela de login."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Para trocar a senha do Painel Rango, você pode seguir estes passos:\n\n1. Use a opção **Esqueci minha senha** na tela de login.\n2. O link de troca chegará no e-mail cadastrado.\n\nVocê também pode fazer a troca diretamente em Configurações > Segurança.",
+        "sources": [
+          "10-conta-acessos-e-seguranca.md",
+          "09-suporte-e-chamados.md"
+        ],
+        "retrieved": [
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Golpes comuns",
+            "score": 0.7405024079626783,
+            "semantic": 0.7150034399466834,
+            "keyword": 0.8,
+            "content": "Conta, acessos e segurança — Golpes comuns\n\nGolpistas costumam se passar pela Rango para roubar acessos ou dinheiro da loja. Os golpes mais comuns são"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Sessão do Painel Rango",
+            "score": 0.7116261088388116,
+            "semantic": 0.7594658697697309,
+            "keyword": 0.6,
+            "content": "Conta, acessos e segurança — Sessão do Painel Rango\n\nDepois do login, a sessão do Painel Rango dura 12 horas. Passado esse tempo, o usuário precisa en"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Como a Rango fala com a loja",
+            "score": 0.6928322721231585,
+            "semantic": 0.732617531604512,
+            "keyword": 0.6,
+            "content": "Conta, acessos e segurança — Como a Rango fala com a loja\n\nA Rango nunca pede senha ou código por telefone ou WhatsApp e nunca cobra para liberar repa"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Usuários da loja",
+            "score": 0.6855498071507489,
+            "semantic": 0.7222140102153555,
+            "keyword": 0.6,
+            "content": "Conta, acessos e segurança — Usuários da loja\n\nCada pessoa que usa o Painel Rango ou o Rango Loja precisa de um usuário próprio, com e-mail e senha. N"
+          },
+          {
+            "source": "09-suporte-e-chamados.md",
+            "section": "Quando não é preciso abrir um chamado",
+            "score": 0.6796071581514559,
+            "semantic": 0.713724511644937,
+            "keyword": 0.6,
+            "content": "Suporte e chamados — Quando não é preciso abrir um chamado\n\nMuitas ações a loja faz sozinha no Painel Rango: pausar itens em Cardápio, programar pausa"
+          }
+        ],
+        "context": [
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "",
+            "chars": 4688
+          },
+          {
+            "source": "09-suporte-e-chamados.md",
+            "section": "",
+            "chars": 4480
+          }
+        ],
+        "searchQuery": "Esqueci minha senha do Painel Rango, como troco?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 3711,
+          "outputTokens": 68
+        },
+        "latencyMs": 3827,
+        "routerMs": 1845,
+        "route": "rag"
+      },
+      "latencyMs": 3827,
+      "usage": {
+        "calls": 3,
+        "inputTokens": 3711,
+        "outputTokens": 68
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 165,
+        "tipo": "parafrase",
+        "pergunta": "quanto a Rango cobra pra adiantar a grana das vendas?",
+        "fonte_esperada": [
+          "02-repasse-financeiro.md"
+        ],
+        "deve_conter": [
+          "2,49%"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Gíria para antecipação do repasse: 'adiantar a grana' no lugar de antecipação."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "A taxa da antecipação é de 2,49% sobre o valor antecipado.",
+        "sources": [
+          "01-planos-e-taxas.md",
+          "11-pagamentos-e-fiscal.md",
+          "02-repasse-financeiro.md"
+        ],
+        "retrieved": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Os três planos",
+            "score": 0.6438388952818536,
+            "semantic": 0.7360963810148928,
+            "keyword": 0.42857142857142855,
+            "content": "Planos e taxas — Os três planos\n\nA Rango oferece três planos para lojas parceiras. A diferença entre eles é quem faz a entrega e, por isso, quanto a l"
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Informe anual",
+            "score": 0.6359463009443636,
+            "semantic": 0.72482124624705,
+            "keyword": 0.42857142857142855,
+            "content": "Pagamentos e fiscal — Informe anual\n\nA Rango disponibiliza um informe anual com o total das vendas pelo app, o total repassado e o total cobrado pela "
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos do repasse",
+            "score": 0.6187390618243301,
+            "semantic": 0.761463965871492,
+            "keyword": 0.2857142857142857,
+            "content": "Repasse financeiro — Descontos do repasse\n\nO repasse chega líquido. Do valor das vendas pagas pelo app, a Rango desconta:\n\n- A comissão do plano, calc"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "O que é o repasse",
+            "score": 0.6046930510455316,
+            "semantic": 0.7413982361874941,
+            "keyword": 0.2857142857142857,
+            "content": "Repasse financeiro — O que é o repasse\n\nO repasse é a transferência que a Rango faz para a conta bancária da loja com o dinheiro das vendas pagas pelo"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Taxa de serviço ao cliente",
+            "score": 0.6022331892242077,
+            "semantic": 0.7378841478713171,
+            "keyword": 0.2857142857142857,
+            "content": "Planos e taxas — Taxa de serviço ao cliente\n\nA Rango cobra do cliente uma taxa de serviço por pedido, que vai de R$ 0,99 a R$ 1,99. Essa taxa é paga p"
+          }
+        ],
+        "context": [
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "",
+            "chars": 6043
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "",
+            "chars": 3794
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "",
+            "chars": 5342
+          }
+        ],
+        "searchQuery": "quanto a Rango cobra pra adiantar a grana das vendas?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 5564,
+          "outputTokens": 24
+        },
+        "latencyMs": 2957,
+        "routerMs": 1318,
+        "route": "rag"
+      },
+      "latencyMs": 2957,
+      "usage": {
+        "calls": 3,
+        "inputTokens": 5564,
+        "outputTokens": 24
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 168,
+        "tipo": "aberta",
+        "pergunta": "O que eu preciso saber sobre o repasse?",
+        "fonte_esperada": [
+          "02-repasse-financeiro.md"
+        ],
+        "deve_conter": [
+          "quarta"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Pergunta ampla sobre o repasse: ciclo semanal, dia do pagamento e antecipação em seções diferentes."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "O repasse é semanal e transfere o dinheiro das vendas pagas pelo app, descontadas a comissão, as taxas e outros valores devidos. O pagamento cai na quarta-feira seguinte na conta cadastrada, para pedidos concluídos de segunda a domingo. \n\nAlguns pontos importantes:\n1. O valor mínimo para o repasse é R$ 20,00; se ficar abaixo, o saldo acumula para a semana seguinte.\n2. Em feriados bancários nacionais na quarta-feira, o pagamento ocorre no próximo dia útil.\n3. A loja pode antecipar valores no Financeiro > Antecipação, respeitando o mínimo de R$ 100,00 e a taxa de 2,49%.\n4. É possível acompanhar o extrato e os status (como Em apuração, Agendado ou Pago) em Financeiro > Extrato.",
+        "sources": [
+          "02-repasse-financeiro.md",
+          "11-pagamentos-e-fiscal.md",
+          "10-conta-acessos-e-seguranca.md"
+        ],
+        "retrieved": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Descontos do repasse",
+            "score": 0.6669273754882953,
+            "semantic": 0.7384676792689933,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Descontos do repasse\n\nO repasse chega líquido. Do valor das vendas pagas pelo app, a Rango desconta:\n\n- A comissão do plano, calc"
+          },
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "Antecipação",
+            "score": 0.6644853257537109,
+            "semantic": 0.7349790367910156,
+            "keyword": 0.5,
+            "content": "Repasse financeiro — Antecipação\n\nA loja pode antecipar o recebimento de vendas que ainda não foram repassadas. A antecipação é pedida no Financeiro, "
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "Tributos",
+            "score": 0.6444443898008274,
+            "semantic": 0.7063491282868963,
+            "keyword": 0.5,
+            "content": "Pagamentos e fiscal — Tributos\n\nA Rango não faz retenção de tributos na fonte sobre o repasse. O repasse chega só com os descontos descritos no extrat"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Troca de conta bancária",
+            "score": 0.6357615144622347,
+            "semantic": 0.6939450206603354,
+            "keyword": 0.5,
+            "content": "Conta, acessos e segurança — Troca de conta bancária\n\nA conta bancária que recebe o repasse é cadastrada em Configurações > Conta bancária. Só o perfi"
+          },
+          {
+            "source": "01-planos-e-taxas.md",
+            "section": "Quando abrir um chamado",
+            "score": 0.62745112175118,
+            "semantic": 0.6820730310731142,
+            "keyword": 0.5,
+            "content": "Planos e taxas — Quando abrir um chamado\n\nAbra um chamado do tipo Financeiro em Ajuda > Abrir chamado se a comissão, a taxa de pagamento ou a mensalid"
+          }
+        ],
+        "context": [
+          {
+            "source": "02-repasse-financeiro.md",
+            "section": "",
+            "chars": 5342
+          },
+          {
+            "source": "11-pagamentos-e-fiscal.md",
+            "section": "",
+            "chars": 3794
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "",
+            "chars": 4688
+          }
+        ],
+        "searchQuery": "O que eu preciso saber sobre o repasse?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 5022,
+          "outputTokens": 191
+        },
+        "latencyMs": 4111,
+        "routerMs": 1084,
+        "route": "rag"
+      },
+      "latencyMs": 4111,
+      "usage": {
+        "calls": 3,
+        "inputTokens": 5022,
+        "outputTokens": 191
+      },
+      "contextMissing": []
+    },
+    {
+      "question": {
+        "id": 170,
+        "tipo": "aberta",
+        "pergunta": "Quais cuidados devo ter com a segurança da minha conta?",
+        "fonte_esperada": [
+          "10-conta-acessos-e-seguranca.md"
+        ],
+        "deve_conter": [
+          "2 etapas"
+        ],
+        "esperado": "resposta",
+        "rota_esperada": "rag",
+        "nota": "Pergunta ampla sobre segurança: senha, verificação em 2 etapas e perfis de acesso."
+      },
+      "reply": {
+        "status": "answered",
+        "answer": "Para manter sua conta segura, siga estes cuidados:\n\n1. Use um usuário próprio para cada pessoa, sem compartilhar senhas entre funcionários.\n2. Crie uma senha com no mínimo 10 caracteres (frase longa, letras, números e símbolos) e diferente de outros serviços.\n3. Ative a verificação em 2 etapas (obrigatória para Dono e recomendada para Gerente e Operador).\n4. Desconfie de golpes: a Rango nunca pede senha, código ou pagamento para liberar repasses por telefone ou WhatsApp.\n5. Revise os usuários e remova o acesso de quem sair da equipe no mesmo dia.",
+        "sources": [
+          "10-conta-acessos-e-seguranca.md"
+        ],
+        "retrieved": [
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Senha",
+            "score": 0.6508387058362083,
+            "semantic": 0.7154838654802976,
+            "keyword": 0.5,
+            "content": "Conta, acessos e segurança — Senha\n\nA senha precisa ter no mínimo 10 caracteres. Use uma frase longa ou uma combinação de palavras, números e símbolos"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Usuários da loja",
+            "score": 0.6287227919845302,
+            "semantic": 0.6838897028350431,
+            "keyword": 0.5,
+            "content": "Conta, acessos e segurança — Usuários da loja\n\nCada pessoa que usa o Painel Rango ou o Rango Loja precisa de um usuário próprio, com e-mail e senha. N"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Perfis e permissões",
+            "score": 0.6261792950616254,
+            "semantic": 0.680256135802322,
+            "keyword": 0.5,
+            "content": "Conta, acessos e segurança — Perfis e permissões\n\nCada usuário tem um perfil, que define o que ele pode fazer:\n\n- **Dono:** acesso a tudo, inclusive F"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Se a conta foi invadida",
+            "score": 0.6189373734225682,
+            "semantic": 0.7413391048893831,
+            "keyword": 0.3333333333333333,
+            "content": "Conta, acessos e segurança — Se a conta foi invadida\n\n1. Troque a senha imediatamente em Configurações > Segurança ou pela opção Esqueci minha senha.\n"
+          },
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "Golpes comuns",
+            "score": 0.6097643667080246,
+            "semantic": 0.7282348095828923,
+            "keyword": 0.3333333333333333,
+            "content": "Conta, acessos e segurança — Golpes comuns\n\nGolpistas costumam se passar pela Rango para roubar acessos ou dinheiro da loja. Os golpes mais comuns são"
+          }
+        ],
+        "context": [
+          {
+            "source": "10-conta-acessos-e-seguranca.md",
+            "section": "",
+            "chars": 4688
+          }
+        ],
+        "searchQuery": "Quais cuidados devo ter com a segurança da minha conta?",
+        "usage": {
+          "calls": 3,
+          "inputTokens": 2494,
+          "outputTokens": 140
+        },
+        "latencyMs": 16321,
+        "routerMs": 1461,
+        "route": "rag"
+      },
+      "latencyMs": 16321,
+      "usage": {
+        "calls": 3,
+        "inputTokens": 2494,
+        "outputTokens": 140
+      },
+      "contextMissing": []
+    }
+  ],
+  "scores": [
+    {
+      "id": 116,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 119,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 124,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 126,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 132,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 134,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 163,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 165,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 168,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    },
+    {
+      "id": 170,
+      "inScope": true,
+      "hit": true,
+      "hitAll": null,
+      "correct": true,
+      "refusedCorrectly": null,
+      "refusalTypeMatches": null,
+      "falseRefusal": false,
+      "forbiddenFound": [],
+      "routeMatches": true,
+      "falseSmallTalk": false,
+      "conversationCorrect": null,
+      "contextSufficient": true,
+      "failureCause": null
+    }
+  ],
+  "metrics": {
+    "total": 10,
+    "inScope": 10,
+    "hitAtK": 1,
+    "accuracy": 1,
+    "correctRefusal": 0,
+    "falseRefusal": 0,
+    "latencyP50Ms": 4111,
+    "latencyP95Ms": 24300,
+    "errors": 0,
+    "usage": {
+      "calls": 35,
+      "inputTokens": 49137,
+      "outputTokens": 804
+    },
+    "routing": {
+      "routeAccuracy": 1,
+      "falseSmallTalk": 0,
+      "falseSmallTalkIds": [],
+      "avoidedSearches": 0,
+      "greetingAccuracy": 0,
+      "conversationAccuracy": 0,
+      "mixedAccuracy": 0,
+      "shortRagLatencyAvgMs": 11095.714285714286
+    },
+    "contextSufficiency": 1
+  }
+}

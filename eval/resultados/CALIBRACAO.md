@@ -40,3 +40,18 @@ Todas as metas do RF2 foram atingidas na `v2`. A comparação completa está em 
 
 - **Pergunta 13** ("Se eu pausar muito a loja, minha nota cai?") ficou em fallback nas 4 execuções, com os trechos dos dois documentos esperados entre os recuperados. A base diz que pausas frequentes reduzem a visibilidade e que as causas dos fechamentos pioram as métricas de desempenho, mas não diz que a pausa derruba a nota. O modelo de resposta trata isso como informação ausente. Não é um problema de parâmetro de busca: fica como ponto de análise para o prompt ou para a redação da pergunta, numa tarefa separada.
 - **Pergunta 9** oscila entre resposta e fallback com os mesmos trechos. A variação vem do modelo de resposta, não da busca.
+
+## Contexto por documento (`v5`)
+
+Passo 2 da change `reduce-false-refusals`: a busca continua por trecho, mas o modelo recebe até 3 documentos inteiros (`contextMode: "documents"`). Duas rodadas completas das 73 perguntas, com o `padrao` e o mesmo commit, só trocando o modo de contexto.
+
+| Rodada | Contexto | Acerto | Falsa recusa | Contexto suficiente | Recusa correta | Tokens de entrada |
+|---|---|---|---|---|---|---|
+| [`v5-baseline`](v5-baseline.md) | `chunks` | 68,9% | 26,7% | 88,9% | 100% | 120.255 |
+| [`v5-docs`](v5-docs.md) | `documents` | 91,1% | 6,7% | 97,8% | 100% | 250.446 |
+
+Dez perguntas passaram de erro a acerto (116, 119, 124, 126, 132, 134, 163, 165, 168 e 170) e nenhuma piorou. Repetidas uma vez ([`v5-docs-rep`](v5-docs-rep.md)), as dez acertaram de novo. Nenhuma das 16 perguntas de recusa passou a ser respondida.
+
+**Decisão:** o critério do passo 2 passou. O `padrao` fica em `documents` com `maxContextDocs` 3. O custo é o dobro dos tokens de entrada, dentro do limite por minuto com `--delay-ms 4000`.
+
+A `v5-docs` esbarrou na cota do Gemini no meio da rodada (5 perguntas com `LlmQuotaError`); depois da troca da chave, só essas e as pendentes foram refeitas com `--append`.
