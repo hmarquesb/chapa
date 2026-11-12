@@ -152,11 +152,15 @@ export function deleteSession(
   id: string,
   fetchFn: typeof fetch = defaultFetch,
 ): Promise<ApiResult<null>> {
-  return deleteRequest(`/api/sessions/${encodeURIComponent(id)}`, fetchFn)
+  return emptyRequest("DELETE", `/api/sessions/${encodeURIComponent(id)}`, fetchFn)
 }
 
 export function deleteAccount(fetchFn: typeof fetch = defaultFetch): Promise<ApiResult<null>> {
-  return deleteRequest("/api/account", fetchFn)
+  return emptyRequest("DELETE", "/api/account", fetchFn)
+}
+
+export function markWelcomeSeen(fetchFn: typeof fetch = defaultFetch): Promise<ApiResult<null>> {
+  return emptyRequest("POST", "/api/account/welcome", fetchFn)
 }
 
 export function saveProfile(
@@ -176,10 +180,14 @@ export function saveProfile(
   )
 }
 
-async function deleteRequest(url: string, fetchFn: typeof fetch): Promise<ApiResult<null>> {
+async function emptyRequest(
+  method: "DELETE" | "POST",
+  url: string,
+  fetchFn: typeof fetch,
+): Promise<ApiResult<null>> {
   let response: Response
   try {
-    response = await fetchFn(url, { method: "DELETE", cache: "no-store" })
+    response = await fetchFn(url, { method, cache: "no-store" })
   } catch {
     return { ok: false, status: 0, error: NETWORK_ERROR_MESSAGE }
   }
