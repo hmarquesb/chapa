@@ -13,6 +13,7 @@ export type LogEntry = {
   accountId?: string // id da conta da sessão, quando houver; nunca o e-mail
   replyStatus?: ReplyStatus
   replyRoute?: ReplyRoute // rota que decidiu o turno; ausente quando a entrada foi bloqueada
+  routerMs?: number // latência da chamada do roteador de conversa; ausente quando ele não rodou
   llmCalls?: number
   inputTokens?: number
   outputTokens?: number
