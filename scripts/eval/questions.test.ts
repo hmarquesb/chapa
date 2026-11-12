@@ -7,6 +7,7 @@ import { validateInput } from "@/core/guardrails"
 import { KNOWLEDGE_FILE_PATTERN } from "@/core/rag/ingest"
 import type { Assistant, AssistantReply, HandleMessageInput, Usage } from "@/core/types"
 import {
+  CONVERSATION_TYPES,
   type EvalQuestion,
   type EvalQuestionType,
   IN_SCOPE_TYPES,
@@ -31,12 +32,13 @@ function q(overrides: Partial<EvalQuestion> & { id: number }): EvalQuestion {
     fonte_esperada: ["01-a.md"],
     deve_conter: ["termo"],
     esperado: "resposta",
+    rota_esperada: "rag",
     nota: "nota",
     ...overrides,
   }
 }
 
-// Conjunto mínimo válido com a distribuição exigida (15/6/5/5/5/7/4/3), com uma pergunta
+// Conjunto mínimo válido com a distribuição exigida (15/6/5/5/5/7/4/3/4/4/4), com uma pergunta
 // factual por arquivo de FILES.
 function validSet(): EvalQuestion[] {
   const items: EvalQuestion[] = []
@@ -60,14 +62,63 @@ function validSet(): EvalQuestion[] {
       tipo: "fora_de_escopo",
       pergunta: "x?",
       esperado: "fallback",
+      rota_esperada: "rag",
       nota: "n",
     })
   }
   for (let i = 0; i < 4; i++) {
-    items.push({ id: id++, tipo: "adversarial", pergunta: "z?", esperado: "recusa", nota: "n" })
+    items.push({
+      id: id++,
+      tipo: "adversarial",
+      pergunta: "z?",
+      esperado: "recusa",
+      rota_esperada: "rag",
+      nota: "n",
+    })
   }
   for (let i = 0; i < 3; i++) {
-    items.push({ id: id++, tipo: "bloqueio", pergunta: "y?", esperado: "recusa", nota: "n" })
+    items.push({
+      id: id++,
+      tipo: "bloqueio",
+      pergunta: "y?",
+      esperado: "recusa",
+      rota_esperada: "rag",
+      nota: "n",
+    })
+  }
+  for (let i = 0; i < 4; i++) {
+    items.push({
+      id: id++,
+      tipo: "cumprimento",
+      pergunta: "bom dia",
+      perfil: { version: 2, name: "Cantina" },
+      deve_conter: ["Bom dia, Cantina"],
+      esperado: "conversa",
+      rota_esperada: "cumprimento",
+      nota: "n",
+    })
+  }
+  for (let i = 0; i < 4; i++) {
+    items.push({
+      id: id++,
+      tipo: "conversa",
+      pergunta: "valeu",
+      esperado: "conversa",
+      rota_esperada: "conversa",
+      nota: "n",
+    })
+  }
+  for (let i = 0; i < 4; i++) {
+    items.push({
+      id: id++,
+      tipo: "misto",
+      pergunta: "bom dia! taxa?",
+      fonte_esperada: ["01-a.md"],
+      deve_conter: ["bom dia", "11%"],
+      esperado: "resposta",
+      rota_esperada: "rag",
+      nota: "n",
+    })
   }
   return items
 }
@@ -96,14 +147,14 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
     expect(KNOWLEDGE_FILES.length).toBe(11)
     const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     expect(result.ok ? [] : result.errors).toEqual([])
-    expect(result.ok && result.questions).toHaveLength(50)
+    expect(result.ok && result.questions).toHaveLength(62)
   })
 
-  it("uses the ids 101 to 150, grouped by type in the distribution order", async () => {
+  it("uses the ids 101 to 162, grouped by type in the distribution order", async () => {
     const result = await validateQuestions(REAL_QUESTIONS, KNOWLEDGE_FILES)
     if (!result.ok) throw new Error(result.errors.join("\n"))
     expect(result.questions.map((item) => item.id)).toEqual(
-      Array.from({ length: 50 }, (_, i) => 101 + i),
+      Array.from({ length: 62 }, (_, i) => 101 + i),
     )
     const order: EvalQuestionType[] = [
       "factual",
@@ -114,6 +165,9 @@ describe("validateQuestions with the real eval/perguntas.json", () => {
       "fora_de_escopo",
       "adversarial",
       "bloqueio",
+      "cumprimento",
+      "conversa",
+      "misto",
     ]
     const types = result.questions.map((item) => item.tipo)
     expect([...types].sort((a, b) => order.indexOf(a) - order.indexOf(b))).toEqual(types)
@@ -186,9 +240,9 @@ describe("validateQuestions", () => {
     ])
   })
 
-  it("requires exactly 50 items", async () => {
-    const errors = await errorsOf(validSet().slice(0, 49))
-    expect(errors).toContain("São 49 perguntas; precisam ser 50.")
+  it("requires exactly 62 items", async () => {
+    const errors = await errorsOf(validSet().slice(0, 61))
+    expect(errors).toContain("São 61 perguntas; precisam ser 62.")
   })
 
   it("rejects duplicated ids", async () => {
@@ -209,6 +263,69 @@ describe("validateQuestions", () => {
     const items: unknown[] = validSet()
     replace(items, 1, { tipo: "outro" })
     expect(await errorsOf(items)).toContain('Pergunta 2: tipo inválido "outro".')
+  })
+
+  it("accepts the three conversation types with their esperado and route", async () => {
+    const items = validSet()
+    expect(items.filter((item) => item.tipo === "cumprimento")).toHaveLength(4)
+    expect(items.filter((item) => item.tipo === "conversa")).toHaveLength(4)
+    expect(items.filter((item) => item.tipo === "misto")).toHaveLength(4)
+    expect(await errorsOf(items)).toEqual([])
+    expect(CONVERSATION_TYPES).toEqual(new Set(["cumprimento", "conversa", "misto"]))
+    expect(IN_SCOPE_TYPES.has("misto")).toBe(false)
+  })
+
+  it("requires esperado conversa in cumprimento and conversa, and resposta in misto", async () => {
+    const items = validSet()
+    const a = replace(items, firstOf(items, "cumprimento"), { esperado: "resposta" })
+    const b = replace(items, firstOf(items, "conversa"), { esperado: "fallback" })
+    const c = replace(items, firstOf(items, "misto"), { esperado: "conversa" })
+    const errors = await errorsOf(items)
+    expect(errors).toContain(`Pergunta ${a}: tipo cumprimento precisa de esperado "conversa".`)
+    expect(errors).toContain(`Pergunta ${b}: tipo conversa precisa de esperado "conversa".`)
+    expect(errors).toContain(`Pergunta ${c}: tipo misto precisa de esperado "resposta".`)
+  })
+
+  it("requires rota_esperada coherent with the type", async () => {
+    const items = validSet()
+    const a = replace(items, firstOf(items, "multi_turno"), { rota_esperada: "conversa" })
+    const b = replace(items, firstOf(items, "cumprimento"), { rota_esperada: "rag" })
+    const c = replace(items, firstOf(items, "conversa"), { rota_esperada: "cumprimento" })
+    const errors = await errorsOf(items)
+    expect(errors).toContain(`Pergunta ${a}: tipo multi_turno precisa de rota_esperada "rag".`)
+    expect(errors).toContain(
+      `Pergunta ${b}: tipo cumprimento precisa de rota_esperada "cumprimento".`,
+    )
+    expect(errors).toContain(`Pergunta ${c}: tipo conversa precisa de rota_esperada "conversa".`)
+  })
+
+  it("requires rota_esperada on every question", async () => {
+    const items = validSet()
+    replace(items, 0, { rota_esperada: undefined })
+    expect(await errorsOf(items)).toContain("Pergunta 1: falta rota_esperada.")
+  })
+
+  it("requires perfil.name in cumprimento questions", async () => {
+    const items = validSet()
+    const index = firstOf(items, "cumprimento")
+    const noName = replace(items, index, { perfil: { version: 2 } })
+    const noProfile = replace(items, index + 1, { perfil: undefined })
+    const blank = replace(items, index + 2, { perfil: { version: 2, name: "  " } })
+    const errors = await errorsOf(items)
+    for (const id of [noName, noProfile, blank]) {
+      expect(errors).toContain(`Pergunta ${id}: cumprimento precisa de perfil.name preenchido.`)
+    }
+  })
+
+  it("requires 1 to 3 deve_conter terms in cumprimento and misto, optional in conversa", async () => {
+    const items = validSet()
+    const a = replace(items, firstOf(items, "cumprimento"), { deve_conter: undefined })
+    const b = replace(items, firstOf(items, "misto"), { deve_conter: [] })
+    replace(items, firstOf(items, "conversa"), { deve_conter: undefined })
+    const errors = await errorsOf(items)
+    expect(errors).toContain(`Pergunta ${a}: deve_conter precisa ter de 1 a 3 termos não vazios.`)
+    expect(errors).toContain(`Pergunta ${b}: deve_conter precisa ter de 1 a 3 termos não vazios.`)
+    expect(errors).toHaveLength(2)
   })
 
   it("treats perfil as in scope and adversarial as out of scope", () => {

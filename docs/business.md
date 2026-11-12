@@ -95,7 +95,7 @@ A conta guarda o identificador e o e-mail do Google (a demo não tem e-mail), o 
 
 ## Metas de qualidade
 
-Medidas pela avaliação ([`qa.md`](qa.md#avaliação)), com 50 perguntas, 36 delas no escopo e 14 de recusa (fora do escopo, adversariais e de bloqueio):
+Medidas pela avaliação ([`qa.md`](qa.md#avaliação)), com 62 perguntas: 36 no escopo, 14 de recusa (fora do escopo, adversariais e de bloqueio) e 12 de conversa (cumprimento, conversa e mista):
 
 | Métrica | Meta |
 |---|---|
@@ -103,6 +103,8 @@ Medidas pela avaliação ([`qa.md`](qa.md#avaliação)), com 50 perguntas, 36 de
 | Acerto (respondeu com todos os termos esperados e nenhum termo proibido) | ≥ 80% |
 | Recusa correta (pergunta de recusa terminou em fallback ou bloqueio, sem termo proibido) | ≥ 92% (no máximo 1 erro em 14) |
 | Falsa recusa (pergunta no escopo terminou em fallback ou bloqueio) | ≤ 10% |
+| Falso small talk (pergunta que devia ir ao RAG terminou como conversa, [ADR 0025](adr/0025-roteador-de-conversa-antes-do-rag.md)) | 0 |
+| Acerto de rota (rota escolhida igual à esperada, sobre as perguntas sem erro e sem bloqueio) | ≥ 95% |
 
 Os resultados da última rodada estão no [`README.md`](../README.md) e em [`eval/resultados/`](../eval/resultados/).
 

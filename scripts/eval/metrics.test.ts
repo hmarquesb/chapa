@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 import type { AssistantReply, RetrievedChunk, Usage } from "@/core/types"
-import { aggregate, percentile, type QuestionResult, scoreQuestion } from "./metrics"
+import {
+  aggregate,
+  type Metrics,
+  percentile,
+  type QuestionResult,
+  ROUTE_TARGETS,
+  scoreQuestion,
+} from "./metrics"
 import type { EvalQuestion } from "./questions"
 
 const ONE_CALL: Usage = { calls: 1, inputTokens: 10, outputTokens: 5 }
@@ -40,6 +47,7 @@ function question(overrides: Partial<EvalQuestion> = {}): EvalQuestion {
     fonte_esperada: ["01-planos-e-taxas.md"],
     deve_conter: ["12%"],
     esperado: "resposta",
+    rota_esperada: "rag",
     nota: "nota",
     ...overrides,
   }
@@ -96,6 +104,9 @@ describe("scoreQuestion", () => {
       refusalTypeMatches: null,
       falseRefusal: false,
       forbiddenFound: [],
+      routeMatches: true,
+      falseSmallTalk: false,
+      conversationCorrect: null,
     })
   })
 
@@ -158,6 +169,9 @@ describe("scoreQuestion", () => {
       refusalTypeMatches: true,
       falseRefusal: null,
       forbiddenFound: [],
+      routeMatches: true,
+      falseSmallTalk: false,
+      conversationCorrect: null,
     })
     expect(scoreQuestion(result(OUT_OF_SCOPE, { status: "blocked_output" }))).toMatchObject({
       refusedCorrectly: true,
@@ -251,6 +265,9 @@ describe("scoreQuestion", () => {
       refusalTypeMatches: null,
       falseRefusal: false,
       forbiddenFound: [],
+      routeMatches: null,
+      falseSmallTalk: null,
+      conversationCorrect: null,
     })
     expect(scoreQuestion(result(MULTI_DOC, null, { error: "X" }))).toMatchObject({
       hit: false,
@@ -310,8 +327,8 @@ describe("aggregate", () => {
   ]
 
   it("computes the RF2 metrics", () => {
-    const metrics = aggregate(results)
-    expect(metrics).toEqual({
+    const metrics = aggregate(results, 12)
+    expect(metrics).toMatchObject({
       total: 7,
       inScope: 4,
       hitAtK: 2 / 4,
@@ -332,13 +349,13 @@ describe("aggregate", () => {
       result({ id: 3 }, {}, { judge: null }),
       result({ id: 4 }, {}),
     ]
-    expect(aggregate(judged).judgeAvg).toEqual({ corretude: 3, fidelidade: 4 })
-    expect(aggregate([result({ id: 1 }, {}, { judge: null })]).judgeAvg).toBeNull()
-    expect(aggregate(results).judgeAvg).toBeUndefined()
+    expect(aggregate(judged, 12).judgeAvg).toEqual({ corretude: 3, fidelidade: 4 })
+    expect(aggregate([result({ id: 1 }, {}, { judge: null })], 12).judgeAvg).toBeNull()
+    expect(aggregate(results, 12).judgeAvg).toBeUndefined()
   })
 
   it("returns zeros for an empty run", () => {
-    expect(aggregate([])).toEqual({
+    expect(aggregate([], 12)).toEqual({
       total: 0,
       inScope: 0,
       hitAtK: 0,
@@ -349,6 +366,203 @@ describe("aggregate", () => {
       latencyP95Ms: 0,
       errors: 0,
       usage: { calls: 0, inputTokens: 0, outputTokens: 0 },
+      routing: {
+        routeAccuracy: 0,
+        falseSmallTalk: 0,
+        falseSmallTalkIds: [],
+        avoidedSearches: 0,
+        greetingAccuracy: 0,
+        conversationAccuracy: 0,
+        mixedAccuracy: 0,
+        shortRagLatencyAvgMs: null,
+      },
     })
+  })
+})
+
+// ---------- Rotas e perguntas de conversa ----------
+
+const GREETING: Partial<EvalQuestion> = {
+  tipo: "cumprimento",
+  pergunta: "bom dia",
+  esperado: "conversa",
+  rota_esperada: "cumprimento",
+  fonte_esperada: undefined,
+  deve_conter: ["Bom dia, Cantina"],
+}
+const CHAT: Partial<EvalQuestion> = {
+  tipo: "conversa",
+  pergunta: "valeu",
+  esperado: "conversa",
+  rota_esperada: "conversa",
+  fonte_esperada: undefined,
+  deve_conter: undefined,
+  nao_deve_conter: ["Não encontrei"],
+}
+const MIXED: Partial<EvalQuestion> = {
+  tipo: "misto",
+  pergunta: "bom dia! qual a comissão?",
+  esperado: "resposta",
+  rota_esperada: "rag",
+  deve_conter: ["bom dia", "12%"],
+}
+const SMALL_TALK = (answer: string, route: "cumprimento" | "conversa" = "conversa") => ({
+  status: "small_talk" as const,
+  answer,
+  route,
+  retrieved: [],
+  sources: [],
+})
+
+describe("scoreQuestion routing", () => {
+  it("matches the chosen route of the last turn against rota_esperada", () => {
+    expect(scoreQuestion(result({}, { route: "rag" }))).toMatchObject({ routeMatches: true })
+    expect(scoreQuestion(result({}, { route: "conversa" }))).toMatchObject({ routeMatches: false })
+    expect(scoreQuestion(result(CHAT, SMALL_TALK("De nada!")))).toMatchObject({
+      routeMatches: true,
+    })
+  })
+
+  it("leaves the route null on error and on a blocked input", () => {
+    expect(scoreQuestion(result({}, null, { error: "X" }))).toMatchObject({
+      routeMatches: null,
+      falseSmallTalk: null,
+    })
+    const blocked = scoreQuestion(result(BLOCK, { status: "blocked_input", route: null }))
+    expect(blocked).toMatchObject({ routeMatches: null, falseSmallTalk: null })
+  })
+
+  it("flags a false small talk only when rota_esperada is rag", () => {
+    expect(scoreQuestion(result({}, SMALL_TALK("De nada!")))).toMatchObject({
+      falseSmallTalk: true,
+      routeMatches: false,
+    })
+    expect(scoreQuestion(result({}, { route: "rag" }))).toMatchObject({ falseSmallTalk: false })
+    expect(scoreQuestion(result(CHAT, SMALL_TALK("De nada!")))).toMatchObject({
+      falseSmallTalk: null,
+    })
+  })
+
+  it("keeps the conversation types out of the scope and refusal scores", () => {
+    const score = scoreQuestion(result(GREETING, SMALL_TALK("Bom dia, Cantina da Nonna!")))
+    expect(score).toMatchObject({
+      inScope: false,
+      hit: null,
+      correct: null,
+      refusedCorrectly: null,
+      refusalTypeMatches: null,
+      falseRefusal: null,
+    })
+  })
+
+  it("scores a cumprimento as correct with small_talk and every term", () => {
+    const ok = SMALL_TALK("Bom dia, Cantina da Nonna! Em que posso ajudar?", "cumprimento")
+    expect(scoreQuestion(result(GREETING, ok)).conversationCorrect).toBe(true)
+    expect(scoreQuestion(result(GREETING, SMALL_TALK("Olá!"))).conversationCorrect).toBe(false)
+    expect(
+      scoreQuestion(result(GREETING, { answer: "Bom dia, Cantina da Nonna" })).conversationCorrect,
+    ).toBe(false)
+    expect(scoreQuestion(result(GREETING, null, { error: "X" })).conversationCorrect).toBe(false)
+  })
+
+  it("scores a conversa as correct with small_talk, no digit and no forbidden term", () => {
+    expect(scoreQuestion(result(CHAT, SMALL_TALK("De nada!"))).conversationCorrect).toBe(true)
+    const withDigit = scoreQuestion(result(CHAT, SMALL_TALK("De nada! O repasse cai em 7 dias.")))
+    expect(withDigit.conversationCorrect).toBe(false)
+    const forbidden = scoreQuestion(result(CHAT, SMALL_TALK("Não encontrei isso.")))
+    expect(forbidden).toMatchObject({
+      conversationCorrect: false,
+      forbiddenFound: ["Não encontrei"],
+    })
+    expect(scoreQuestion(result(CHAT, { status: "fallback" })).conversationCorrect).toBe(false)
+  })
+
+  it("scores a misto as correct with answered, every term and no forbidden term", () => {
+    const ok = { answer: "Bom dia! A comissão é de 12%." }
+    expect(scoreQuestion(result(MIXED, ok)).conversationCorrect).toBe(true)
+    expect(
+      scoreQuestion(result(MIXED, { answer: "A comissão é de 12%." })).conversationCorrect,
+    ).toBe(false)
+    expect(scoreQuestion(result(MIXED, { ...ok, status: "fallback" })).conversationCorrect).toBe(
+      false,
+    )
+    const forbidden = scoreQuestion(
+      result({ ...MIXED, nao_deve_conter: ["22%"] }, { answer: "Bom dia! 12% e 22%." }),
+    )
+    expect(forbidden.conversationCorrect).toBe(false)
+  })
+
+  it("leaves conversationCorrect null for the other types", () => {
+    expect(scoreQuestion(result({}, {})).conversationCorrect).toBeNull()
+    expect(
+      scoreQuestion(result(OUT_OF_SCOPE, { status: "fallback" })).conversationCorrect,
+    ).toBeNull()
+  })
+})
+
+describe("aggregate routing", () => {
+  const results = [
+    result({ id: 1 }, { route: "rag", latencyMs: 300 }), // curta (3 palavras) no RAG
+    result({ id: 2, pergunta: "E se for Pix?" }, SMALL_TALK("De nada!")), // falso small talk
+    result(
+      {
+        id: 3,
+        pergunta:
+          "Qual a comissão do Plano Próprio para pedidos de retirada no balcão da loja hoje?",
+      },
+      { route: "rag", latencyMs: 900 },
+    ), // longa
+    result({ ...GREETING, id: 4 }, SMALL_TALK("Bom dia, Cantina da Nonna!", "cumprimento")),
+    result({ ...CHAT, id: 5 }, SMALL_TALK("De nada! Até mais.")),
+    result({ ...CHAT, id: 6 }, SMALL_TALK("São 7 dias.")), // com dígito
+    result({ ...MIXED, id: 7 }, { answer: "Bom dia! 12%.", route: "rag" }),
+    result({ ...BLOCK, id: 8 }, { status: "blocked_input", route: null }),
+    result({ id: 9 }, null, { error: "X" }),
+  ]
+  const routing = aggregate(results, 12).routing
+
+  it("computes the route accuracy over the questions with a route", () => {
+    // 7 com rota: acertam 1, 3, 4, 5, 6 (conversa) e 7; erra a 2.
+    expect(routing?.routeAccuracy).toBe(6 / 7)
+  })
+
+  it("counts the false small talk and lists the ids", () => {
+    expect(routing?.falseSmallTalk).toBe(1)
+    expect(routing?.falseSmallTalkIds).toEqual([2])
+  })
+
+  it("counts the avoided searches", () => {
+    expect(routing?.avoidedSearches).toBe(4) // 2, 4, 5 e 6
+  })
+
+  it("computes the accuracy of each conversation type", () => {
+    expect(routing?.greetingAccuracy).toBe(1)
+    expect(routing?.conversationAccuracy).toBe(1 / 2)
+    expect(routing?.mixedAccuracy).toBe(1)
+  })
+
+  it("averages the latency of the short questions that went to the RAG", () => {
+    // Com maxWords 12: a 1 (300 ms) e a 7 (6 palavras, latência 100 ms); a 3 é longa.
+    expect(routing?.shortRagLatencyAvgMs).toBe(200)
+    // Com maxWords 2: nenhuma pergunta é curta.
+    expect(aggregate(results, 2).routing?.shortRagLatencyAvgMs).toBeNull()
+  })
+
+  it("does not change the old metrics because of the conversation types", () => {
+    const old = results.filter(
+      (r) => !["cumprimento", "conversa", "misto"].includes(r.question.tipo),
+    )
+    const pick = ({ inScope, hitAtK, accuracy, correctRefusal, falseRefusal }: Metrics) => ({
+      inScope,
+      hitAtK,
+      accuracy,
+      correctRefusal,
+      falseRefusal,
+    })
+    expect(pick(aggregate(results, 12))).toEqual(pick(aggregate(old, 12)))
+  })
+
+  it("exposes the route targets", () => {
+    expect(ROUTE_TARGETS).toEqual({ falseSmallTalk: 0, routeAccuracy: 0.95 })
   })
 })

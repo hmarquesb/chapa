@@ -1,18 +1,34 @@
 // Relatório em markdown de uma rodada de avaliação (S08, RF5). Puro: usa só o EvalRun, para que
 // gerar o .md de novo a partir do .json dê o mesmo texto (RNF4).
-import type { AppConfig, RagConfig } from "@/config"
-import { type Metrics, type QuestionResult, type QuestionScore, REFUSAL_STATUSES } from "./metrics"
-import { questionMessages } from "./questions"
+import { type AppConfig, config as appConfig, type RagConfig } from "@/config"
+import {
+  type Metrics,
+  type QuestionResult,
+  type QuestionScore,
+  REFUSAL_STATUSES,
+  ROUTE_TARGETS,
+  type RouteMetrics,
+} from "./metrics"
+import { CONVERSATION_TYPES, questionMessages } from "./questions"
 
 export type EvalRun = {
   label: string
   preset: string
   date: string // ISO
   commit: string // git rev-parse --short HEAD, ou "sem-git"
-  config: { models: AppConfig["models"]; rag: RagConfig }
+  config: {
+    models: AppConfig["models"]
+    rag: RagConfig
+    router?: AppConfig["router"] // opcional: rodadas antigas não têm
+  }
   results: QuestionResult[]
   scores: QuestionScore[]
   metrics: Metrics
+}
+
+// Limite de palavras do roteador da rodada (o do config atual numa rodada sem `router`).
+export function routerMaxWords(run: Pick<EvalRun, "config">): number {
+  return run.config.router?.maxWords ?? appConfig.router.maxWords
 }
 
 const ANSWER_PREVIEW_CHARS = 300
@@ -52,6 +68,12 @@ function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max)}…` : text
 }
 
+function routerText(router: NonNullable<EvalRun["config"]["router"]>): string {
+  return router.enabled
+    ? `ligado (até ${router.maxWords} palavras)`
+    : "desligado (só a regra de cumprimento)"
+}
+
 function renderConfig(run: EvalRun): string[] {
   const { models, rag } = run.config
   const lines = [
@@ -61,6 +83,7 @@ function renderConfig(run: EvalRun): string[] {
     `- Modelo de chat: \`${models.chat}\``,
     `- Modelo rápido (reescrita, resumo e juiz): \`${models.fast}\``,
     `- Modelo de embedding: \`${models.embedding}\` (${models.embeddingDimensions} dimensões)`,
+    ...(run.config.router === undefined ? [] : [`- Roteador: ${routerText(run.config.router)}`]),
     "",
     "| Campo | Valor |",
     "|---|---|",
@@ -126,19 +149,60 @@ function renderMetrics(metrics: Metrics): string[] {
   return lines
 }
 
+function renderRoutes(routing: RouteMetrics): string[] {
+  const lines = [
+    "## Rotas",
+    "",
+    "| Métrica | Valor | Meta | Status |",
+    "|---|---|---|---|",
+    metricRow(
+      "Acerto de rota",
+      formatPercent(routing.routeAccuracy),
+      "≥ 95%",
+      routing.routeAccuracy >= ROUTE_TARGETS.routeAccuracy,
+    ),
+    metricRow(
+      "Falso small talk",
+      String(routing.falseSmallTalk),
+      "0",
+      routing.falseSmallTalk <= ROUTE_TARGETS.falseSmallTalk,
+    ),
+    metricRow("Chamadas evitadas", String(routing.avoidedSearches), "registrar", null),
+    metricRow("Acerto cumprimento", formatPercent(routing.greetingAccuracy), "registrar", null),
+    metricRow("Acerto conversa", formatPercent(routing.conversationAccuracy), "registrar", null),
+    metricRow("Acerto mistas", formatPercent(routing.mixedAccuracy), "registrar", null),
+    metricRow(
+      "Latência média das curtas no RAG",
+      routing.shortRagLatencyAvgMs === null
+        ? EMPTY
+        : `${Math.round(routing.shortRagLatencyAvgMs)} ms`,
+      "registrar",
+      null,
+    ),
+  ]
+  if (routing.falseSmallTalkIds.length > 0) {
+    lines.push("", `Falso small talk: pergunta ${routing.falseSmallTalkIds.join(", ")}.`)
+  }
+  return lines
+}
+
 function statusLabel(result: QuestionResult): string {
   if (result.reply === null) return `erro (${result.error ?? "desconhecido"})`
   return result.reply.status
 }
 
-// "Correto": no escopo, resposta certa; fora do escopo e bloqueio, recusa certa.
+// "Correto": no escopo, resposta certa; fora do escopo e bloqueio, recusa certa; nos tipos de
+// conversa, o acerto da conversa.
 function passed(score: QuestionScore): boolean | null {
+  if (score.conversationCorrect != null) return score.conversationCorrect
   return score.inScope ? score.correct : score.refusedCorrectly
 }
 
 function renderQuestions(run: EvalRun): string[] {
   const withJudge = run.results.some((result) => result.judge !== undefined)
+  const withRoute = run.metrics.routing !== undefined
   const header = ["Id", "Tipo", "Status", "Hit", "Correto", "Latência", "Fontes"]
+  if (withRoute) header.splice(3, 0, "Rota")
   if (withJudge) header.push("Juiz (corretude/fidelidade)")
   const lines = [
     "## Por pergunta",
@@ -160,6 +224,10 @@ function renderQuestions(run: EvalRun): string[] {
       `${result.latencyMs} ms`,
       sources.length === 0 ? EMPTY : sources.join(", "),
     ]
+    if (withRoute) {
+      const expected = result.question.rota_esperada ?? EMPTY
+      columns.splice(3, 0, `${expected} → ${result.reply?.route ?? EMPTY}`)
+    }
     if (withJudge) {
       columns.push(result.judge ? `${result.judge.corretude}/${result.judge.fidelidade}` : EMPTY)
     }
@@ -171,11 +239,28 @@ function renderQuestions(run: EvalRun): string[] {
 // Motivo da falha, ou null se a pergunta passou. Recusa de tipo diferente do esperado também
 // é listada, embora conte como recusa correta na métrica (nunca no adversarial, que aceita
 // qualquer recusa).
+// Motivo da falha de uma pergunta de conversa, ou null se acertou.
+function conversationFailure(result: QuestionResult, score: QuestionScore): string | null {
+  if (score.conversationCorrect) return null
+  const reply = result.reply
+  if (reply === null) return `erro (${result.error ?? "desconhecido"})`
+  const { tipo } = result.question
+  const forbidden = score.forbiddenFound ?? []
+  if (tipo === "misto" ? reply.status !== "answered" : reply.status !== "small_talk") {
+    return `${tipo === "misto" ? "não respondeu" : "não foi small_talk"} (status ${reply.status})`
+  }
+  if (forbidden.length > 0) return `resposta com termo proibido (${forbidden.join(", ")})`
+  if (tipo === "conversa") return "resposta com dígito"
+  return "resposta sem todos os termos de deve_conter"
+}
+
 function failureReason(result: QuestionResult, score: QuestionScore): string | null {
   if (result.reply === null) return `erro (${result.error ?? "desconhecido"})`
   // Campo ausente em resultados gravados antes do nao_deve_conter.
   const forbidden = score.forbiddenFound ?? []
   const status = result.reply.status
+  if (score.falseSmallTalk) return `falso small talk (rota ${result.reply.route} em vez de rag)`
+  if (CONVERSATION_TYPES.has(result.question.tipo)) return conversationFailure(result, score)
   if (score.inScope) {
     if (score.falseRefusal) return `falsa recusa (status ${status})`
     if (forbidden.length > 0) return `resposta com termo proibido (${forbidden.join(", ")})`
@@ -244,6 +329,7 @@ export function renderReport(run: EvalRun): string {
     "",
     ...renderMetrics(run.metrics),
     "",
+    ...(run.metrics.routing === undefined ? [] : [...renderRoutes(run.metrics.routing), ""]),
     ...renderQuestions(run),
     "",
     ...renderFailures(run),
