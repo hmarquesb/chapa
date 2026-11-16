@@ -26,7 +26,7 @@
 
 ## 5. Verificação manual (orquestrador)
 
-- [ ] 5.1 Com `npm run dev` no `dev`: `/base` abre numa janela anônima sem login; cada documento abre formatado, sem `**` nem `>` à mostra; `/base/README` e `/base/12-publicidade` dão 404; numa demo, o card mostra o texto novo e o link abre `/base` em aba nova sem fechar o card; uma pergunta respondida tem selos que abrem o documento em aba nova; o rodapé tem o link; a 390 px sem rolagem horizontal; nos dois temas
+- [x] 5.1 Com `npm run dev` no `dev`: `/base` abre numa janela anônima sem login; cada documento abre formatado, sem `**` nem `>` à mostra; `/base/README` e `/base/12-publicidade` dão 404; numa demo, o card mostra o texto novo e o link abre `/base` em aba nova sem fechar o card; uma pergunta respondida tem selos que abrem o documento em aba nova; o rodapé tem o link; a 390 px sem rolagem horizontal; nos dois temas
 - [x] 5.2 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` no worktree, todos verdes
 
 ## Workflow follow-up
