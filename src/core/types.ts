@@ -1,5 +1,5 @@
 import "server-only"
-import type { Channel, ReplyStatus, RestaurantProfile } from "@/lib/types"
+import type { Channel, ProgressEvent, ReplyStatus, RestaurantProfile } from "@/lib/types"
 
 // ---------- LLM ----------
 export type ChatMessage = { role: "user" | "assistant"; content: string }
@@ -184,6 +184,8 @@ export type HandleMessageInput = {
   profile?: RestaurantProfile
   // web: o perfil da conta, usado no prompt e nunca gravado na conversa. Proibido em cli e eval.
   accountProfile?: RestaurantProfile
+  // web: avisado no início de cada etapa que de fato roda. Nunca recebe conteúdo do turno.
+  onProgress?: (event: ProgressEvent) => void
 }
 
 // Rota que decidiu o turno.

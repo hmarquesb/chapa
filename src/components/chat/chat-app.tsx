@@ -120,10 +120,15 @@ export function ChatApp() {
 
     dispatch({ type: "send_started", text: message, now: new Date().toISOString() })
     setDraft("")
-    const result = await sendMessage({
-      ...(id !== null ? { sessionId: id } : {}),
-      message,
-    })
+    const result = await sendMessage(
+      { ...(id !== null ? { sessionId: id } : {}), message },
+      {
+        // An old turn's step never lands on the conversation that replaced it.
+        onProgress: (event) => {
+          if (sessionRef.current === id) dispatch({ type: "progress", event })
+        },
+      },
+    )
     if (isSignedOut(result)) {
       window.location.assign(SIGN_IN_PATH)
       return
@@ -191,7 +196,12 @@ export function ChatApp() {
             Conversas
           </Button>
         </div>
-        <MessageList messages={state.messages} sending={state.sending} loading={loadingHistory} />
+        <MessageList
+          messages={state.messages}
+          sending={state.sending}
+          loading={loadingHistory}
+          steps={state.steps}
+        />
         {empty && !loadingHistory && (
           <ExampleQuestions disabled={busy} onPick={(question) => void send(question)} />
         )}

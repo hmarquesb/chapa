@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { HttpError, json, readJsonBody } from "@/app/api/_lib/http"
+import { encodeNdjsonLine, HttpError, json, readJsonBody, wantsNdjson } from "@/app/api/_lib/http"
+import type { ChatStreamEvent } from "@/lib/types"
 
 function post(body: BodyInit | null, headers: Record<string, string> = {}): Request {
   return new Request("http://localhost/api/chat", { method: "POST", body, headers })
@@ -124,5 +125,53 @@ describe("json", () => {
     expect(res.status).toBe(429)
     expect(res.headers.get("retry-after")).toBe("12")
     expect(res.headers.get("cache-control")).toBe("no-store")
+  })
+})
+
+describe("wantsNdjson", () => {
+  const accept = (value?: string) => new Headers(value === undefined ? {} : { accept: value })
+
+  it("is false without the header or without the type", () => {
+    expect(wantsNdjson(accept())).toBe(false)
+    expect(wantsNdjson(accept("application/json"))).toBe(false)
+    expect(wantsNdjson(accept("*/*"))).toBe(false)
+  })
+
+  it("is true with the type alone, in any case", () => {
+    expect(wantsNdjson(accept("application/x-ndjson"))).toBe(true)
+    expect(wantsNdjson(accept("Application/X-NDJSON"))).toBe(true)
+  })
+
+  it("finds the type in a list and with parameters", () => {
+    expect(wantsNdjson(accept("application/json, application/x-ndjson"))).toBe(true)
+    expect(wantsNdjson(accept("application/x-ndjson;q=0.9, application/json;q=0.5"))).toBe(true)
+    expect(wantsNdjson(accept("application/json; q=1 , application/x-ndjson ; q=0.8"))).toBe(true)
+  })
+
+  it("is false when the type is refused with q=0", () => {
+    expect(wantsNdjson(accept("application/x-ndjson;q=0, application/json"))).toBe(false)
+  })
+})
+
+describe("encodeNdjsonLine", () => {
+  const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes)
+
+  it("writes one JSON line ending with a newline", () => {
+    const text = decode(encodeNdjsonLine({ type: "step", step: "writing", documents: 2 }))
+    expect(text).toBe('{"type":"step","step":"writing","documents":2}\n')
+    expect(text.indexOf("\n")).toBe(text.length - 1)
+  })
+
+  it("keeps multi-line answers on one line, as valid JSON", () => {
+    const event: ChatStreamEvent = {
+      type: "reply",
+      status: "answered",
+      answer: "Linha 1\nLinha 2 — ç",
+      sources: ["02-repasse-financeiro.md"],
+      sessionId: null,
+    }
+    const text = decode(encodeNdjsonLine(event))
+    expect(text.split("\n")).toHaveLength(2)
+    expect(JSON.parse(text)).toEqual(event)
   })
 })

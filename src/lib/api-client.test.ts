@@ -9,7 +9,12 @@ import {
   saveProfile,
   sendMessage,
 } from "@/lib/api-client"
-import type { ChatResponse, SessionHistoryResponse, SessionListResponse } from "@/lib/types"
+import type {
+  ChatResponse,
+  ProgressEvent,
+  SessionHistoryResponse,
+  SessionListResponse,
+} from "@/lib/types"
 
 const ID = "3f1c2b8e-9a4d-4c1e-8f7a-1b2c3d4e5f60"
 
@@ -42,7 +47,11 @@ describe("sendMessage", () => {
 
   it("posts JSON to /api/chat and returns the reply", async () => {
     const { fn, calls } = fakeFetch(json(reply))
-    const result = await sendMessage({ sessionId: ID, message: "O repasse cai via Pix?" }, fn)
+    const result = await sendMessage(
+      { sessionId: ID, message: "O repasse cai via Pix?" },
+      undefined,
+      fn,
+    )
     expect(result).toEqual({ ok: true, data: reply })
     expect(calls).toHaveLength(1)
     expect(calls[0]?.url).toBe("/api/chat")
@@ -62,7 +71,7 @@ describe("sendMessage", () => {
       sessionId: ID,
     }
     const { fn } = fakeFetch(json(greeting))
-    expect(await sendMessage({ sessionId: ID, message: "bom dia" }, fn)).toEqual({
+    expect(await sendMessage({ sessionId: ID, message: "bom dia" }, undefined, fn)).toEqual({
       ok: true,
       data: greeting,
     })
@@ -70,7 +79,7 @@ describe("sendMessage", () => {
 
   it("returns the API error message and status", async () => {
     const { fn } = fakeFetch(json({ error: "Muitas mensagens. Espere um pouco." }, 429))
-    expect(await sendMessage({ sessionId: ID, message: "Oi" }, fn)).toEqual({
+    expect(await sendMessage({ sessionId: ID, message: "Oi" }, undefined, fn)).toEqual({
       ok: false,
       status: 429,
       error: "Muitas mensagens. Espere um pouco.",
@@ -79,7 +88,7 @@ describe("sendMessage", () => {
 
   it("uses a generic message when the error body is not the expected JSON", async () => {
     const { fn } = fakeFetch(new Response("<html>Bad gateway</html>", { status: 502 }))
-    const result = await sendMessage({ sessionId: ID, message: "Oi" }, fn)
+    const result = await sendMessage({ sessionId: ID, message: "Oi" }, undefined, fn)
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.status).toBe(502)
@@ -89,18 +98,120 @@ describe("sendMessage", () => {
 
   it("rejects a 200 whose body does not match ChatResponse", async () => {
     const { fn } = fakeFetch(json({ answer: 1 }))
-    const result = await sendMessage({ sessionId: ID, message: "Oi" }, fn)
+    const result = await sendMessage({ sessionId: ID, message: "Oi" }, undefined, fn)
     expect(result.ok).toBe(false)
   })
 
   it("maps a network failure to status 0 and the connection message", async () => {
     const { fn } = fakeFetch(new TypeError("Failed to fetch"))
-    expect(await sendMessage({ sessionId: ID, message: "Oi" }, fn)).toEqual({
+    expect(await sendMessage({ sessionId: ID, message: "Oi" }, undefined, fn)).toEqual({
       ok: false,
       status: 0,
       error: NETWORK_ERROR_MESSAGE,
     })
     expect(NETWORK_ERROR_MESSAGE).toBe("Não consegui falar com o servidor. Confira sua conexão.")
+  })
+})
+
+// Corpo NDJSON entregue em pedaços arbitrários, como a rede faz.
+function ndjson(...chunks: string[]): Response {
+  const encoder = new TextEncoder()
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(encoder.encode(chunk))
+      controller.close()
+    },
+  })
+  return new Response(body, {
+    status: 200,
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8" },
+  })
+}
+
+describe("sendMessage NDJSON", () => {
+  const reply: ChatResponse = {
+    status: "answered",
+    answer: "Sim.\nCai no ciclo.",
+    sources: ["02-repasse.md"],
+    sessionId: ID,
+  }
+  const INVALID = "O servidor mandou uma resposta inesperada. Tente de novo."
+
+  function send(response: Response) {
+    const steps: ProgressEvent[] = []
+    const { fn, calls } = fakeFetch(response)
+    const result = sendMessage(
+      { sessionId: ID, message: "Quando cai o repasse?" },
+      { onProgress: (event) => steps.push(event) },
+      fn,
+    )
+    return { result, steps, calls }
+  }
+
+  it("asks for NDJSON", async () => {
+    const { result, calls } = send(json(reply))
+    await result
+    const headers = new Headers(calls[0]?.init?.headers)
+    expect(headers.get("Accept")).toBe("application/x-ndjson")
+    expect(headers.get("Content-Type")).toBe("application/json")
+  })
+
+  it("reports each step in order and returns the reply", async () => {
+    const { result, steps } = send(
+      ndjson(
+        '{"type":"step","step":"history"}\n{"type":"step","st',
+        'ep":"understanding"}\n',
+        '{"type":"step","step":"searching"}\r\n{"type":"step","step":"writing","documents":2}\n',
+        `${JSON.stringify({ type: "reply", ...reply }).slice(0, 20)}`,
+        `${JSON.stringify({ type: "reply", ...reply }).slice(20)}\n`,
+      ),
+    )
+    expect(await result).toEqual({ ok: true, data: reply })
+    expect(steps).toEqual([
+      { step: "history" },
+      { step: "understanding" },
+      { step: "searching" },
+      { step: "writing", documents: 2 },
+    ])
+  })
+
+  it("accepts a last line without the final newline", async () => {
+    const { result } = send(ndjson(JSON.stringify({ type: "reply", ...reply })))
+    expect(await result).toEqual({ ok: true, data: reply })
+  })
+
+  it("turns the error event into a 500 with its text", async () => {
+    const { result, steps } = send(
+      ndjson('{"type":"step","step":"searching"}\n{"type":"error","error":"Fora do ar."}\n'),
+    )
+    expect(await result).toEqual({ ok: false, status: 500, error: "Fora do ar." })
+    expect(steps).toEqual([{ step: "searching" }])
+  })
+
+  it("answers the unexpected-reply text for a body without an ending", async () => {
+    const { result } = send(ndjson('{"type":"step","step":"history"}\n'))
+    const value = await result
+    expect(value.ok).toBe(false)
+    if (!value.ok) expect(value.error).toBe(INVALID)
+  })
+
+  it("answers the unexpected-reply text for an invalid line", async () => {
+    const { result } = send(ndjson('{"type":"step","step":"history"}\n{"type":\n'))
+    const value = await result
+    expect(value.ok).toBe(false)
+    if (!value.ok) expect(value.error).toBe(INVALID)
+  })
+
+  it("keeps the JSON path for JSON replies and errors", async () => {
+    const ok = send(json(reply))
+    expect(await ok.result).toEqual({ ok: true, data: reply })
+    expect(ok.steps).toEqual([])
+    const limited = send(json({ error: "Muitas mensagens. Espere um pouco." }, 429))
+    expect(await limited.result).toEqual({
+      ok: false,
+      status: 429,
+      error: "Muitas mensagens. Espere um pouco.",
+    })
   })
 })
 
@@ -169,13 +280,21 @@ describe("sendMessage sessionId", () => {
 
   it("accepts a null sessionId", async () => {
     const { fn } = fakeFetch(json({ ...base, sessionId: null }))
-    expect((await sendMessage({ message: "Oi" }, fn)).ok).toBe(true)
+    expect((await sendMessage({ message: "Oi" }, undefined, fn)).ok).toBe(true)
   })
 
   it("rejects a reply without sessionId or with a non-string one", async () => {
-    expect((await sendMessage({ message: "Oi" }, fakeFetch(json(base)).fn)).ok).toBe(false)
+    expect((await sendMessage({ message: "Oi" }, undefined, fakeFetch(json(base)).fn)).ok).toBe(
+      false,
+    )
     expect(
-      (await sendMessage({ message: "Oi" }, fakeFetch(json({ ...base, sessionId: 3 })).fn)).ok,
+      (
+        await sendMessage(
+          { message: "Oi" },
+          undefined,
+          fakeFetch(json({ ...base, sessionId: 3 })).fn,
+        )
+      ).ok,
     ).toBe(false)
   })
 })

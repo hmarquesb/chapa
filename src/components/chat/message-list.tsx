@@ -4,23 +4,27 @@ import { useEffect, useRef } from "react"
 import { ThinkingIndicator } from "@/components/brand/thinking-indicator"
 import { MessageItem } from "@/components/chat/message-item"
 import type { UiMessage } from "@/lib/chat-state"
+import type { ProgressEvent } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 type MessageListProps = {
   messages: UiMessage[]
   sending: boolean
   loading: boolean
+  // Etapas do turno em andamento, mostradas no indicador.
+  steps?: ProgressEvent[]
 }
 
-export function MessageList({ messages, sending, loading }: MessageListProps) {
+export function MessageList({ messages, sending, loading, steps }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Keeps the latest message (or the thinking indicator) in view.
+  // Keeps the latest message (or the thinking indicator and its steps) in view.
+  const stepCount = steps?.length ?? 0
   useEffect(() => {
     const element = scrollRef.current
-    if (!element || (messages.length === 0 && !sending)) return
+    if (!element || (messages.length === 0 && !sending && stepCount === 0)) return
     element.scrollTop = element.scrollHeight
-  }, [messages, sending])
+  }, [messages, sending, stepCount])
 
   const empty = messages.length === 0
   // With nothing to show, a bordered box reads as a text field. Keep only the hint until the
@@ -55,7 +59,7 @@ export function MessageList({ messages, sending, loading }: MessageListProps) {
           ))}
         </ul>
       )}
-      {sending && <ThinkingIndicator />}
+      {sending && <ThinkingIndicator steps={steps} />}
     </div>
   )
 }

@@ -35,7 +35,7 @@ import type {
   SessionRepository,
   StoredMessage,
 } from "@/core/types"
-import type { RestaurantProfile } from "@/lib/types"
+import type { ChatStreamEvent, ProgressEvent, RestaurantProfile } from "@/lib/types"
 
 const SESSION_ID = "0b7c9a52-3f0e-4d4f-9a55-2a1f3c1d9e10"
 const OTHER_ID = "5f1d2c3b-4a59-4e6f-8a7b-9c0d1e2f3a4b"
@@ -122,9 +122,12 @@ class FakeAssistant implements Assistant {
   inputs: HandleMessageInput[] = []
   failWith: unknown = null
   reply: AssistantReply = REPLY
+  // Avisadas por onProgress antes de falhar ou responder, como o núcleo faz.
+  steps: ProgressEvent[] = []
 
   async handleMessage(input: HandleMessageInput): Promise<AssistantReply> {
     this.inputs.push(input)
+    for (const step of this.steps) input.onProgress?.(step)
     if (this.failWith !== null) throw this.failWith
     return this.reply
   }
@@ -179,13 +182,14 @@ function chatSetup(
 
 function chatRequest(
   body: unknown,
-  init: { contentType?: string; ip?: string; raw?: string } = {},
+  init: { contentType?: string; ip?: string; raw?: string; accept?: string } = {},
 ): Request {
   return new Request("http://localhost/api/chat", {
     method: "POST",
     headers: {
       "content-type": init.contentType ?? "application/json",
       "x-forwarded-for": init.ip ?? IP,
+      ...(init.accept === undefined ? {} : { accept: init.accept }),
     },
     body: init.raw ?? JSON.stringify(body),
   })
@@ -492,6 +496,188 @@ describe("createChatHandler", () => {
 })
 
 // ---------- logs ----------
+
+describe("createChatHandler NDJSON", () => {
+  const NDJSON = "application/x-ndjson"
+  const STEPS: ProgressEvent[] = [
+    { step: "history" },
+    { step: "understanding" },
+    { step: "searching" },
+    { step: "writing", documents: 2 },
+  ]
+
+  function ndjsonRequest(body: unknown = VALID, init: { contentType?: string } = {}): Request {
+    return chatRequest(body, { ...init, accept: NDJSON })
+  }
+
+  async function events(response: Response): Promise<ChatStreamEvent[]> {
+    const text = await response.text()
+    expect(text.endsWith("\n")).toBe(true)
+    return text
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line) as ChatStreamEvent)
+  }
+
+  it("answers 200 in NDJSON, never cached", async () => {
+    const { handler } = chatSetup()
+    const res = await handler(ndjsonRequest())
+    expect(res.status).toBe(200)
+    expect(res.headers.get("content-type")).toBe("application/x-ndjson; charset=utf-8")
+    expect(res.headers.get("cache-control")).toBe("no-store")
+  })
+
+  it("writes the steps and then the reply, in order", async () => {
+    const { handler, assistant } = chatSetup()
+    assistant.steps = STEPS
+    const lines = await events(await handler(ndjsonRequest()))
+    expect(lines).toEqual([
+      { type: "step", step: "history" },
+      { type: "step", step: "understanding" },
+      { type: "step", step: "searching" },
+      { type: "step", step: "writing", documents: 2 },
+      {
+        type: "reply",
+        status: "answered",
+        answer: REPLY.answer,
+        sources: REPLY.sources,
+        sessionId: SESSION_ID,
+      },
+    ])
+    expect(assistant.inputs[0]?.onProgress).toBeTypeOf("function")
+  })
+
+  it("sends the same reply as the JSON response", async () => {
+    const json = chatSetup()
+    const ndjson = chatSetup()
+    const expected = await (await json.handler(chatRequest(VALID))).json()
+    const lines = await events(await ndjson.handler(ndjsonRequest()))
+    expect(lines).toEqual([{ type: "reply", ...expected }])
+  })
+
+  it("sends sessionId null when a new conversation is blocked at the input", async () => {
+    const { handler, assistant } = chatSetup()
+    assistant.reply = { ...REPLY, status: "blocked_input", sources: [], route: null }
+    const lines = await events(await handler(ndjsonRequest({ message: "meu cpf é 123" })))
+    expect(lines).toEqual([
+      {
+        type: "reply",
+        status: "blocked_input",
+        answer: REPLY.answer,
+        sources: [],
+        sessionId: null,
+      },
+    ])
+  })
+
+  it("keeps the errors before the turn in JSON, with the usual status", async () => {
+    const anonymous = chatSetup({ authenticate: async () => null })
+    const unauthenticated = await anonymous.handler(ndjsonRequest())
+    expect(unauthenticated.status).toBe(401)
+    expect(unauthenticated.headers.get("content-type")).toContain("application/json")
+    expect(await unauthenticated.json()).toEqual({ error: UNAUTHENTICATED })
+
+    const { handler } = chatSetup()
+    const unsupported = await handler(ndjsonRequest(VALID, { contentType: "text/plain" }))
+    expect(unsupported.status).toBe(415)
+    expect(unsupported.headers.get("content-type")).toContain("application/json")
+
+    const foreign = chatSetup({ authenticate: async () => OTHER_ACCOUNT })
+    const notFound = await foreign.handler(ndjsonRequest())
+    expect(notFound.status).toBe(404)
+    expect(await notFound.json()).toEqual({ error: NOT_FOUND })
+    expect(foreign.assistant.inputs).toEqual([])
+  })
+
+  it("keeps the rate limit in JSON, with Retry-After", async () => {
+    const limited: AppConfig = {
+      ...config,
+      limits: { ...config.limits, rateLimitPerMinute: 1 },
+    }
+    const { handler } = chatSetup({ config: limited })
+    expect((await handler(ndjsonRequest())).status).toBe(200)
+    const res = await handler(ndjsonRequest())
+    expect(res.status).toBe(429)
+    expect(res.headers.get("content-type")).toContain("application/json")
+    expect(res.headers.get("retry-after")).not.toBeNull()
+  })
+
+  it("ends with the internal error text after the steps", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.steps = STEPS.slice(0, 3)
+    assistant.failWith = new Error("detalhe interno")
+    const res = await handler(ndjsonRequest())
+    expect(res.status).toBe(200)
+    const lines = await events(res)
+    expect(lines.at(-1)).toEqual({
+      type: "error",
+      error: "Algo deu errado do nosso lado. Tente de novo.",
+    })
+    expect(lines.slice(0, -1).every((line) => line.type === "step")).toBe(true)
+    expect(JSON.stringify(lines)).not.toContain("detalhe interno")
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({ status: 500, error: "Error" })
+  })
+
+  it("ends with the unavailable text when the model fails after writing", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.steps = STEPS
+    assistant.failWith = new LlmUnavailableError("fora do ar")
+    const lines = await events(await handler(ndjsonRequest()))
+    expect(lines).toHaveLength(5)
+    expect(lines.at(-1)).toEqual({
+      type: "error",
+      error: "O assistente está indisponível agora. Tente de novo em instantes.",
+    })
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({ status: 503, error: "LlmUnavailableError" })
+  })
+
+  it("logs once, at the end, with the turn data", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.steps = STEPS
+    const res = await handler(ndjsonRequest())
+    await res.text()
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({
+      route: "/api/chat",
+      method: "POST",
+      status: 200,
+      replyStatus: "answered",
+      replyRoute: "rag",
+      llmCalls: 3,
+      inputTokens: 1200,
+      outputTokens: 150,
+      accountId: ACCOUNT.id,
+    })
+    expect(JSON.stringify(logs)).not.toContain(VALID.message)
+  })
+
+  it("keeps the turn going when the client is gone", async () => {
+    const { handler, assistant, logs } = chatSetup()
+    assistant.steps = STEPS
+    const res = await handler(ndjsonRequest())
+    await res.body?.cancel()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(assistant.inputs).toHaveLength(1)
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({ status: 200 })
+  })
+
+  it("answers the usual JSON without the Accept header", async () => {
+    const { handler, assistant } = chatSetup()
+    assistant.steps = STEPS
+    const res = await handler(chatRequest(VALID))
+    expect(res.headers.get("content-type")).toContain("application/json")
+    expect(await res.json()).toEqual({
+      status: "answered",
+      answer: REPLY.answer,
+      sources: REPLY.sources,
+      sessionId: SESSION_ID,
+    })
+    expect(assistant.inputs[0]?.onProgress).toBeUndefined()
+  })
+})
 
 describe("request logs", () => {
   it("log once per request with status, latency, reply status and usage", async () => {

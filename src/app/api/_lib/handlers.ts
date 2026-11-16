@@ -1,6 +1,6 @@
 import { randomUUID, timingSafeEqual } from "node:crypto"
 import { ERROR_MESSAGES } from "@/app/api/_lib/errors"
-import { HttpError, json, readJsonBody } from "@/app/api/_lib/http"
+import { encodeNdjsonLine, HttpError, json, readJsonBody, wantsNdjson } from "@/app/api/_lib/http"
 import { type LogEntry, logRequest } from "@/app/api/_lib/log"
 import { checkAccountDailyLimit, checkRateLimit } from "@/app/api/_lib/rate-limit"
 import { isUuid, parseChatRequest, parseProfileUpdate } from "@/app/api/_lib/validate"
@@ -12,22 +12,25 @@ import type {
   AccountRecord,
   AccountRepository,
   Assistant,
+  AssistantReply,
   ChunkRepository,
   RateLimitRepository,
   SessionRepository,
   StoredMessage,
 } from "@/core/types"
 import type { ProfileTextRejection } from "@/lib/moderation/profile-text"
-import type {
-  ApiErrorResponse,
-  ChatResponse,
-  ConversationListItem,
-  HealthResponse,
-  HistoryMessage,
-  ProfileErrorField,
-  ProfileResponse,
-  SessionHistoryResponse,
-  SessionListResponse,
+import {
+  type ApiErrorResponse,
+  CHAT_STREAM_CONTENT_TYPE,
+  type ChatResponse,
+  type ChatStreamEvent,
+  type ConversationListItem,
+  type HealthResponse,
+  type HistoryMessage,
+  type ProfileErrorField,
+  type ProfileResponse,
+  type SessionHistoryResponse,
+  type SessionListResponse,
 } from "@/lib/types"
 
 type Log = (entry: LogEntry) => void
@@ -157,6 +160,75 @@ function failed(error: unknown, finish: Finish, profileRejected?: ProfileTextRej
 
 // ---------- POST /api/chat ----------
 
+// Picked one by one: retrieved, searchQuery and usage never leave the server.
+function toChatResponse(reply: AssistantReply, sessionId: string, isNew: boolean): ChatResponse {
+  return {
+    status: reply.status,
+    answer: reply.answer,
+    sources: reply.sources,
+    // A new conversation blocked at the input is never saved: there is no id to adopt.
+    sessionId: isNew && reply.status === "blocked_input" ? null : sessionId,
+  }
+}
+
+function finishReply(finish: Finish, reply: AssistantReply): void {
+  finish({
+    status: 200,
+    replyStatus: reply.status,
+    replyRoute: reply.route ?? undefined,
+    routerMs: reply.routerMs ?? undefined,
+    llmCalls: reply.usage.calls,
+    inputTokens: reply.usage.inputTokens,
+    outputTokens: reply.usage.outputTokens,
+  })
+}
+
+// NDJSON: one line per step, then the reply or the error. The answer text only goes out in the
+// reply, whole, after the output guardrail. The log line is written once, when the body ends.
+// A client that went away does not stop the turn: it finishes and is saved, as in JSON.
+function streamTurn(
+  run: (onProgress: (event: ChatStreamEvent) => void) => Promise<ChatResponse>,
+  finish: Finish,
+): Response {
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const write = (event: ChatStreamEvent): void => {
+        try {
+          controller.enqueue(encodeNdjsonLine(event))
+        } catch {
+          // The client closed the stream: nothing to write to.
+        }
+      }
+      const close = (): void => {
+        try {
+          controller.close()
+        } catch {
+          // Already closed by the client.
+        }
+      }
+      void run(write).then(
+        (body) => {
+          write({ type: "reply", ...body })
+          close()
+        },
+        (error: unknown) => {
+          const { status, message } = toPublicError(error)
+          finish({ status, error: errorName(error) })
+          write({ type: "error", error: message })
+          close()
+        },
+      )
+    },
+  })
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      "content-type": `${CHAT_STREAM_CONTENT_TYPE}; charset=utf-8`,
+      "cache-control": "no-store",
+    },
+  })
+}
+
 export function createChatHandler(deps: {
   assistant: Assistant
   sessions: Pick<SessionRepository, "get">
@@ -224,33 +296,30 @@ export function createChatHandler(deps: {
         throw new HttpError(404, ERROR_MESSAGES.sessionNotFound)
       }
       const sessionId = requestedId ?? randomUUID()
-
-      const reply = await deps.assistant.handleMessage({
+      const input = {
         sessionId,
         message,
-        channel: "web",
+        channel: "web" as const,
         accountId: account.id,
         // The profile comes from the account the database just returned, never from the body.
         accountProfile: account.profile,
-      })
-      finish({
-        status: 200,
-        replyStatus: reply.status,
-        replyRoute: reply.route ?? undefined,
-        routerMs: reply.routerMs ?? undefined,
-        llmCalls: reply.usage.calls,
-        inputTokens: reply.usage.inputTokens,
-        outputTokens: reply.usage.outputTokens,
-      })
-      // Picked one by one: retrieved, searchQuery and usage never leave the server.
-      const body: ChatResponse = {
-        status: reply.status,
-        answer: reply.answer,
-        sources: reply.sources,
-        // A new conversation blocked at the input is never saved: there is no id to adopt.
-        sessionId: isNew && reply.status === "blocked_input" ? null : sessionId,
       }
-      return json(body)
+
+      if (wantsNdjson(req.headers)) {
+        return streamTurn(async (write) => {
+          const reply = await deps.assistant.handleMessage({
+            ...input,
+            // Only the step name and a count: never the turn content.
+            onProgress: (event) => write({ type: "step", ...event }),
+          })
+          finishReply(finish, reply)
+          return toChatResponse(reply, sessionId, isNew)
+        }, finish)
+      }
+
+      const reply = await deps.assistant.handleMessage(input)
+      finishReply(finish, reply)
+      return json(toChatResponse(reply, sessionId, isNew))
     } catch (error) {
       return failed(error, finish)
     }

@@ -1,15 +1,23 @@
+import {
+  InvalidStreamError,
+  isChatResponse,
+  isReplyStatus,
+  parseStreamEvent,
+  splitLines,
+} from "@/lib/chat-stream"
 import { DAY_IDS } from "@/lib/profile/types"
-import type {
-  ChatRequest,
-  ChatResponse,
-  ConversationListItem,
-  HistoryMessage,
-  ProfileErrorField,
-  ProfileResponse,
-  ProfileUpdateRequest,
-  ReplyStatus,
-  SessionHistoryResponse,
-  SessionListResponse,
+import {
+  CHAT_STREAM_CONTENT_TYPE,
+  type ChatRequest,
+  type ChatResponse,
+  type ConversationListItem,
+  type HistoryMessage,
+  type ProfileErrorField,
+  type ProfileResponse,
+  type ProfileUpdateRequest,
+  type ProgressEvent,
+  type SessionHistoryResponse,
+  type SessionListResponse,
 } from "@/lib/types"
 
 export type ApiResult<T> =
@@ -19,14 +27,6 @@ export type ApiResult<T> =
 export const NETWORK_ERROR_MESSAGE = "Não consegui falar com o servidor. Confira sua conexão."
 const GENERIC_ERROR_MESSAGE = "Algo deu errado do nosso lado. Tente de novo em instantes."
 const INVALID_RESPONSE_MESSAGE = "O servidor mandou uma resposta inesperada. Tente de novo."
-
-const REPLY_STATUSES: readonly ReplyStatus[] = [
-  "answered",
-  "small_talk",
-  "fallback",
-  "blocked_input",
-  "blocked_output",
-]
 
 // A thin arrow keeps `this` right when the global fetch is passed around as a value.
 const defaultFetch: typeof fetch = (input, init) => fetch(input, init)
@@ -49,20 +49,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string")
-}
-
-function isReplyStatus(value: unknown): value is ReplyStatus {
-  return typeof value === "string" && (REPLY_STATUSES as readonly string[]).includes(value)
-}
-
-function isChatResponse(value: unknown): value is ChatResponse {
-  return (
-    isRecord(value) &&
-    isReplyStatus(value.status) &&
-    typeof value.answer === "string" &&
-    isStringArray(value.sources) &&
-    (value.sessionId === null || typeof value.sessionId === "string")
-  )
 }
 
 function isHistoryMessage(value: unknown): value is HistoryMessage {
@@ -125,7 +111,13 @@ async function request<T>(
   } catch {
     return { ok: false, status: 0, error: NETWORK_ERROR_MESSAGE }
   }
+  return readResponse(response, isValid)
+}
 
+async function readResponse<T>(
+  response: Response,
+  isValid: (body: unknown) => body is T,
+): Promise<ApiResult<T>> {
   const body = await readJson(response)
   if (!response.ok) {
     const error =
@@ -201,21 +193,76 @@ async function emptyRequest(
   return { ok: false, status: response.status, error }
 }
 
-export function sendMessage(
+function isNdjson(response: Response): boolean {
+  const type = response.headers.get("Content-Type") ?? ""
+  return type.split(";")[0]?.trim().toLowerCase() === CHAT_STREAM_CONTENT_TYPE
+}
+
+// Lê o corpo NDJSON de POST /api/chat: avisa cada etapa e termina no reply ou no error.
+// Linha inválida ou corpo sem final dão a resposta inesperada.
+async function readChatStream(
+  body: ReadableStream<Uint8Array>,
+  onProgress: ((event: ProgressEvent) => void) | undefined,
+): Promise<ApiResult<ChatResponse>> {
+  const invalid = { ok: false, status: 200, error: INVALID_RESPONSE_MESSAGE } as const
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let rest = ""
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      const split = done
+        ? { lines: [rest + decoder.decode()], rest: "" }
+        : splitLines(rest, decoder.decode(value, { stream: true }))
+      rest = split.rest
+      for (const line of split.lines) {
+        const event = parseStreamEvent(line)
+        if (event === null) continue
+        if (event.type === "step") {
+          const { type: _type, ...step } = event
+          onProgress?.(step)
+        } else if (event.type === "reply") {
+          const { type: _type, ...data } = event
+          await reader.cancel().catch(() => undefined)
+          return { ok: true, data }
+        } else {
+          await reader.cancel().catch(() => undefined)
+          const error = event.error.trim() === "" ? GENERIC_ERROR_MESSAGE : event.error
+          return { ok: false, status: 500, error }
+        }
+      }
+      if (done) return invalid
+    }
+  } catch (error) {
+    await reader.cancel().catch(() => undefined)
+    // Linha inválida: resposta inesperada. Conexão caída no meio do corpo: erro de rede.
+    if (error instanceof InvalidStreamError) return invalid
+    return { ok: false, status: 0, error: NETWORK_ERROR_MESSAGE }
+  }
+}
+
+// Pede as etapas do turno em NDJSON; uma resposta em JSON (erros antes do turno) segue o
+// caminho de sempre.
+export async function sendMessage(
   req: ChatRequest,
+  options: { onProgress?: (event: ProgressEvent) => void } = {},
   fetchFn: typeof fetch = defaultFetch,
 ): Promise<ApiResult<ChatResponse>> {
-  return request(
-    "/api/chat",
-    {
+  let response: Response
+  try {
+    response = await fetchFn("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Accept: CHAT_STREAM_CONTENT_TYPE },
       body: JSON.stringify(req),
       cache: "no-store",
-    },
-    isChatResponse,
-    fetchFn,
-  )
+    })
+  } catch {
+    return { ok: false, status: 0, error: NETWORK_ERROR_MESSAGE }
+  }
+  if (response.ok && response.body !== null && isNdjson(response)) {
+    return readChatStream(response.body, options.onProgress)
+  }
+  return readResponse(response, isChatResponse)
 }
 
 export function fetchHistory(

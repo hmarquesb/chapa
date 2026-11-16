@@ -26,7 +26,7 @@ import type {
   StoredMessage,
   Usage,
 } from "@/core/types"
-import type { Channel, RestaurantProfile } from "@/lib/types"
+import type { Channel, ProgressEvent, RestaurantProfile } from "@/lib/types"
 
 const SESSION_ID = "0b7c9a52-3f0e-4d4f-9a55-2a1f3c1d9e10"
 
@@ -996,5 +996,122 @@ describe("createAssistant().handleMessage document context", () => {
     chunks.listError = new Error("banco fora")
     await expect(send("Quando cai o repasse?")).rejects.toThrow("banco fora")
     expect(sessions.messages).toEqual([])
+  })
+})
+
+describe("createAssistant().handleMessage progress steps", () => {
+  const LONG_QUESTION =
+    "quando cai o repasse das vendas que fiz ontem à noite no plano próprio aqui"
+
+  function track(appConfig: AppConfig = ROUTER_OFF) {
+    const ctx = setup(appConfig)
+    const events: ProgressEvent[] = []
+    const run = (message: string) =>
+      ctx.sendRaw({ channel: "cli", message, onProgress: (event) => events.push(event) })
+    return { ...ctx, events, run }
+  }
+
+  it("emits nothing on a blocked input", async () => {
+    const { events, run } = track(ROUTER_ON)
+    const reply = await run("Meu CPF é 123.456.789-09")
+    expect(reply.status).toBe("blocked_input")
+    expect(events).toEqual([])
+  })
+
+  it("emits nothing on a greeting", async () => {
+    const { events, run } = track(ROUTER_ON)
+    const reply = await run("bom dia")
+    expect(reply.route).toBe("cumprimento")
+    expect(events).toEqual([])
+  })
+
+  it("emits history and understanding on a conversation turn", async () => {
+    const { llm, events, run } = track(ROUTER_ON)
+    llm.router = () => "Por nada!"
+    const reply = await run("obrigado!")
+    expect(reply.route).toBe("conversa")
+    expect(events).toEqual([{ step: "history" }, { step: "understanding" }])
+  })
+
+  it("skips understanding on a long question without history", async () => {
+    const { events, run } = track(ROUTER_ON)
+    const reply = await run(LONG_QUESTION)
+    expect(reply.status).toBe("answered")
+    expect(events).toEqual([
+      { step: "history" },
+      { step: "searching" },
+      { step: "writing", documents: 2 },
+    ])
+  })
+
+  it("emits the four steps once on a question with history and the router", async () => {
+    const { sessions, events, run } = track(ROUTER_ON)
+    sessions.seed(2)
+    const reply = await run("Quando cai o repasse?")
+    expect(reply.status).toBe("answered")
+    expect(events).toEqual([
+      { step: "history" },
+      { step: "understanding" },
+      { step: "searching" },
+      { step: "writing", documents: reply.sources.length },
+    ])
+  })
+
+  it("counts the unique files of the context on writing", async () => {
+    const { sessions, events, run } = track(ROUTER_OFF)
+    sessions.seed(2)
+    const reply = await run("Quando cai o repasse?")
+    const files = new Set(reply.context.map((block) => block.source)).size
+    expect(events.at(-1)).toEqual({ step: "writing", documents: files })
+    expect(events.map((event) => event.step)).toEqual([
+      "history",
+      "understanding",
+      "searching",
+      "writing",
+    ])
+  })
+
+  it("stops at searching on a fallback", async () => {
+    const { chunks, events, run } = track(ROUTER_OFF)
+    chunks.candidates = WEAK_CANDIDATES
+    const reply = await run("Como funciona o programa de fidelidade?")
+    expect(reply.status).toBe("fallback")
+    expect(events).toEqual([{ step: "history" }, { step: "searching" }])
+  })
+
+  it("never carries turn content in a step", async () => {
+    const { sessions, events, run } = track(ROUTER_OFF)
+    sessions.seed(2)
+    await run("Quando cai o repasse?")
+    for (const event of events) {
+      expect(Object.keys(event).sort()).toEqual(
+        event.step === "writing" ? ["documents", "step"] : ["step"],
+      )
+    }
+  })
+
+  it("keeps the reply when onProgress throws", async () => {
+    const quiet = setup(ROUTER_OFF)
+    const noisy = setup(ROUTER_OFF)
+    quiet.sessions.seed(2)
+    noisy.sessions.seed(2)
+    const expected = await quiet.sendRaw({ channel: "cli" })
+    const reply = await noisy.sendRaw({
+      channel: "cli",
+      onProgress: () => {
+        throw new Error("aviso quebrado")
+      },
+    })
+    expect(reply).toEqual(expected)
+    expect(noisy.sessions.messages).toEqual(quiet.sessions.messages)
+  })
+
+  it("does not change the turn without onProgress", async () => {
+    const withSteps = track(ROUTER_OFF)
+    const without = setup(ROUTER_OFF)
+    const expected = await without.sendRaw({ channel: "cli" })
+    const reply = await withSteps.run("Quando cai o repasse?")
+    expect(reply).toEqual(expected)
+    expect(withSteps.llm.generateCalls).toEqual(without.llm.generateCalls)
   })
 })
