@@ -12,7 +12,13 @@ function sent(text = "Quando o repasse cai?"): ChatState {
 
 describe("initialChatState", () => {
   it("starts empty and idle", () => {
-    expect(initialChatState).toEqual({ messages: [], sending: false, error: null, notice: null })
+    expect(initialChatState).toEqual({
+      messages: [],
+      sending: false,
+      error: null,
+      notice: null,
+      steps: [],
+    })
   })
 })
 
@@ -165,5 +171,42 @@ describe("chatReducer", () => {
     expect(state.error).toBeNull()
     expect(state.notice).toBeNull()
     expect(state.messages).toEqual(withBoth.messages)
+  })
+})
+
+describe("chatReducer steps", () => {
+  const REPLY = { status: "answered", answer: "Sim.", sources: [], sessionId: SID } as const
+
+  function withSteps(): ChatState {
+    const first = chatReducer(sent(), { type: "progress", event: { step: "history" } })
+    return chatReducer(first, { type: "progress", event: { step: "writing", documents: 2 } })
+  }
+
+  it("accumulates the steps while sending", () => {
+    expect(withSteps().steps).toEqual([{ step: "history" }, { step: "writing", documents: 2 }])
+  })
+
+  it("ignores a step when not sending", () => {
+    const state = chatReducer(initialChatState, {
+      type: "progress",
+      event: { step: "history" },
+    })
+    expect(state).toBe(initialChatState)
+  })
+
+  it("clears the steps on send_started", () => {
+    const failed = { ...withSteps(), sending: false }
+    const again = chatReducer(failed, { type: "send_started", text: "De novo", now: T2 })
+    expect(again.steps).toEqual([])
+  })
+
+  it("clears the steps on send_succeeded, send_failed and reset", () => {
+    const state = withSteps()
+    expect(
+      chatReducer(state, { type: "send_succeeded", reply: { ...REPLY, sources: [] }, now: T2 })
+        .steps,
+    ).toEqual([])
+    expect(chatReducer(state, { type: "send_failed", error: "Falhou" }).steps).toEqual([])
+    expect(chatReducer(state, { type: "reset" }).steps).toEqual([])
   })
 })

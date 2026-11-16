@@ -1,4 +1,4 @@
-import type { ChatResponse, HistoryMessage, ReplyStatus } from "@/lib/types"
+import type { ChatResponse, HistoryMessage, ProgressEvent, ReplyStatus } from "@/lib/types"
 
 export type UiMessage = {
   key: string
@@ -15,6 +15,8 @@ export type ChatState = {
   sending: boolean
   error: string | null
   notice: string | null
+  // Etapas do turno em andamento, na ordem em que chegaram; vazia fora do envio.
+  steps: ProgressEvent[]
 }
 
 export type ChatAction =
@@ -22,6 +24,7 @@ export type ChatAction =
   | { type: "send_started"; text: string; now: string }
   | { type: "send_succeeded"; reply: ChatResponse; now: string }
   | { type: "send_failed"; error: string }
+  | { type: "progress"; event: ProgressEvent }
   | { type: "reset"; notice?: string }
   | { type: "dismiss" }
 
@@ -30,6 +33,7 @@ export const initialChatState: ChatState = {
   sending: false,
   error: null,
   notice: null,
+  steps: [],
 }
 
 // Local keys only need to be unique within the list. A removed pending message frees its
@@ -65,7 +69,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         createdAt: action.now,
         pending: true,
       }
-      return { ...state, messages: [...state.messages, message], sending: true, error: null }
+      return {
+        ...state,
+        messages: [...state.messages, message],
+        sending: true,
+        error: null,
+        steps: [],
+      }
     }
 
     case "send_succeeded": {
@@ -80,7 +90,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         sources: action.reply.sources,
         createdAt: action.now,
       }
-      return { ...state, messages: [...confirmed, reply], sending: false }
+      return { ...state, messages: [...confirmed, reply], sending: false, steps: [] }
     }
 
     case "send_failed":
@@ -89,7 +99,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         messages: state.messages.filter((message) => !message.pending),
         sending: false,
         error: action.error,
+        steps: [],
       }
+
+    case "progress":
+      // Uma etapa que chega fora do envio (atrasada) não tem onde aparecer.
+      if (!state.sending) return state
+      return { ...state, steps: [...state.steps, action.event] }
 
     case "reset":
       return { ...initialChatState, notice: action.notice ?? null }
