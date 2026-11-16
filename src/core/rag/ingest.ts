@@ -2,11 +2,12 @@ import "server-only"
 import { type AppConfig, chunkConfigKey } from "@/config"
 import { chunkDocument } from "@/core/rag/chunking"
 import type { Chunk, ChunkRepository, ChunkSetKey, LlmClient, Usage } from "@/core/types"
+import { KNOWLEDGE_FILE_PATTERN } from "@/lib/knowledge-base"
+
+// The rule lives in src/lib/ so the /base pages list the same files as the ingestion.
+export { KNOWLEDGE_FILE_PATTERN }
 
 export type SourceDocument = { name: string; content: string }
-
-// Só os documentos numerados (01-...md). README.md e regras.yaml ficam de fora.
-export const KNOWLEDGE_FILE_PATTERN: RegExp = /^\d{2}-.*\.md$/
 
 export async function ingestDocuments(input: {
   documents: SourceDocument[]
