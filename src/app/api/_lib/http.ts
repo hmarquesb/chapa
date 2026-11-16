@@ -1,5 +1,5 @@
 import { ERROR_MESSAGES } from "@/app/api/_lib/errors"
-import type { ProfileErrorField } from "@/lib/types"
+import { CHAT_STREAM_CONTENT_TYPE, type ChatStreamEvent, type ProfileErrorField } from "@/lib/types"
 
 // Error with an HTTP status and a message that is safe to show to the user.
 export class HttpError extends Error {
@@ -66,4 +66,23 @@ export function json(body: unknown, init?: ResponseInit): Response {
   const headers = new Headers(init?.headers)
   if (!headers.has("cache-control")) headers.set("cache-control", "no-store")
   return Response.json(body, { ...init, headers })
+}
+
+// True when the Accept header lists application/x-ndjson (and does not refuse it with q=0).
+export function wantsNdjson(headers: Headers): boolean {
+  const accept = headers.get("accept")
+  if (accept === null) return false
+  return accept.split(",").some((range) => {
+    const [type, ...params] = range.split(";").map((part) => part.trim().toLowerCase())
+    if (type !== CHAT_STREAM_CONTENT_TYPE) return false
+    const quality = params.find((param) => param.startsWith("q="))
+    return quality === undefined || Number(quality.slice(2)) > 0
+  })
+}
+
+const encoder = new TextEncoder()
+
+// Uma linha JSON terminada em "\n", já codificada.
+export function encodeNdjsonLine(event: ChatStreamEvent): Uint8Array {
+  return encoder.encode(`${JSON.stringify(event)}\n`)
 }
