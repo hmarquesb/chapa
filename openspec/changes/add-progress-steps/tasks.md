@@ -26,7 +26,7 @@
 
 ## 5. Verificação manual (orquestrador)
 
-- [ ] 5.1 Com `npm run dev` no `dev` (demo): numa conversa com histórico, uma pergunta da base mostra "Lendo a conversa", "Entendendo a pergunta", "Buscando na base de conhecimento" e "Escrevendo a resposta com base em N documentos", com ✓ nas anteriores, e a lista some quando a resposta chega; "bom dia" mostra só "Chapa está pensando…"; uma pergunta fora da base para em "Buscando"; com movimento reduzido, sem pontos; o Network do navegador mostra a resposta em `application/x-ndjson` e nenhuma linha com trecho ou pergunta reescrita; o terminal mostra uma linha de log por pedido; nos dois temas
+- [x] 5.1 Com `npm run dev` no `dev` (demo): numa conversa com histórico, uma pergunta da base mostra "Lendo a conversa", "Entendendo a pergunta", "Buscando na base de conhecimento" e "Escrevendo a resposta com base em N documentos", com ✓ nas anteriores, e a lista some quando a resposta chega; "bom dia" mostra só "Chapa está pensando…"; uma pergunta fora da base para em "Buscando"; com movimento reduzido, sem pontos; o Network do navegador mostra a resposta em `application/x-ndjson` e nenhuma linha com trecho ou pergunta reescrita; o terminal mostra uma linha de log por pedido; nos dois temas
 - [x] 5.2 Rodar `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` no worktree, todos verdes
 
 ## Workflow follow-up
