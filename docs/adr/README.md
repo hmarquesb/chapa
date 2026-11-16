@@ -33,6 +33,7 @@ Status: `Proposto` → `Aceito` (ou `Rejeitado`) → `Substituído por NNNN`.
 | [0025](0025-roteador-de-conversa-antes-do-rag.md) | Responder a conversa curta com um roteador antes do RAG, com o RAG como padrão seguro | Aceito |
 | [0026](0026-ilustracao-da-marca.md) | Ilustrar a marca com tokens `art-*` só para desenho e ornamentos em SVG inline | Aceito |
 | [0027](0027-busca-por-trecho-contexto-por-documento.md) | Buscar por trecho e enviar ao modelo os documentos inteiros dos melhores trechos | Aceito |
+| [0028](0028-etapas-do-turno-em-ndjson.md) | Mandar as etapas do turno em NDJSON antes da resposta, que segue inteira | Aceito |
 
 ## Modelo
 

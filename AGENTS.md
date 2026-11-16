@@ -128,7 +128,7 @@ As variáveis ficam em `.env.local`, e o `.env.example` lista todas: `GEMINI_API
 5. A mensagem de fallback é a constante `FALLBACK_MESSAGE` de `src/core/messages.ts`. Não duplique o texto.
 6. Se nenhum trecho passar do `minScore`, o assistente responde com o fallback **sem chamar o LLM de resposta**.
 7. O guardrail de entrada bloqueia **padrões** (CPF, cartão, "minha senha é", pedido de senha), nunca palavras soltas. "O repasse cai via Pix?" tem que passar.
-8. Sem streaming: a resposta só sai depois do guardrail de saída.
+8. Sem streaming do texto: a resposta só sai depois do guardrail de saída. As etapas do turno podem ir antes, sem conteúdo ([ADR 0028](docs/adr/0028-etapas-do-turno-em-ndjson.md)).
 9. Sem estado em memória entre requisições. Histórico e resumo vêm do banco a cada mensagem.
 
 ## Segurança e privacidade
