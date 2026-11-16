@@ -48,6 +48,20 @@ export type ChatResponse = {
   sessionId: string | null // null when no conversation was created
 }
 
+// POST /api/chat com Accept: application/x-ndjson: uma linha JSON por evento.
+// As etapas nunca levam conteúdo do turno (pergunta reescrita, trechos, prompt).
+export type ProgressStep = "history" | "understanding" | "searching" | "writing"
+export type ProgressEvent =
+  | { step: "history" | "understanding" | "searching" }
+  | { step: "writing"; documents: number }
+
+export type ChatStreamEvent =
+  | ({ type: "step" } & ProgressEvent)
+  | ({ type: "reply" } & ChatResponse)
+  | { type: "error"; error: string }
+
+export const CHAT_STREAM_CONTENT_TYPE = "application/x-ndjson"
+
 // GET /api/sessions
 export type ConversationListItem = {
   id: string

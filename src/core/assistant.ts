@@ -33,7 +33,12 @@ import { addUsage, emptyUsage } from "@/core/usage"
 import { checkProfileText } from "@/lib/moderation/profile-text"
 import { isPlanId } from "@/lib/plans"
 import { findCity } from "@/lib/profile/cities"
-import { PROFILE_VERSION, type ReplyStatus, type RestaurantProfile } from "@/lib/types"
+import {
+  PROFILE_VERSION,
+  type ProgressEvent,
+  type ReplyStatus,
+  type RestaurantProfile,
+} from "@/lib/types"
 
 export type AssistantDeps = {
   llm: LlmClient
@@ -107,6 +112,14 @@ export function createAssistant(deps: AssistantDeps): Assistant {
       throw new Error("profile source disagrees with channel")
     }
     const owner: SessionOwner = { accountId: input.accountId }
+    // Aviso das etapas (web). Uma falha no aviso nunca derruba o turno.
+    const emit = (event: ProgressEvent): void => {
+      try {
+        input.onProgress?.(event)
+      } catch {
+        // Ignorado: o aviso é só para a interface.
+      }
+    }
 
     // Bloqueio de entrada: nada vai para o LLM nem para o banco (pode conter CPF ou cartão).
     const inputCheck = validateInput(message, config.limits.maxInputChars)
@@ -165,6 +178,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     }
 
     // Memória: histórico pendente desde o último resumo, vindo do banco a cada mensagem.
+    emit({ step: "history" })
     const pending = await sessions.listMessages(sessionId, owner, {
       afterId: session.summaryUntilId ?? undefined,
     })
@@ -192,7 +206,10 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     // Roteador de conversa: mensagens curtas, depois da memória (precisa da última resposta do
     // Chapa) e antes da reescrita. Nunca lança: qualquer falha segue para o RAG.
     let routerMs: number | null = null
+    let understanding = false
     if (config.router.enabled && countWords(message) <= config.router.maxWords) {
+      emit({ step: "understanding" })
+      understanding = true
       const lastMessage = recent.at(-1)
       const routed = await routeConversation({
         message,
@@ -231,6 +248,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     // Reescrita: só quando há contexto anterior para tornar a pergunta autossuficiente.
     let searchQuery = message
     if (config.rag.rewriteQuery && (history.length > 0 || summary)) {
+      if (!understanding) emit({ step: "understanding" })
       const rewritten = await rewriteQuery({
         question: message,
         history,
@@ -243,6 +261,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
     }
 
     // Recuperação: uma única busca por turno. Erros sobem sem persistir nada.
+    emit({ step: "searching" })
     const { results, usage: retrieveUsage } = await retrieve({
       query: searchQuery,
       config,
@@ -261,6 +280,7 @@ export function createAssistant(deps: AssistantDeps): Assistant {
       status = "fallback"
       answer = FALLBACK_MESSAGE
     } else {
+      emit({ step: "writing", documents: uniqueSources(context).length })
       const generated = await llm.generate({
         model: config.models.chat,
         system: buildSystemInstruction({
