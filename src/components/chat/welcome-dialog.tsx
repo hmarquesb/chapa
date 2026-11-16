@@ -9,8 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { KNOWLEDGE_BASE_PATH } from "@/lib/knowledge-base"
 import {
   WELCOME_CONFIRM,
+  WELCOME_KNOWLEDGE_BASE,
   WELCOME_OUT_OF_SCOPE,
   WELCOME_PARAGRAPHS,
   WELCOME_TITLE,
@@ -43,6 +45,19 @@ export function WelcomeDialog({ open, onOpenChange }: WelcomeDialogProps) {
             ))}
           </ul>
           <p>{WELCOME_OUT_OF_SCOPE}</p>
+          <p>
+            {WELCOME_KNOWLEDGE_BASE.before}
+            <a
+              href={KNOWLEDGE_BASE_PATH}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {WELCOME_KNOWLEDGE_BASE.link}
+              <span className="sr-only"> (abre em nova aba)</span>
+            </a>
+            {WELCOME_KNOWLEDGE_BASE.after}
+          </p>
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)}>{WELCOME_CONFIRM}</Button>

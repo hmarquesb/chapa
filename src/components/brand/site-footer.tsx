@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { KNOWLEDGE_BASE_PATH } from "@/lib/knowledge-base"
 import { FICTIONAL_COMPANY_NOTICE } from "@/lib/sign-in"
 
 export function SiteFooter({ note }: { note?: string }) {
@@ -12,6 +13,10 @@ export function SiteFooter({ note }: { note?: string }) {
       {" · "}
       <Link href="/marca" className="underline underline-offset-4">
         Marca
+      </Link>
+      {" · "}
+      <Link href={KNOWLEDGE_BASE_PATH} className="underline underline-offset-4">
+        Base de conhecimento
       </Link>
     </footer>
   )

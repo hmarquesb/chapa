@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import type { UiMessage } from "@/lib/chat-state"
 import { formatSourceLabel, formatTime } from "@/lib/format"
+import { documentHref } from "@/lib/knowledge-base"
 import { cn } from "@/lib/utils"
 
 const TEXT = "whitespace-pre-wrap [overflow-wrap:anywhere]"
@@ -27,11 +28,14 @@ function SourceBadges({ sources }: { sources: string[] }) {
       {unique.map((source) => (
         <Badge
           key={source}
+          asChild
           variant="secondary"
-          title={source}
-          className="max-w-full bg-accent text-accent-foreground"
+          className="max-w-full bg-accent text-accent-foreground underline-offset-2 hover:underline"
         >
-          <span className="truncate">{formatSourceLabel(source)}</span>
+          <a href={documentHref(source)} target="_blank" rel="noopener noreferrer" title={source}>
+            <span className="truncate">{formatSourceLabel(source)}</span>
+            <span className="sr-only"> (abre em nova aba)</span>
+          </a>
         </Badge>
       ))}
     </div>
